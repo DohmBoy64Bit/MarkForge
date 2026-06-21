@@ -38,3 +38,4 @@ apps/editor/src-tauri/target/release/bundle/nsis/MarkForge_0.0.0_x64-setup.exe
 - File watching is currently implemented as metadata polling. A native watcher should replace it after platform service APIs settle.
 - Print/PDF is a proof-of-concept webview print call, not the final export pipeline.
 - Shortcut editing is not implemented yet; Phase 1 only validates native menu accelerators.
+- The Phase 1 UI is a plain proof-of-concept and is not the final visual direction. MarkForge should preserve functional parity goals without becoming a 1:1 MarkText visual clone.

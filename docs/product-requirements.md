@@ -11,6 +11,7 @@ MarkForge is a modern, fast, local-first Markdown editor and standalone Markdown
 - Clear module ownership. UI components do not own business logic.
 - Feature parity is evidence-based. MarkText features must be tracked in `docs/marktext-parity-matrix.md`.
 - Originality matters. Functional parity is a target, but MarkForge must have its own architecture, interaction design, theming, converter system, viewer, and local LLM layer.
+- MarkForge must not be a 1:1 visual clone of MarkText. MarkText is an audit source for behavior, not a design template to copy.
 
 ## Primary Users
 
@@ -100,4 +101,3 @@ Each converter must be independently testable and report confidence, warnings, a
 - Mobile support.
 - Full PDF layout reconstruction in PDF-to-Markdown conversion.
 - 1:1 MarkText visual clone.
-

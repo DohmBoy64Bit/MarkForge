@@ -15,6 +15,12 @@
     "build:editor": "pnpm --filter @markforge/editor build",
     "tauri:dev": "pnpm --filter @markforge/editor tauri dev",
     "tauri:build": "pnpm --filter @markforge/editor tauri build",
-    "test": "node -e \"console.log('Phase 1 smoke tests are manual until the app shell stabilizes')\""
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.9"
   }
 }
