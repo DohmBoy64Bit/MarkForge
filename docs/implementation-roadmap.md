@@ -65,7 +65,8 @@ Current status:
 
 - Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, light/dark preferences, native menu event handling, metadata polling for active-file external changes, and a compact document status bar.
 - Phase 5A added the first typed source-mode command registry, Markdown formatting command rail, core formatting shortcuts, command status feedback, and replace-current/replace-all source search actions.
-- Prompt-before-close, keybinding preferences, command palette, real filesystem watching, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
+- Phase 5C added the first command palette foundation over the shared editor-engine command registry, including Ctrl+Shift+P, grouped search results, keyboard navigation, shortcut display, and execution through the source-mode command path.
+- Prompt-before-close, user-editable keybinding preferences, real filesystem watching, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
 
 Exit criteria:
 
@@ -80,6 +81,7 @@ Current status:
 
 - Phase 5A source-mode advanced editing is implemented with selection-aware transforms for inline emphasis/code/link, heading application, blockquote/list/task-list prefixes, code fences, horizontal rules, and starter table insertion.
 - Phase 5B moved the source command registry and text transforms into `packages/editor-engine` while keeping React-specific toolbar rendering in `apps/editor`.
+- Phase 5C added a compact MarkForge-native command palette in the editor app, backed by the editor-engine command metadata and existing transform execution path.
 - Find/replace foundation is implemented for literal source matches through replace current and replace all.
 - WYSIWYG/realtime editing, format overlay, advanced table tools, image workflows, autocomplete, linting, formatter integration, and focus/typewriter modes remain open.
 

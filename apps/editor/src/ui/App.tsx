@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   ClipboardCopy,
   Code2,
+  Command,
   FileDown,
   FileInput,
   FilePenLine,
@@ -47,6 +48,8 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { CommandPalette } from './CommandPalette'
+import type { PaletteCommand } from './paletteCommandHelpers'
 
 type FileInfo = {
   exists: boolean
@@ -160,7 +163,11 @@ export function App() {
   const [lastCommand, setLastCommand] = useState('No formatting command yet')
   const [clipboardStatus, setClipboardStatus] = useState('Not checked')
   const [recentFiles, setRecentFiles] = useState<string[]>(restored.recentFiles)
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [commandPaletteQuery, setCommandPaletteQuery] = useState('')
+  const [commandPaletteActiveIndex, setCommandPaletteActiveIndex] = useState(0)
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+  const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null)
 
   const activeDocument = documents.find(document => document.id === activeId) ?? documents[0] ?? null
   const activeDirty = activeDocument ? isDirty(activeDocument) : false
@@ -178,6 +185,17 @@ export function App() {
       ...group,
       commands: editorCommands.filter(command => command.group === group.id)
     })),
+    []
+  )
+  const paletteCommands = useMemo<PaletteCommand[]>(
+    () => commandGroups.flatMap(group =>
+      editorCommands
+        .filter(command => command.group === group.id)
+        .map(command => ({
+          ...command,
+          groupLabel: group.label
+        }))
+    ),
     []
   )
 
@@ -236,6 +254,34 @@ export function App() {
     setStatus(confirmation)
     setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
   }, [activeDocument, setEditorSelection, updateActiveDocument])
+
+  const openCommandPalette = useCallback(() => {
+    commandPaletteReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    setCommandPaletteQuery('')
+    setCommandPaletteActiveIndex(0)
+    setIsCommandPaletteOpen(true)
+    setStatus('Command palette opened')
+  }, [])
+
+  const closeCommandPalette = useCallback((restoreFocus = true) => {
+    setIsCommandPaletteOpen(false)
+    setCommandPaletteQuery('')
+    setCommandPaletteActiveIndex(0)
+
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => {
+        commandPaletteReturnFocusRef.current?.focus()
+        commandPaletteReturnFocusRef.current = null
+      })
+    }
+  }, [])
+
+  const executePaletteCommand = useCallback((commandId: EditorCommandId) => {
+    closeCommandPalette(false)
+    applyEditorCommand(commandId)
+  }, [applyEditorCommand, closeCommandPalette])
 
   const createDocument = useCallback((text = '# Untitled\n\n', title = 'Untitled.md') => {
     const document = createEditorDocument({ title, text })
@@ -492,6 +538,15 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (isCommandPaletteShortcut(event) && shouldHandleCommandPaletteShortcut(event, textAreaRef.current)) {
+        event.preventDefault()
+
+        if (isCommandPaletteOpen) closeCommandPalette()
+        else openCommandPalette()
+
+        return
+      }
+
       const commandId = commandIdFromKeyboardEvent(event)
 
       if (!commandId || !shouldHandleFormattingShortcut(event, textAreaRef.current)) return
@@ -502,7 +557,7 @@ export function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [applyEditorCommand])
+  }, [applyEditorCommand, closeCommandPalette, isCommandPaletteOpen, openCommandPalette])
 
   useEffect(() => {
     if (!activeDocument?.path || !activeDocument.lastKnownFileInfo?.modifiedMs) return
@@ -587,6 +642,14 @@ export function App() {
           </button>
           <button type="button" onClick={() => void checkClipboard()} title="Check clipboard" aria-label="Check clipboard">
             <ClipboardCheck size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={openCommandPalette}
+            title="Command palette (Ctrl+Shift+P)"
+            aria-label="Command palette"
+          >
+            <Command size={18} />
           </button>
           <button type="button" onClick={() => window.print()} title="Print" aria-label="Print">
             <Printer size={18} />
@@ -806,6 +869,10 @@ export function App() {
             </div>
             <p className="commandStatus">{lastCommand}</p>
             <dl className="shortcutList">
+              <Fragment>
+                <dt>Ctrl+Shift+P</dt>
+                <dd>Command Palette</dd>
+              </Fragment>
               {editorCommands.filter(command => command.shortcut).map(command => (
                 <Fragment key={command.id}>
                   <dt>{command.shortcut}</dt>
@@ -938,6 +1005,19 @@ export function App() {
         <span>{rendered.warnings.length} warnings</span>
         <strong>{status}</strong>
       </footer>
+
+      {isCommandPaletteOpen && (
+        <CommandPalette
+          activeIndex={commandPaletteActiveIndex}
+          commands={paletteCommands}
+          iconByName={commandIconByName}
+          onActiveIndexChange={setCommandPaletteActiveIndex}
+          onExecute={executePaletteCommand}
+          onQueryChange={setCommandPaletteQuery}
+          onRequestClose={closeCommandPalette}
+          query={commandPaletteQuery}
+        />
+      )}
     </main>
   )
 }
@@ -1101,6 +1181,24 @@ function commandIdFromKeyboardEvent(event: KeyboardEvent): EditorCommandId | nul
 }
 
 function shouldHandleFormattingShortcut(event: KeyboardEvent, textarea: HTMLTextAreaElement | null): boolean {
+  if (event.defaultPrevented) return false
+
+  const target = event.target
+
+  if (!(target instanceof HTMLElement)) return true
+  if (target === textarea) return true
+  if (target.isContentEditable) return false
+
+  return !['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)
+}
+
+function isCommandPaletteShortcut(event: KeyboardEvent): boolean {
+  const hasPrimaryModifier = event.ctrlKey || event.metaKey
+
+  return hasPrimaryModifier && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'p'
+}
+
+function shouldHandleCommandPaletteShortcut(event: KeyboardEvent, textarea: HTMLTextAreaElement | null): boolean {
   if (event.defaultPrevented) return false
 
   const target = event.target
