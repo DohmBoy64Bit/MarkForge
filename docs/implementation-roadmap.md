@@ -61,6 +61,11 @@ Exit criteria:
 - Build editor workspace shell, tabs, source mode, split preview, command registry, menus, preferences, recent files, and session restore.
 - Add basic editing operations and source Markdown workflows.
 
+Current status:
+
+- Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, light/dark preferences, native menu event handling, metadata polling for active-file external changes, and a compact document status bar.
+- Prompt-before-close, full command registry, keybinding preferences, real filesystem watching, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
+
 Exit criteria:
 
 - Windows users can open, edit, save, search, and preview Markdown reliably.
