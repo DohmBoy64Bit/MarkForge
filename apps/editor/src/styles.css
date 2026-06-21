@@ -174,6 +174,7 @@ button {
 .searchBox:focus-within,
 .replaceBox:focus-within,
 .tabButton:focus-visible,
+.tabCloseButton:focus-visible,
   .matches button:focus-visible,
   .recentFiles button:focus-visible,
   .paletteInputRow button:focus-visible,
@@ -184,6 +185,8 @@ button {
   .keybindingSummary button:focus-visible,
   .keybindingReset:focus-visible,
   .keybindingInput:focus-within,
+  .unsavedHeader button:focus-visible,
+  .unsavedActions button:focus-visible,
   .changeNotice button:focus-visible,
   textarea:focus-visible {
   outline: 2px solid var(--accent);
@@ -271,26 +274,59 @@ button {
   background: color-mix(in srgb, var(--rail), var(--app-bg) 34%);
 }
 
-.tabButton {
+.tabItem {
   max-width: 240px;
   height: 36px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 7px;
-  padding: 0 9px;
   border: 1px solid transparent;
   border-bottom: 0;
   border-radius: 7px 7px 0 0;
   background: transparent;
   color: var(--muted);
-  cursor: pointer;
 }
 
-.tabButton.active {
+.tabItem.active {
   border-color: var(--rail-border);
   background: var(--panel);
   color: var(--text);
+}
+
+.tabItem:hover {
+  background: color-mix(in srgb, var(--panel), transparent 35%);
+}
+
+.tabButton {
+  min-width: 0;
+  height: 35px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 8px 0 9px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tabCloseButton {
+  width: 30px;
+  height: 35px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0 7px 0 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tabCloseButton:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .tabButton span:nth-child(2) {
@@ -302,12 +338,12 @@ button {
   white-space: nowrap;
 }
 
-.tabButton svg {
+.tabButton svg,
+.tabCloseButton svg {
   flex: 0 0 auto;
-  color: var(--muted);
 }
 
-.tabButton svg[aria-label="Changed on disk"] {
+.tabButton svg[aria-label] {
   color: var(--warning);
 }
 
@@ -647,6 +683,42 @@ textarea {
   color: var(--warning);
 }
 
+.changeNotice > svg {
+  flex: 0 0 auto;
+}
+
+.changeNotice > div:first-of-type {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.changeNotice strong,
+.changeNotice span {
+  overflow-wrap: anywhere;
+}
+
+.changeNotice strong {
+  color: var(--warning);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.changeNotice span {
+  color: color-mix(in srgb, var(--warning), var(--text) 28%);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.changeNoticeActions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+
 .renderError {
   border: 1px solid color-mix(in srgb, var(--danger), var(--panel-border) 45%);
   background: var(--danger-soft);
@@ -655,9 +727,10 @@ textarea {
 
 .changeNotice button {
   width: auto;
-  margin-left: auto;
   padding: 0 10px;
   color: var(--warning);
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .inspector {
@@ -1520,6 +1593,163 @@ textarea {
   color: var(--muted);
 }
 
+.unsavedBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(17, 24, 31, 0.38), rgba(17, 24, 31, 0.18)),
+    color-mix(in srgb, var(--app-bg), transparent 26%);
+}
+
+.unsavedDialog {
+  width: min(440px, 100%);
+  max-height: min(420px, calc(100vh - 32px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--warning), var(--rail-border) 56%);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rail), var(--page) 42%), var(--panel));
+  box-shadow:
+    0 26px 76px rgba(14, 24, 32, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.68) inset;
+}
+
+.dark .unsavedDialog {
+  box-shadow:
+    0 30px 84px rgba(0, 0, 0, 0.56),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.unsavedHeader {
+  min-width: 0;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rail-border);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--warning-soft), transparent 22%), transparent 58%),
+    var(--rail);
+}
+
+.unsavedHeader > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.unsavedHeader svg {
+  flex: 0 0 auto;
+  color: var(--warning);
+}
+
+.unsavedHeader h2,
+.unsavedHeader p,
+.unsavedBody p {
+  margin: 0;
+}
+
+.unsavedHeader h2 {
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.unsavedHeader p {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unsavedHeader button,
+.unsavedActions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--rail), var(--page) 52%);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.unsavedHeader button {
+  width: 32px;
+  height: 32px;
+  color: var(--muted);
+}
+
+.unsavedHeader button:hover,
+.unsavedActions button:hover {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 30%);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.unsavedBody {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.unsavedBody p {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.unsavedBody span {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.unsavedActions {
+  min-width: 0;
+  display: flex;
+  justify-content: end;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--rail-border);
+  background: color-mix(in srgb, var(--panel), var(--rail) 42%);
+}
+
+.unsavedActions button {
+  min-height: 34px;
+  gap: 7px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.unsavedActions button.primary {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 36%);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.unsavedActions button.danger {
+  border-color: color-mix(in srgb, var(--danger), var(--rail-border) 45%);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 @media (max-width: 1180px) {
   .commandRail {
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -1648,6 +1878,20 @@ textarea {
     font-size: 30px;
   }
 
+  .changeNotice {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+
+  .changeNoticeActions {
+    width: 100%;
+    margin-left: 26px;
+  }
+
+  .changeNoticeActions button {
+    flex: 1 1 0;
+  }
+
   .statusBar {
     gap: 8px;
   }
@@ -1727,6 +1971,23 @@ textarea {
 
   .keybindingReset {
     width: 100%;
+  }
+
+  .unsavedBackdrop {
+    align-items: end;
+    padding: 8px;
+  }
+
+  .unsavedDialog {
+    max-height: calc(100vh - 16px);
+  }
+
+  .unsavedActions {
+    flex-wrap: wrap;
+  }
+
+  .unsavedActions button {
+    flex: 1 1 96px;
   }
 }
 

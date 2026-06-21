@@ -51,6 +51,18 @@ import {
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { CommandPalette } from './CommandPalette'
 import { PreferencesDialog } from './PreferencesDialog'
+import { UnsavedChangesDialog } from './UnsavedChangesDialog'
+import {
+  closeStatusLabel,
+  externalChangeLabel,
+  fileStatusLabel,
+  isDirty,
+  normalizeExternalChange,
+  reconcileFileInfo,
+  shouldPromptForClose,
+  type ExternalChangeState,
+  type FileInfo
+} from './documentLifecycle'
 import {
   actionIdFromKeyboardEvent,
   commandPaletteActionId,
@@ -65,12 +77,6 @@ import {
 } from './editorPreferences'
 import type { PaletteCommand } from './paletteCommandHelpers'
 
-type FileInfo = {
-  exists: boolean
-  modifiedMs: number | null
-  len: number | null
-}
-
 type EditorDocument = {
   id: string
   title: string
@@ -78,7 +84,7 @@ type EditorDocument = {
   text: string
   savedText: string
   lastKnownFileInfo: FileInfo | null
-  externalChange: boolean
+  externalChange: ExternalChangeState
   createdAt: number
   updatedAt: number
 }
@@ -95,6 +101,10 @@ type PersistedSession = {
   activeId: string | null
   docs: Array<Pick<EditorDocument, 'id' | 'title' | 'path' | 'text' | 'savedText' | 'createdAt' | 'updatedAt'>>
 }
+
+type PendingLifecycleAction =
+  | { kind: 'close'; documentId: string }
+  | { kind: 'reload'; documentId: string }
 
 const supportedExtensions = ['md', 'markdown', 'mdown', 'txt']
 const sessionKey = 'markforge.editor.session.v1'
@@ -169,17 +179,20 @@ export function App() {
   const [recentFiles, setRecentFiles] = useState<string[]>(restored.recentFiles)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
+  const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingLifecycleAction | null>(null)
   const [commandPaletteQuery, setCommandPaletteQuery] = useState('')
   const [commandPaletteActiveIndex, setCommandPaletteActiveIndex] = useState(0)
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
   const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null)
   const preferencesReturnFocusRef = useRef<HTMLElement | null>(null)
+  const unsavedDialogReturnFocusRef = useRef<HTMLElement | null>(null)
 
   const theme = preferences.theme
   const viewMode = preferences.viewMode
   const commandPaletteShortcut = shortcutForAction(commandPaletteActionId, preferences.keybindings)
   const activeDocument = documents.find(document => document.id === activeId) ?? documents[0] ?? null
   const activeDirty = activeDocument ? isDirty(activeDocument) : false
+  const activeFileStatus = useMemo(() => fileStatusLabel(activeDocument), [activeDocument])
   const fileName = activeDocument ? activeDocument.title : 'No document'
   const renderState = useMemo(() => safeRenderMarkdown(activeDocument?.text ?? ''), [activeDocument?.text])
   const { rendered, renderError } = renderState
@@ -274,7 +287,7 @@ export function App() {
     const edit = command.execute(document.text, { start: selectionStart, end: selectionEnd })
     const confirmation = `${command.label} applied`
 
-    updateActiveDocument({ text: edit.text, externalChange: false })
+    updateActiveDocument({ text: edit.text })
     setLastCommand(confirmation)
     setStatus(confirmation)
     setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
@@ -336,6 +349,83 @@ export function App() {
     window.setTimeout(() => textAreaRef.current?.focus(), 0)
   }, [])
 
+  const reloadDocumentFromDisk = useCallback(async (documentId: string): Promise<boolean> => {
+    const document = documents.find(item => item.id === documentId)
+
+    if (!document?.path) return false
+
+    try {
+      const contents = await invoke<string>('read_text_file', { path: document.path })
+      const info = await invoke<FileInfo>('get_file_info', { path: document.path })
+
+      setDocuments(current =>
+        current.map(item =>
+          item.id === document.id
+            ? {
+                ...item,
+                title: titleFromPath(document.path ?? item.title),
+                text: contents,
+                savedText: contents,
+                lastKnownFileInfo: info,
+                externalChange: 'none',
+                updatedAt: Date.now()
+              }
+            : item
+        )
+      )
+      rememberRecentFile(document.path)
+      setStatus(`Reloaded ${document.path}`)
+      return true
+    } catch (error) {
+      setStatus(messageFromError(error))
+      return false
+    }
+  }, [documents, rememberRecentFile])
+
+  const requestReloadDocument = useCallback((documentId: string) => {
+    const targetDocument = documents.find(item => item.id === documentId)
+
+    if (!targetDocument?.path) return
+
+    if (shouldPromptForClose(targetDocument)) {
+      unsavedDialogReturnFocusRef.current = window.document.activeElement instanceof HTMLElement
+        ? window.document.activeElement
+        : null
+      setActiveId(targetDocument.id)
+      setPendingLifecycleAction({ kind: 'reload', documentId })
+      setStatus('Confirm reload before replacing unsaved text')
+      return
+    }
+
+    void reloadDocumentFromDisk(documentId)
+  }, [documents, reloadDocumentFromDisk])
+
+  const keepLocalCopy = useCallback(async (documentId: string) => {
+    const document = documents.find(item => item.id === documentId)
+
+    if (!document?.path) return
+
+    try {
+      const info = await invoke<FileInfo>('get_file_info', { path: document.path })
+
+      setDocuments(current =>
+        current.map(item =>
+          item.id === documentId
+            ? {
+                ...item,
+                externalChange: 'none',
+                lastKnownFileInfo: info,
+                updatedAt: Date.now()
+              }
+            : item
+        )
+      )
+      setStatus('Keeping local copy')
+    } catch (error) {
+      setStatus(messageFromError(error))
+    }
+  }, [documents])
+
   const openDocument = useCallback(async (path?: string) => {
     try {
       const selected = path ?? await open({
@@ -345,48 +435,47 @@ export function App() {
 
       if (typeof selected !== 'string') return
 
-      const contents = await invoke<string>('read_text_file', { path: selected })
-      const info = await invoke<FileInfo>('get_file_info', { path: selected })
       const existing = documents.find(document => document.path === selected)
 
-      if (existing) {
-        setDocuments(current =>
-          current.map(document =>
-            document.id === existing.id
-              ? {
-                  ...document,
-                  text: contents,
-                  savedText: contents,
-                  lastKnownFileInfo: info,
-                  externalChange: false,
-                  updatedAt: Date.now()
-                }
-              : document
-          )
-        )
+      if (existing && shouldPromptForClose(existing)) {
+        unsavedDialogReturnFocusRef.current = window.document.activeElement instanceof HTMLElement
+          ? window.document.activeElement
+          : null
         setActiveId(existing.id)
-      } else {
-        const document = createEditorDocument({
-          title: titleFromPath(selected),
-          path: selected,
-          text: contents,
-          savedText: contents,
-          lastKnownFileInfo: info
-        })
-        setDocuments(current => [...current, document])
-        setActiveId(document.id)
+        setPendingLifecycleAction({ kind: 'reload', documentId: existing.id })
+        setStatus('Confirm reload before replacing unsaved text')
+        return
       }
+
+      if (existing) {
+        await reloadDocumentFromDisk(existing.id)
+        setActiveId(existing.id)
+        return
+      }
+
+      const contents = await invoke<string>('read_text_file', { path: selected })
+      const info = await invoke<FileInfo>('get_file_info', { path: selected })
+      const document = createEditorDocument({
+        title: titleFromPath(selected),
+        path: selected,
+        text: contents,
+        savedText: contents,
+        lastKnownFileInfo: info
+      })
+
+      setDocuments(current => [...current, document])
+      setActiveId(document.id)
 
       rememberRecentFile(selected)
       setStatus(`Opened ${selected}`)
     } catch (error) {
       setStatus(messageFromError(error))
     }
-  }, [documents, rememberRecentFile])
+  }, [documents, reloadDocumentFromDisk, rememberRecentFile])
 
-  const saveDocumentAs = useCallback(async () => {
-    const document = activeDocument
-    if (!document) return
+  const saveDocumentAs = useCallback(async (documentId = activeId): Promise<boolean> => {
+    const document = documents.find(item => item.id === documentId)
+    if (!document) return false
 
     try {
       const selected = await save({
@@ -394,7 +483,10 @@ export function App() {
         defaultPath: document.path ?? document.title
       })
 
-      if (!selected) return
+      if (!selected) {
+        setStatus('Save canceled')
+        return false
+      }
 
       await invoke('write_text_file', { path: selected, contents: document.text })
       const info = await invoke<FileInfo>('get_file_info', { path: selected })
@@ -408,7 +500,7 @@ export function App() {
                 path: selected,
                 savedText: document.text,
                 lastKnownFileInfo: info,
-                externalChange: false,
+                externalChange: 'none',
                 updatedAt: Date.now()
               }
             : item
@@ -416,18 +508,19 @@ export function App() {
       )
       rememberRecentFile(selected)
       setStatus(`Saved ${selected}`)
+      return true
     } catch (error) {
       setStatus(messageFromError(error))
+      return false
     }
-  }, [activeDocument, rememberRecentFile])
+  }, [activeId, documents, rememberRecentFile])
 
-  const saveDocument = useCallback(async () => {
-    const document = activeDocument
-    if (!document) return
+  const saveDocument = useCallback(async (documentId = activeId): Promise<boolean> => {
+    const document = documents.find(item => item.id === documentId)
+    if (!document) return false
 
     if (!document.path) {
-      await saveDocumentAs()
-      return
+      return saveDocumentAs(document.id)
     }
 
     try {
@@ -441,7 +534,7 @@ export function App() {
                 ...item,
                 savedText: document.text,
                 lastKnownFileInfo: info,
-                externalChange: false,
+                externalChange: 'none',
                 updatedAt: Date.now()
               }
             : item
@@ -449,10 +542,12 @@ export function App() {
       )
       rememberRecentFile(document.path)
       setStatus(`Saved ${document.path}`)
+      return true
     } catch (error) {
       setStatus(messageFromError(error))
+      return false
     }
-  }, [activeDocument, rememberRecentFile, saveDocumentAs])
+  }, [activeId, documents, rememberRecentFile, saveDocumentAs])
 
   const copyMarkdown = useCallback(async () => {
     if (!activeDocument) return
@@ -478,12 +573,12 @@ export function App() {
     }
   }, [])
 
-  const closeDocument = useCallback((id: string) => {
+  const forceCloseDocument = useCallback((id: string) => {
     setDocuments(current => {
       if (current.length === 1) {
         const replacement = createEditorDocument({ title: 'Untitled.md', text: '# Untitled\n\n' })
         setActiveId(replacement.id)
-        setStatus('Started a new document')
+        setStatus(closeStatusLabel(0))
         return [replacement]
       }
 
@@ -491,10 +586,73 @@ export function App() {
       if (activeId === id) {
         setActiveId(next[Math.max(0, current.findIndex(document => document.id === id) - 1)]?.id ?? next[0]?.id ?? null)
       }
-      setStatus('Closed document tab')
+      setStatus(closeStatusLabel(next.length))
       return next
     })
   }, [activeId])
+
+  const requestCloseDocument = useCallback((id: string) => {
+    const targetDocument = documents.find(document => document.id === id)
+
+    if (!targetDocument) return
+
+    if (shouldPromptForClose(targetDocument)) {
+      unsavedDialogReturnFocusRef.current = document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+      setActiveId(targetDocument.id)
+      setPendingLifecycleAction({ kind: 'close', documentId: id })
+      setStatus('Confirm close before discarding unsaved text')
+      return
+    }
+
+    forceCloseDocument(id)
+  }, [documents, forceCloseDocument])
+
+  const closeUnsavedDialog = useCallback((restoreFocus = true) => {
+    setPendingLifecycleAction(null)
+
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => {
+        unsavedDialogReturnFocusRef.current?.focus()
+        unsavedDialogReturnFocusRef.current = null
+      })
+    }
+  }, [])
+
+  const cancelPendingLifecycleAction = useCallback(() => {
+    closeUnsavedDialog()
+    setStatus('Action canceled')
+  }, [closeUnsavedDialog])
+
+  const savePendingLifecycleAction = useCallback(async () => {
+    if (!pendingLifecycleAction) return
+
+    const saved = await saveDocument(pendingLifecycleAction.documentId)
+    if (!saved) return
+
+    if (pendingLifecycleAction.kind === 'close') {
+      closeUnsavedDialog(false)
+      forceCloseDocument(pendingLifecycleAction.documentId)
+      return
+    }
+
+    closeUnsavedDialog(false)
+    setStatus('Local edits saved')
+  }, [closeUnsavedDialog, forceCloseDocument, pendingLifecycleAction, saveDocument])
+
+  const discardPendingLifecycleAction = useCallback(async () => {
+    if (!pendingLifecycleAction) return
+
+    if (pendingLifecycleAction.kind === 'close') {
+      closeUnsavedDialog(false)
+      forceCloseDocument(pendingLifecycleAction.documentId)
+      return
+    }
+
+    const reloaded = await reloadDocumentFromDisk(pendingLifecycleAction.documentId)
+    if (reloaded) closeUnsavedDialog(false)
+  }, [closeUnsavedDialog, forceCloseDocument, pendingLifecycleAction, reloadDocumentFromDisk])
 
   const jumpToMatch = useCallback((match: SearchMatch, index: number) => {
     setSelectedMatch(index)
@@ -526,7 +684,7 @@ export function App() {
     const nextText = `${document.text.slice(0, match.start)}${replaceText}${document.text.slice(match.end)}`
     const cursor = match.start + replaceText.length
 
-    updateActiveDocument({ text: nextText, externalChange: false })
+    updateActiveDocument({ text: nextText })
     setLastCommand('Replace current applied')
     setStatus('Replaced current match')
     setEditorSelection(match.start, cursor)
@@ -549,7 +707,7 @@ export function App() {
     const escaped = escapeRegExp(query)
     const nextText = document.text.replace(new RegExp(escaped, 'gi'), replaceText)
 
-    updateActiveDocument({ text: nextText, externalChange: false })
+    updateActiveDocument({ text: nextText })
     setSelectedMatch(0)
     setLastCommand(`Replace all applied to ${searchMatches.length} matches`)
     setStatus(`Replaced ${searchMatches.length} matches`)
@@ -605,29 +763,62 @@ export function App() {
   }, [applyEditorCommand, closeCommandPalette, isCommandPaletteOpen, openCommandPalette, preferences.keybindings])
 
   useEffect(() => {
-    if (!activeDocument?.path || !activeDocument.lastKnownFileInfo?.modifiedMs) return
+    const trackedDocuments = documents.filter(document => document.path)
 
-    const interval = window.setInterval(async () => {
-      try {
-        const current = await invoke<FileInfo>('get_file_info', { path: activeDocument.path })
+    if (trackedDocuments.length === 0) return
 
-        if (!current.exists) {
-          updateActiveDocument({ externalChange: true })
-          setStatus('File is no longer available')
-          return
+    const pollDocuments = async () => {
+      const results = await Promise.all(trackedDocuments.map(async document => {
+        try {
+          const info = await invoke<FileInfo>('get_file_info', { path: document.path })
+          return {
+            documentId: document.id,
+            next: reconcileFileInfo(document, info)
+          }
+        } catch (error) {
+          setStatus(messageFromError(error))
+          return null
         }
+      }))
 
-        if (current.modifiedMs && current.modifiedMs !== activeDocument.lastKnownFileInfo?.modifiedMs) {
-          updateActiveDocument({ externalChange: true })
-          setStatus('File changed on disk')
-        }
-      } catch (error) {
-        setStatus(messageFromError(error))
+      const updates = results.filter(result => result !== null)
+
+      if (updates.length === 0) return
+
+      setDocuments(current =>
+        current.map(document => {
+          const update = updates.find(item => item.documentId === document.id)
+
+          if (!update) return document
+          if (
+            document.externalChange === update.next.externalChange &&
+            fileInfoEquals(document.lastKnownFileInfo, update.next.lastKnownFileInfo)
+          ) {
+            return document
+          }
+
+          return {
+            ...document,
+            externalChange: update.next.externalChange,
+            lastKnownFileInfo: update.next.lastKnownFileInfo,
+            updatedAt: Date.now()
+          }
+        })
+      )
+
+      const changedCount = updates.filter(update => update.next.externalChange !== 'none').length
+
+      if (changedCount > 0) {
+        setStatus(changedCount === 1 ? 'File changed on disk' : `${changedCount} files changed on disk`)
       }
+    }
+
+    const interval = window.setInterval(() => {
+      void pollDocuments()
     }, 2500)
 
     return () => window.clearInterval(interval)
-  }, [activeDocument?.path, activeDocument?.lastKnownFileInfo?.modifiedMs, updateActiveDocument])
+  }, [documents])
 
   useEffect(() => {
     setSelectedMatch(0)
@@ -656,7 +847,24 @@ export function App() {
     saveEditorPreferences(preferences)
   }, [preferences])
 
+  useEffect(() => {
+    const hasDirtyDocuments = documents.some(document => isDirty(document))
+
+    if (!hasDirtyDocuments) return
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [documents])
+
   const selectedSearchMatch = searchMatches[selectedMatch]
+  const pendingLifecycleDocument = pendingLifecycleAction
+    ? documents.find(document => document.id === pendingLifecycleAction.documentId) ?? null
+    : null
 
   return (
     <main className={`editorShell ${theme}`} data-theme={theme}>
@@ -759,25 +967,33 @@ export function App() {
 
       <section className="tabStrip" aria-label="Open documents">
         {documents.map(document => (
-          <button
+          <div
             key={document.id}
-            type="button"
-            className={`tabButton ${document.id === activeId ? 'active' : ''}`}
-            onClick={() => setActiveId(document.id)}
-            title={document.path ?? document.title}
+            className={`tabItem ${document.id === activeId ? 'active' : ''}`}
           >
-            <span className={isDirty(document) ? 'dirtyDot' : 'cleanDot'} aria-hidden="true" />
-            <span>{document.title}</span>
-            {document.externalChange && <TriangleAlert size={13} aria-label="Changed on disk" />}
-            <X
-              size={14}
-              aria-label="Close tab"
-              onClick={event => {
-                event.stopPropagation()
-                closeDocument(document.id)
-              }}
-            />
-          </button>
+            <button
+              type="button"
+              className="tabButton"
+              onClick={() => setActiveId(document.id)}
+              title={document.path ?? document.title}
+              aria-current={document.id === activeId ? 'page' : undefined}
+            >
+              <span className={isDirty(document) ? 'dirtyDot' : 'cleanDot'} aria-hidden="true" />
+              <span>{document.title}</span>
+              {document.externalChange !== 'none' && (
+                <TriangleAlert size={13} aria-label={externalChangeLabel(document.externalChange)} />
+              )}
+            </button>
+            <button
+              type="button"
+              className="tabCloseButton"
+              onClick={() => requestCloseDocument(document.id)}
+              title={`Close ${document.title}`}
+              aria-label={`Close ${document.title}`}
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          </div>
         ))}
       </section>
 
@@ -860,7 +1076,7 @@ export function App() {
             ref={textAreaRef}
             value={activeDocument?.text ?? ''}
             spellCheck
-            onChange={event => updateActiveDocument({ text: event.target.value, externalChange: false })}
+            onChange={event => updateActiveDocument({ text: event.target.value })}
             aria-label="Markdown source"
           />
         </section>
@@ -880,15 +1096,29 @@ export function App() {
                 <span>Renderer recovered: {renderError}</span>
               </div>
             )}
-            {activeDocument?.externalChange && (
+            {activeDocument && activeDocument.externalChange !== 'none' && (
               <div className="changeNotice" role="status">
-                <TriangleAlert size={16} />
-                <span>Changed on disk</span>
-                {activeDocument.path && (
-                  <button type="button" onClick={() => void openDocument(activeDocument.path ?? undefined)}>
-                    Reload
+                <TriangleAlert size={16} aria-hidden="true" />
+                <div>
+                  <strong>{externalChangeLabel(activeDocument.externalChange)}</strong>
+                  <span>
+                    {activeDocument.externalChange === 'missing'
+                      ? 'Keep the local copy or choose another save path.'
+                      : activeDirty
+                        ? 'Reload replaces local edits.'
+                        : 'Reload from disk or keep this local copy.'}
+                  </span>
+                </div>
+                <div className="changeNoticeActions">
+                  {activeDocument.externalChange !== 'missing' && (
+                    <button type="button" onClick={() => requestReloadDocument(activeDocument.id)}>
+                      Reload
+                    </button>
+                  )}
+                  <button type="button" onClick={() => void keepLocalCopy(activeDocument.id)}>
+                    Keep local
                   </button>
-                )}
+                </div>
               </div>
             )}
             <article className="documentPage" dangerouslySetInnerHTML={{ __html: rendered.html }} />
@@ -905,11 +1135,17 @@ export function App() {
               <dt>Path</dt>
               <dd>{activeDocument?.path ?? 'Unsaved tab'}</dd>
               <dt>State</dt>
-              <dd>{activeDirty ? 'Unsaved changes' : 'Saved'}</dd>
+              <dd>{activeFileStatus}</dd>
               <dt>Size</dt>
               <dd>{formatBytes(activeDocument?.lastKnownFileInfo?.len ?? activeDocument?.text.length ?? 0)}</dd>
               <dt>External</dt>
-              <dd>{activeDocument?.externalChange ? 'Refresh pending' : activeDocument?.path ? 'Polling metadata' : 'Not tracked'}</dd>
+              <dd>
+                {activeDocument?.externalChange && activeDocument.externalChange !== 'none'
+                  ? externalChangeLabel(activeDocument.externalChange)
+                  : activeDocument?.path
+                    ? 'Polling metadata'
+                    : 'Not tracked'}
+              </dd>
               <dt>Clipboard</dt>
               <dd>{clipboardStatus}</dd>
             </dl>
@@ -1076,6 +1312,17 @@ export function App() {
           onRequestClose={closePreferences}
         />
       )}
+
+      {pendingLifecycleAction && pendingLifecycleDocument && (
+        <UnsavedChangesDialog
+          documentPath={pendingLifecycleDocument.path}
+          documentTitle={pendingLifecycleDocument.title}
+          mode={pendingLifecycleAction.kind}
+          onCancel={cancelPendingLifecycleAction}
+          onDiscard={() => void discardPendingLifecycleAction()}
+          onSave={() => void savePendingLifecycleAction()}
+        />
+      )}
     </main>
   )
 }
@@ -1095,7 +1342,7 @@ function restoreInitialState(): {
     .map(document => createEditorDocument({
       ...document,
       lastKnownFileInfo: null,
-      externalChange: false
+      externalChange: 'none'
     })) ?? []
   const documents = restoredDocuments.length > 0
     ? restoredDocuments
@@ -1121,7 +1368,7 @@ function createEditorDocument(input: Partial<EditorDocument> & { title: string; 
     text: input.text,
     savedText: input.savedText ?? '',
     lastKnownFileInfo: input.lastKnownFileInfo ?? null,
-    externalChange: input.externalChange ?? false,
+    externalChange: normalizeExternalChange(input.externalChange),
     createdAt: input.createdAt ?? now,
     updatedAt: input.updatedAt ?? now
   }
@@ -1241,10 +1488,6 @@ function documentStats(source: string): { characters: number; lines: number; wor
   }
 }
 
-function isDirty(document: EditorDocument): boolean {
-  return document.text !== document.savedText
-}
-
 function titleFromPath(path: string): string {
   return path.split(/[\\/]/).pop() ?? path
 }
@@ -1253,6 +1496,15 @@ function formatBytes(value: number): string {
   if (value < 1024) return `${value} B`
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
   return `${(value / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function fileInfoEquals(left: FileInfo | null, right: FileInfo | null): boolean {
+  if (left === right) return true
+  if (!left || !right) return false
+
+  return left.exists === right.exists &&
+    left.modifiedMs === right.modifiedMs &&
+    left.len === right.len
 }
 
 function messageFromError(error: unknown): string {

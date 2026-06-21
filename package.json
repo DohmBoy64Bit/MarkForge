@@ -20,11 +20,13 @@
     "tauri:viewer:dev": "pnpm --filter @markforge/viewer tauri dev",
     "tauri:viewer:build": "pnpm --filter @markforge/viewer tauri build",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "browser:install": "playwright install chromium"
   },
   "devDependencies": {
     "@types/node": "^26.0.0",
     "jsdom": "^29.1.1",
+    "playwright": "^1.61.0",
     "vitest": "^4.1.9"
   }
 }

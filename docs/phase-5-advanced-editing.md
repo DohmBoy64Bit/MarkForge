@@ -15,6 +15,9 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 - Command feedback in the status bar plus an inspector command panel showing the last command and shortcut list.
 - Phase 5C command palette opened from the toolbar or Ctrl+Shift+P, with grouped command search, keyboard navigation, empty state, shortcut badges, and execution through the existing source command path.
 - Phase 5D Preferences dialog for local theme/default view choices and editable keybindings for the command palette plus existing editor commands.
+- Phase 5E unsaved-work protection for dirty tab close/reload flows with Save, Discard, and Cancel decisions.
+- Browser `beforeunload` protection whenever any open editor tab is dirty.
+- Phase 5E external-change reconciliation built on metadata polling across open file-backed tabs, with changed/missing-on-disk notices, Reload from disk, Keep local, and clearer inspector status labels.
 
 ## Selection Behavior
 
@@ -29,15 +32,19 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 
 The Phase 5 UI keeps the Phase 4 workbench structure: cool application chrome, warm source and preview surfaces, restrained teal accent, compact icon buttons, and dense inspector panels. The command rail sits between tabs and the editor workspace so Markdown editing feels close to the document, while the command palette and Preferences dialog add keyboard-first overlays without changing the main workspace density.
 
-## Deferred
+## Phase 5E Reliability
 
-- Rich WYSIWYG/realtime editing behavior.
-- Full preferences schema beyond the Phase 5D local editor settings foundation.
-- Non-format command remapping and platform-native/global shortcut registration.
-- Toggle-aware formatting that removes existing Markdown markers.
-- Regex, case-sensitive, whole-word, and capture-group replace modes.
-- Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.
-- Prompt-before-close for unsaved documents and real filesystem watching.
+Phase 5E adds the first reliability pass around local documents.
+
+- Closing a dirty tab opens a compact dialog instead of discarding text immediately.
+- Save closes only after a successful write; Save As keeps the tab open if the picker is canceled or the write fails.
+- Discard closes the dirty tab, or reloads from disk for dirty reload confirmations.
+- Cancel leaves tab state unchanged and restores focus.
+- External-change polling now checks every open file-backed document rather than only the active file.
+- Missing files are distinguished from modified files in the tab, preview notice, and File Status inspector.
+- Keep local clears the current external-change notice by adopting the latest observed metadata as the new baseline; a missing file stays quiet while still missing and alerts again if it reappears.
+
+This is still metadata polling. Native filesystem watching and native Tauri window-close interception remain future shell work.
 
 ## Phase 5B Extraction
 
@@ -64,6 +71,16 @@ Phase 5D adds a compact Preferences dialog and moves existing editor shortcut di
 - Duplicate non-empty shortcuts are shown as conflicts. Runtime dispatch is deterministic for now: the first action in the keybinding registry wins.
 - Toolbar titles, command palette badges, and the inspector shortcut list use current preference values.
 - The existing `markforge.editor.prefs.v1` localStorage key remains compatible with legacy `{ theme, viewMode }` records and now restores a versioned keybinding shape.
+
+## Deferred
+
+- Rich WYSIWYG/realtime editing behavior.
+- Full preferences schema beyond the Phase 5D local editor settings foundation.
+- Non-format command remapping and platform-native/global shortcut registration.
+- Toggle-aware formatting that removes existing Markdown markers.
+- Regex, case-sensitive, whole-word, and capture-group replace modes.
+- Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.
+- Native filesystem watching beyond metadata polling and native Tauri close-event protection.
 
 ## Verification
 
