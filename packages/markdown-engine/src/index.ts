@@ -60,6 +60,7 @@ export type MarkdownRenderWarning = {
     | 'diagram-rendering-deferred'
     | 'front-matter-json-parse-failed'
     | 'front-matter-structured-parse-limited'
+    | 'renderer-failed'
     | 'unknown-code-language'
   line?: number
   message: string
@@ -70,6 +71,8 @@ type MarkdownEnvironment = {
   slugCounts: Map<string, number>
   warnings: MarkdownRenderWarning[]
 }
+
+type MarkdownPlugin = (markdown: MarkdownIt, ...params: unknown[]) => void
 
 const diagramLanguages = new Set(['mermaid', 'plantuml', 'vega', 'vega-lite'])
 
@@ -168,11 +171,11 @@ function createMarkdownIt(options: RenderMarkdownOptions, warnings: MarkdownRend
     linkify: true,
     typographer: true
   })
-    .use(footnote)
-    .use(taskLists, { enabled: true, label: true })
+    .use(resolveMarkdownPlugin(footnote))
+    .use(resolveMarkdownPlugin(taskLists), { enabled: true, label: true })
 
   if (options.enableMath ?? true) {
-    markdown.use(katexPlugin)
+    markdown.use(resolveMarkdownPlugin(katexPlugin))
   }
 
   const defaultRenderToken = markdown.renderer.renderToken.bind(markdown.renderer)
@@ -197,6 +200,23 @@ function createMarkdownIt(options: RenderMarkdownOptions, warnings: MarkdownRend
   }
 
   return markdown
+}
+
+function resolveMarkdownPlugin<T>(plugin: T): MarkdownPlugin {
+  if (typeof plugin === 'function') {
+    return plugin as MarkdownPlugin
+  }
+
+  if (
+    typeof plugin === 'object' &&
+    plugin !== null &&
+    'default' in plugin &&
+    typeof plugin.default === 'function'
+  ) {
+    return plugin.default as MarkdownPlugin
+  }
+
+  throw new TypeError('Invalid Markdown-it plugin')
 }
 
 function createHighlightRenderer(

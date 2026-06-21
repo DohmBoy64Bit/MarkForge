@@ -47,6 +47,11 @@ Exit criteria:
 - Build standalone viewer shell.
 - Add theme support, TOC sidebar, in-document search, copy code buttons, print/export, file watching, and display options.
 
+Current status:
+
+- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, metadata polling, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and light/dark mode control.
+- Real filesystem watching, rendered search highlighting, copy code buttons, export workflows, and full theme-engine integration remain open.
+
 Exit criteria:
 
 - Viewer opens local files, refreshes on change, and passes security tests.

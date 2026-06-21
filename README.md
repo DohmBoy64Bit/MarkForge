@@ -32,6 +32,7 @@ The audit config is:
 - [Design principles](docs/design-principles.md)
 - [Phase 1 proof of concept](docs/phase-1-proof-of-concept.md)
 - [Phase 2 markdown engine](docs/phase-2-markdown-engine.md)
+- [Phase 3 viewer foundation](docs/phase-3-viewer-foundation.md)
 - [Developer documentation](docs/developer-documentation.md)
 - [User documentation](docs/user-documentation.md)
 - [Theming documentation](docs/theming-documentation.md)

@@ -13,8 +13,12 @@
     "docs:check": "node -e \"console.log('MarkForge docs scaffold ready')\"",
     "dev:editor": "pnpm --filter @markforge/editor dev",
     "build:editor": "pnpm --filter @markforge/editor build",
+    "dev:viewer": "pnpm --filter @markforge/viewer dev",
+    "build:viewer": "pnpm --filter @markforge/viewer build",
     "tauri:dev": "pnpm --filter @markforge/editor tauri dev",
     "tauri:build": "pnpm --filter @markforge/editor tauri build",
+    "tauri:viewer:dev": "pnpm --filter @markforge/viewer tauri dev",
+    "tauri:viewer:build": "pnpm --filter @markforge/viewer tauri build",
     "test": "vitest run",
     "test:watch": "vitest"
   },
