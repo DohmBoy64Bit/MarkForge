@@ -20,6 +20,9 @@ importers:
 
   apps/editor:
     dependencies:
+      '@markforge/editor-engine':
+        specifier: workspace:*
+        version: link:../../packages/editor-engine
       '@markforge/markdown-engine':
         specifier: workspace:*
         version: link:../../packages/markdown-engine
@@ -103,6 +106,8 @@ importers:
       vite:
         specifier: ^8.0.16
         version: 8.0.16(@types/node@26.0.0)
+
+  packages/editor-engine: {}
 
   packages/markdown-engine:
     dependencies:

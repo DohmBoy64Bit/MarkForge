@@ -109,7 +109,7 @@ Cross-package integration, fixture, and end-to-end tests. Package-level unit tes
 
 The structure above remains the target architecture, but Phase 1-5A intentionally kept some behavior inside app components while validating the product slices:
 
-- `apps/editor` currently owns temporary session restore, recent files, active-file polling, and source editing command wiring that should move toward `packages/core`, `packages/platform`, and `packages/editor-engine`.
+- `apps/editor` currently owns temporary session restore, recent files, active-file polling, and command UI wiring that should move toward `packages/core` and `packages/platform`; Phase 5B moved source editing command behavior into `packages/editor-engine`.
 - `apps/viewer` currently owns its file-open lifecycle, metadata polling, search state, and print command wiring while the shared platform facade is still forming.
 - `packages/markdown-engine` is the strongest extracted boundary today; broader package extraction should follow proven app behavior rather than speculative abstractions.
 - `pnpm docs:check` is still a placeholder and should become a real documentation validation gate.

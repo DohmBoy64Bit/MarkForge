@@ -1,31 +1,52 @@
+import {
+  commandById,
+  commandGroups,
+  editorCommands,
+  type EditorCommandIcon,
+  type EditorCommandId
+} from '@markforge/editor-engine'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import {
+  Bold,
   ClipboardCheck,
   ClipboardCopy,
+  Code2,
   FileDown,
   FileInput,
   FilePenLine,
   FilePlus2,
   Files,
+  Heading1,
+  Heading2,
+  Heading3,
+  Italic,
   Keyboard,
+  Link,
+  List,
+  ListChecks,
+  ListOrdered,
   ListTree,
+  Minus,
   Moon,
   Printer,
+  Quote,
   Replace,
   Save,
   Search,
   ShieldCheck,
   SplitSquareHorizontal,
   Sun,
+  Table2,
+  TextCursorInput,
   TriangleAlert,
-  X
+  X,
+  type LucideIcon
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { commandById, commandGroups, editorCommands, type EditorCommandId } from './commands'
 
 type FileInfo = {
   exists: boolean
@@ -70,6 +91,22 @@ const supportedExtensions = ['md', 'markdown', 'mdown', 'txt']
 const sessionKey = 'markforge.editor.session.v1'
 const prefsKey = 'markforge.editor.prefs.v1'
 const recentKey = 'markforge.editor.recent.v1'
+const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
+  bold: Bold,
+  italic: Italic,
+  inlineCode: Code2,
+  link: Link,
+  heading1: Heading1,
+  heading2: Heading2,
+  heading3: Heading3,
+  blockquote: Quote,
+  unorderedList: List,
+  orderedList: ListOrdered,
+  taskList: ListChecks,
+  codeFence: TextCursorInput,
+  horizontalRule: Minus,
+  table: Table2
+}
 
 const starter = `---
 title: Editor shell foundation
@@ -634,7 +671,7 @@ export function App() {
             <span className="commandGroupLabel">{group.label}</span>
             <div className="commandButtons">
               {group.commands.map(command => {
-                const Icon = command.icon
+                const Icon = commandIconByName[command.icon]
                 const title = command.shortcut ? `${command.label} (${command.shortcut})` : command.label
                 const headingLabel = command.id === 'block.heading1'
                   ? 'H1'

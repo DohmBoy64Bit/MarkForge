@@ -79,6 +79,7 @@ Exit criteria:
 Current status:
 
 - Phase 5A source-mode advanced editing is implemented with selection-aware transforms for inline emphasis/code/link, heading application, blockquote/list/task-list prefixes, code fences, horizontal rules, and starter table insertion.
+- Phase 5B moved the source command registry and text transforms into `packages/editor-engine` while keeping React-specific toolbar rendering in `apps/editor`.
 - Find/replace foundation is implemented for literal source matches through replace current and replace all.
 - WYSIWYG/realtime editing, format overlay, advanced table tools, image workflows, autocomplete, linting, formatter integration, and focus/typewriter modes remain open.
 

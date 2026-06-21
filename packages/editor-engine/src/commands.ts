@@ -1,21 +1,4 @@
 import {
-  Bold,
-  Code2,
-  Heading1,
-  Heading2,
-  Heading3,
-  Italic,
-  Link,
-  List,
-  ListChecks,
-  ListOrdered,
-  Minus,
-  Quote,
-  Table2,
-  TextCursorInput,
-  type LucideIcon
-} from 'lucide-react'
-import {
   applyHeading,
   applyInlineWrap,
   applyLinePrefix,
@@ -44,10 +27,26 @@ export type EditorCommandId =
   | 'insert.horizontalRule'
   | 'insert.table'
 
+export type EditorCommandIcon =
+  | 'bold'
+  | 'italic'
+  | 'inlineCode'
+  | 'link'
+  | 'heading1'
+  | 'heading2'
+  | 'heading3'
+  | 'blockquote'
+  | 'unorderedList'
+  | 'orderedList'
+  | 'taskList'
+  | 'codeFence'
+  | 'horizontalRule'
+  | 'table'
+
 export type EditorCommand = {
   id: EditorCommandId
   label: string
-  icon: LucideIcon
+  icon: EditorCommandIcon
   group: EditorCommandGroup
   shortcut?: string
   execute: (source: string, selection: TextSelection) => TextEdit
@@ -57,7 +56,7 @@ export const editorCommands: EditorCommand[] = [
   {
     id: 'format.bold',
     label: 'Bold',
-    icon: Bold,
+    icon: 'bold',
     group: 'inline',
     shortcut: 'Ctrl+B',
     execute: (source, selection) => applyInlineWrap(source, selection, '**', '**', 'bold text')
@@ -65,7 +64,7 @@ export const editorCommands: EditorCommand[] = [
   {
     id: 'format.italic',
     label: 'Italic',
-    icon: Italic,
+    icon: 'italic',
     group: 'inline',
     shortcut: 'Ctrl+I',
     execute: (source, selection) => applyInlineWrap(source, selection, '_', '_', 'italic text')
@@ -73,14 +72,14 @@ export const editorCommands: EditorCommand[] = [
   {
     id: 'format.inlineCode',
     label: 'Inline code',
-    icon: Code2,
+    icon: 'inlineCode',
     group: 'inline',
     execute: (source, selection) => applyInlineWrap(source, selection, '`', '`', 'code')
   },
   {
     id: 'format.link',
     label: 'Link',
-    icon: Link,
+    icon: 'link',
     group: 'inline',
     shortcut: 'Ctrl+K',
     execute: applyLink
@@ -88,35 +87,35 @@ export const editorCommands: EditorCommand[] = [
   {
     id: 'block.heading1',
     label: 'Heading 1',
-    icon: Heading1,
+    icon: 'heading1',
     group: 'block',
     execute: (source, selection) => applyHeading(source, selection, 1)
   },
   {
     id: 'block.heading2',
     label: 'Heading 2',
-    icon: Heading2,
+    icon: 'heading2',
     group: 'block',
     execute: (source, selection) => applyHeading(source, selection, 2)
   },
   {
     id: 'block.heading3',
     label: 'Heading 3',
-    icon: Heading3,
+    icon: 'heading3',
     group: 'block',
     execute: (source, selection) => applyHeading(source, selection, 3)
   },
   {
     id: 'block.blockquote',
     label: 'Blockquote',
-    icon: Quote,
+    icon: 'blockquote',
     group: 'block',
     execute: (source, selection) => applyLinePrefix(source, selection, () => '> ')
   },
   {
     id: 'block.unorderedList',
     label: 'Unordered list',
-    icon: List,
+    icon: 'unorderedList',
     group: 'block',
     shortcut: 'Ctrl+Shift+8',
     execute: (source, selection) => applyLinePrefix(source, selection, () => '- ')
@@ -124,7 +123,7 @@ export const editorCommands: EditorCommand[] = [
   {
     id: 'block.orderedList',
     label: 'Ordered list',
-    icon: ListOrdered,
+    icon: 'orderedList',
     group: 'block',
     shortcut: 'Ctrl+Shift+7',
     execute: (source, selection) => applyLinePrefix(source, selection, (_line, index) => `${index + 1}. `)
@@ -132,28 +131,28 @@ export const editorCommands: EditorCommand[] = [
   {
     id: 'block.taskList',
     label: 'Task list',
-    icon: ListChecks,
+    icon: 'taskList',
     group: 'block',
     execute: (source, selection) => applyLinePrefix(source, selection, () => '- [ ] ')
   },
   {
     id: 'block.codeFence',
     label: 'Code fence',
-    icon: TextCursorInput,
+    icon: 'codeFence',
     group: 'block',
     execute: (source, selection) => wrapBlock(source, selection, '```\n', '\n```', 'code')
   },
   {
     id: 'insert.horizontalRule',
     label: 'Horizontal rule',
-    icon: Minus,
+    icon: 'horizontalRule',
     group: 'insert',
     execute: (source, selection) => insertBlock(source, selection, '---')
   },
   {
     id: 'insert.table',
     label: 'Table',
-    icon: Table2,
+    icon: 'table',
     group: 'insert',
     execute: (source, selection) => insertBlock(source, selection, '| Name | Value |\n| --- | --- |\n| Item | Detail |')
   }
