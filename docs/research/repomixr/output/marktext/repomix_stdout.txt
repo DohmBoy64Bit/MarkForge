@@ -1,0 +1,430 @@
+[2m
+📦 Repomix v1.14.1
+[22m
+
+[K[?25l⠋ Downloading repository archive...
+
+[K[1A
+[K[?25l⠙ Downloading repository archive...
+
+[K[1A
+[K[?25l⠹ Downloading repository archive...
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (0.0 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (0.0 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (0.5 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (0.5 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (1.2 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (1.2 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (1.9 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (1.9 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (1.9 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (2.0 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (2.0 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (2.0 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (2.0 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (2.1 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (2.1 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (2.1 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (2.1 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (2.1 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (2.1 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (2.1 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (2.1 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (2.2 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (2.2 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (2.2 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (2.2 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (2.2 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (2.5 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (2.5 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (2.5 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (2.5 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (2.5 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (2.7 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (2.7 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (2.7 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (2.8 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (2.8 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (2.9 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (2.9 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (2.9 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (2.9 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (3.9 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (3.9 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (3.9 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (3.9 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (3.9 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (3.9 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (3.9 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (4.0 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (4.0 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (4.0 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (4.0 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (4.0 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (4.2 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (4.2 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (4.2 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (4.2 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (4.2 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (4.2 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (4.4 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (4.4 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (4.4 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (4.5 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (4.5 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (4.5 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (4.7 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (4.7 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (4.7 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (4.7 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (4.8 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (4.8 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (4.8 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (4.8 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (5.7 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (5.7 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (6.4 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (6.4 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (7.3 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (7.3 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (8.7 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (8.7 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (9.8 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (9.8 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (10.8 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (10.8 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (12.2 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (12.2 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (13.2 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (13.2 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (14.5 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (14.5 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (15.7 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (15.7 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (16.7 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (16.7 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (17.9 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (17.9 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (19.0 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (19.0 MB)
+
+[K[1A
+[K[?25l⠙ Downloading repository archive... (20.0 MB)
+
+[K[1A
+[K[?25l⠹ Downloading repository archive... (20.0 MB)
+
+[K[1A
+[K[?25l⠸ Downloading repository archive... (20.5 MB)
+
+[K[1A
+[K[?25l⠼ Downloading repository archive... (20.5 MB)
+
+[K[1A
+[K[?25l⠴ Downloading repository archive... (21.4 MB)
+
+[K[1A
+[K[?25l⠦ Downloading repository archive... (21.4 MB)
+
+[K[1A
+[K[?25l⠧ Downloading repository archive... (22.7 MB)
+
+[K[1A
+[K[?25l⠇ Downloading repository archive... (22.7 MB)
+
+[K[1A
+[K[?25l⠏ Downloading repository archive... (23.5 MB)
+
+[K[1A
+[K[?25l⠋ Downloading repository archive... (23.7 MB)
+
+[K[1A
+[K[?25l✔ Repository archive downloaded successfully!
+[?25h
+
+[K[?25l⠋ Initializing...
+
+[K[1A
+[K[?25l⠙ Searching for files...
+
+[K[1A
+[K[?25l⠹ Searching for files...
+
+[K[1A
+[K[?25l⠸ Collect file... (450/1300) [2mpackages/desktop/test/unit/specs/format-menu-state.spec.ts[22m
+
+[K[1A
+[K[?25l⠼ Processing files...
+
+[K[1A
+[K[?25l⠴ Processing files...
+
+[K[1A
+[K[?25l⠦ Processing files...
+
+[K[1A
+[K[?25l⠧ Processing file... (1/1300) [2m.editorconfig[22m
+
+[K[1A
+[K[?25l⠇ Processing file... (35/1300) [2mdocs/i18n/README-tr.md[22m
+
+[K[1A
+[K[?25l⠏ Running security check... (400/1300) [2mpackages/desktop/test/e2e/inline-format.spec.ts[22m
+
+[K[1A
+[K[?25l⠋ Processing file... (69/1300) [2mpackages/desktop/src/main/app/windowManager.ts[22m
+
+[K[1A
+[K[?25l⠙ Processing file... (132/1300) [2mpackages/desktop/src/renderer/src/assets/icons/searchIcons/iconWord.svg[22m
+
+[K[1A
+[K[?25l⠹ Processing file... (147/1300) [2mpackages/desktop/src/common/commands/constants.ts[22m
+
+[K[1A
+[K[?25l⠸ Processing file... (266/1300) [2mpackages/desktop/src/renderer/src/node/paths.ts[22m
+
+[K[1A
+[K[?25l⠼ Processing file... (556/1300) [2mpackages/muya/src/__tests__/crossBlockParagraph.spec.ts[22m
+
+[K[1A
+[K[?25l⠴ Processing file... (711/1300) [2mpackages/muya/src/config/index.ts[22m
+
+[K[1A
+[K[?25l⠦ Processing file... (1016/1300) [2mpackages/muyajs/lib/assets/icons/upload.svg[22m
+
+[K[1A
+[K[?25l⠧ Processing file... (1080/1300) [2mpackages/muyajs/lib/parser/render/index.js[22m
+
+[K[1A
+[K[?25l⠇ Processing file... (1263/1300) [2mpackages/website/src/components/MockWindow.tsx[22m
+
+[K[1A
+[K[?25l⠏ Writing output file...
+
+[K[1A
+[K[?25l⠋ Calculating metrics... (1300/1300) [2mpackages/muya/src/ui/inlineFormatToolbar/config.ts[22m
+
+[K[1A
+[K[?25l✔ Packing completed successfully!
+[?25h
+📈 Top 5 Files by Token Count:
+[2m──────────────────────────────[22m
+1.  packages/muyajs/lib/ui/emojis/emojisJson.json [2m(93,486 tokens, 298,652 chars, 9.9%)[22m
+2.  packages/muya/test/spec/fixtures/gfm-spec-0.29-gfm.json [2m(42,975 tokens, 116,371 chars, 4.6%)[22m
+3.  packages/desktop/src/renderer/src/components/editorWithTabs/editor.vue [2m(17,386 tokens, 70,908 chars, 1.8%)[22m
+4.  packages/website/public/docs-index.json [2m(15,287 tokens, 68,203 chars, 1.6%)[22m
+5.  packages/desktop/static/locales/tr.json [2m(10,808 tokens, 35,526 chars, 1.1%)[22m
+
+🔎 Security Check:
+[2m──────────────────[22m
+[32m✔[39m No suspicious files detected.
+
+
+📊 Pack Summary:
+[2m────────────────[22m
+  Total Files: 1,300 files
+ Total Tokens: 942,011 tokens
+  Total Chars: 3,485,697 chars
+       Output: repomix-output.xml
+     Security: ✔ No suspicious files detected
+
+[32m🎉 All Done![39m
+Your repository has been successfully packed.
+
+💡 Repomix is now available in your browser! Try it at [4mhttps://repomix.com[24m

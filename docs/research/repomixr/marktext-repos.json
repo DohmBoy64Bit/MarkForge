@@ -1,0 +1,18 @@
+{
+  "output_root": "C:/Projects/MarkForge/docs/research/repomixr/output",
+  "output_file_name": "repomix-output.xml",
+  "style": "xml",
+  "timeout_seconds": 3600,
+  "install_timeout_seconds": 600,
+  "remove_comments": false,
+  "remove_empty_lines": false,
+  "output_show_line_numbers": true,
+  "parsable_style": false,
+  "compress": true,
+  "repos": [
+    {
+      "game_name": "marktext",
+      "url": "https://github.com/marktext/marktext"
+    }
+  ]
+}

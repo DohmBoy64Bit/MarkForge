@@ -1,0 +1,12 @@
+node_modules/
+dist/
+out/
+coverage/
+.turbo/
+.vite/
+.cache/
+*.log
+*.tmp
+Thumbs.db
+.DS_Store
+
