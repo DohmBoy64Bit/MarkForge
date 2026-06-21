@@ -11,9 +11,11 @@ import {
   FilePenLine,
   FilePlus2,
   Files,
+  Keyboard,
   ListTree,
   Moon,
   Printer,
+  Replace,
   Save,
   Search,
   ShieldCheck,
@@ -23,6 +25,7 @@ import {
   X
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { commandById, commandGroups, editorCommands, type EditorCommandId } from './commands'
 
 type FileInfo = {
   exists: boolean
@@ -114,8 +117,10 @@ export function App() {
   const [viewMode, setViewMode] = useState<ViewMode>(restored.viewMode)
   const [theme, setTheme] = useState<Theme>(restored.theme)
   const [searchQuery, setSearchQuery] = useState('')
+  const [replaceText, setReplaceText] = useState('')
   const [selectedMatch, setSelectedMatch] = useState(0)
   const [status, setStatus] = useState(restored.status)
+  const [lastCommand, setLastCommand] = useState('No formatting command yet')
   const [clipboardStatus, setClipboardStatus] = useState('Not checked')
   const [recentFiles, setRecentFiles] = useState<string[]>(restored.recentFiles)
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
@@ -131,6 +136,13 @@ export function App() {
     [activeDocument?.text, searchQuery]
   )
   const stats = useMemo(() => documentStats(activeDocument?.text ?? ''), [activeDocument?.text])
+  const commandsByGroup = useMemo(
+    () => commandGroups.map(group => ({
+      ...group,
+      commands: editorCommands.filter(command => command.group === group.id)
+    })),
+    []
+  )
 
   const persistRecentFiles = useCallback((paths: string[]) => {
     setRecentFiles(paths)
@@ -154,6 +166,39 @@ export function App() {
       )
     )
   }, [activeId])
+
+  const setEditorSelection = useCallback((start: number, end: number, scrollTop?: number) => {
+    window.requestAnimationFrame(() => {
+      const textarea = textAreaRef.current
+      if (!textarea) return
+
+      textarea.focus()
+      if (typeof scrollTop === 'number') textarea.scrollTop = scrollTop
+      textarea.setSelectionRange(start, end)
+    })
+  }, [])
+
+  const applyEditorCommand = useCallback((commandId: EditorCommandId) => {
+    const document = activeDocument
+    const command = commandById[commandId]
+    const textarea = textAreaRef.current
+
+    if (!document || !command) {
+      setStatus('No active document for formatting')
+      return
+    }
+
+    const selectionStart = textarea?.selectionStart ?? document.text.length
+    const selectionEnd = textarea?.selectionEnd ?? selectionStart
+    const scrollTop = textarea?.scrollTop
+    const edit = command.execute(document.text, { start: selectionStart, end: selectionEnd })
+    const confirmation = `${command.label} applied`
+
+    updateActiveDocument({ text: edit.text, externalChange: false })
+    setLastCommand(confirmation)
+    setStatus(confirmation)
+    setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+  }, [activeDocument, setEditorSelection, updateActiveDocument])
 
   const createDocument = useCallback((text = '# Untitled\n\n', title = 'Untitled.md') => {
     const document = createEditorDocument({ title, text })
@@ -336,6 +381,53 @@ export function App() {
     }, 0)
   }, [])
 
+  const replaceCurrentMatch = useCallback(() => {
+    const document = activeDocument
+    const match = searchMatches[selectedMatch]
+
+    if (!document || !searchQuery.trim()) {
+      setStatus('Search before replacing')
+      return
+    }
+
+    if (!match) {
+      setStatus('No selected match to replace')
+      return
+    }
+
+    const nextText = `${document.text.slice(0, match.start)}${replaceText}${document.text.slice(match.end)}`
+    const cursor = match.start + replaceText.length
+
+    updateActiveDocument({ text: nextText, externalChange: false })
+    setLastCommand('Replace current applied')
+    setStatus('Replaced current match')
+    setEditorSelection(match.start, cursor)
+  }, [activeDocument, replaceText, searchMatches, searchQuery, selectedMatch, setEditorSelection, updateActiveDocument])
+
+  const replaceAllMatches = useCallback(() => {
+    const document = activeDocument
+
+    if (!document || !searchQuery.trim()) {
+      setStatus('Search before replacing')
+      return
+    }
+
+    if (searchMatches.length === 0) {
+      setStatus('No matches to replace')
+      return
+    }
+
+    const query = searchQuery.trim()
+    const escaped = escapeRegExp(query)
+    const nextText = document.text.replace(new RegExp(escaped, 'gi'), replaceText)
+
+    updateActiveDocument({ text: nextText, externalChange: false })
+    setSelectedMatch(0)
+    setLastCommand(`Replace all applied to ${searchMatches.length} matches`)
+    setStatus(`Replaced ${searchMatches.length} matches`)
+    setEditorSelection(0, 0)
+  }, [activeDocument, replaceText, searchMatches.length, searchQuery, setEditorSelection, updateActiveDocument])
+
   useEffect(() => {
     let unlisten: (() => void) | null = null
 
@@ -360,6 +452,20 @@ export function App() {
       unlisten?.()
     }
   }, [copyMarkdown, createDocument, openDocument, saveDocument, saveDocumentAs])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const commandId = commandIdFromKeyboardEvent(event)
+
+      if (!commandId || !shouldHandleFormattingShortcut(event, textAreaRef.current)) return
+
+      event.preventDefault()
+      applyEditorCommand(commandId)
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [applyEditorCommand])
 
   useEffect(() => {
     if (!activeDocument?.path || !activeDocument.lastKnownFileInfo?.modifiedMs) return
@@ -522,6 +628,72 @@ export function App() {
         ))}
       </section>
 
+      <section className="formatRail" aria-label="Markdown formatting commands">
+        {commandsByGroup.map(group => (
+          <div className="commandGroup" key={group.id} aria-label={`${group.label} formatting commands`}>
+            <span className="commandGroupLabel">{group.label}</span>
+            <div className="commandButtons">
+              {group.commands.map(command => {
+                const Icon = command.icon
+                const title = command.shortcut ? `${command.label} (${command.shortcut})` : command.label
+                const headingLabel = command.id === 'block.heading1'
+                  ? 'H1'
+                  : command.id === 'block.heading2'
+                    ? 'H2'
+                    : command.id === 'block.heading3'
+                      ? 'H3'
+                      : null
+
+                return (
+                  <button
+                    key={command.id}
+                    type="button"
+                    disabled={!activeDocument}
+                    onClick={() => applyEditorCommand(command.id)}
+                    title={title}
+                    aria-label={title}
+                  >
+                    <Icon size={16} aria-hidden="true" />
+                    {headingLabel && <span>{headingLabel}</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+
+        <div className="commandGroup replaceGroup" aria-label="Replace commands">
+          <span className="commandGroupLabel">Replace</span>
+          <label className="replaceBox">
+            <Replace size={15} aria-hidden="true" />
+            <input
+              value={replaceText}
+              onChange={event => setReplaceText(event.target.value)}
+              placeholder="Replace with"
+              aria-label="Replace with"
+            />
+          </label>
+          <div className="replaceActions">
+            <button
+              type="button"
+              disabled={!activeDocument || searchMatches.length === 0}
+              onClick={replaceCurrentMatch}
+              title="Replace selected search match"
+            >
+              Current
+            </button>
+            <button
+              type="button"
+              disabled={!activeDocument || searchMatches.length === 0}
+              onClick={replaceAllMatches}
+              title="Replace all search matches"
+            >
+              All
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section className={`editorWorkspace ${viewMode}`}>
         <section
           className={`sourcePane ${viewMode === 'preview' ? 'isHidden' : ''}`}
@@ -587,6 +759,22 @@ export function App() {
               <dd>{activeDocument?.externalChange ? 'Refresh pending' : activeDocument?.path ? 'Polling metadata' : 'Not tracked'}</dd>
               <dt>Clipboard</dt>
               <dd>{clipboardStatus}</dd>
+            </dl>
+          </section>
+
+          <section>
+            <div className="panelTitle">
+              <Keyboard size={16} />
+              <h2>Commands</h2>
+            </div>
+            <p className="commandStatus">{lastCommand}</p>
+            <dl className="shortcutList">
+              {editorCommands.filter(command => command.shortcut).map(command => (
+                <Fragment key={command.id}>
+                  <dt>{command.shortcut}</dt>
+                  <dd>{command.label}</dd>
+                </Fragment>
+              ))}
             </dl>
           </section>
 
@@ -803,10 +991,15 @@ function findMatches(source: string, query: string): SearchMatch[] {
 
   if (!normalizedQuery) return []
 
+  const matches: SearchMatch[] = []
   let offset = 0
+  let lineNumber = 1
 
-  return source.split(/\r?\n/).flatMap((line, index) => {
-    const matches: SearchMatch[] = []
+  while (offset <= source.length) {
+    const newline = source.indexOf('\n', offset)
+    const rawLineEnd = newline === -1 ? source.length : newline
+    const lineEnd = rawLineEnd > offset && source[rawLineEnd - 1] === '\r' ? rawLineEnd - 1 : rawLineEnd
+    const line = source.slice(offset, lineEnd)
     let searchFrom = 0
     const lowerLine = line.toLowerCase()
 
@@ -815,7 +1008,7 @@ function findMatches(source: string, query: string): SearchMatch[] {
       if (column === -1) break
 
       matches.push({
-        line: index + 1,
+        line: lineNumber,
         column: column + 1,
         text: line.trim() || '(blank line)',
         start: offset + column,
@@ -824,9 +1017,13 @@ function findMatches(source: string, query: string): SearchMatch[] {
       searchFrom = column + normalizedQuery.length
     }
 
-    offset += line.length + 1
-    return matches
-  })
+    if (newline === -1) break
+
+    offset = newline + 1
+    lineNumber += 1
+  }
+
+  return matches
 }
 
 function frontMatterEntries(data: FrontMatterData | null | undefined): [string, string][] {
@@ -847,6 +1044,35 @@ function highlightSnippet(text: string, query: string): string {
   const suffix = end < trimmed.length ? '...' : ''
 
   return `${prefix}${trimmed.slice(start, end)}${suffix}`
+}
+
+function commandIdFromKeyboardEvent(event: KeyboardEvent): EditorCommandId | null {
+  const hasPrimaryModifier = event.ctrlKey || event.metaKey
+
+  if (!hasPrimaryModifier || event.altKey) return null
+  if (event.shiftKey && event.code === 'Digit7') return 'block.orderedList'
+  if (event.shiftKey && event.code === 'Digit8') return 'block.unorderedList'
+  if (event.shiftKey) return null
+
+  const key = event.key.toLowerCase()
+
+  if (key === 'b') return 'format.bold'
+  if (key === 'i') return 'format.italic'
+  if (key === 'k') return 'format.link'
+
+  return null
+}
+
+function shouldHandleFormattingShortcut(event: KeyboardEvent, textarea: HTMLTextAreaElement | null): boolean {
+  if (event.defaultPrevented) return false
+
+  const target = event.target
+
+  if (!(target instanceof HTMLElement)) return true
+  if (target === textarea) return true
+  if (target.isContentEditable) return false
+
+  return !['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)
 }
 
 function documentStats(source: string): { characters: number; lines: number; words: number } {
@@ -907,4 +1133,8 @@ function escapeHtml(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }

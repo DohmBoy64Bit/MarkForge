@@ -53,7 +53,7 @@ button {
   --code-text: #ecf4f8;
   min-height: 100vh;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   color: var(--text);
   background:
     linear-gradient(90deg, rgba(31, 43, 54, 0.05) 1px, transparent 1px),
@@ -139,6 +139,7 @@ button {
 }
 
 .toolbar button,
+.formatRail button,
 .themeSwitch button,
 .viewSwitch button,
 .changeNotice button {
@@ -155,6 +156,7 @@ button {
 }
 
 .toolbar button:hover,
+.formatRail button:hover:not(:disabled),
 .themeSwitch button:hover,
 .themeSwitch button.active,
 .viewSwitch button:hover,
@@ -166,9 +168,11 @@ button {
 }
 
 .toolbar button:focus-visible,
+.formatRail button:focus-visible,
 .themeSwitch button:focus-visible,
 .viewSwitch button:focus-visible,
 .searchBox:focus-within,
+.replaceBox:focus-within,
 .tabButton:focus-visible,
 .matches button:focus-visible,
 .recentFiles button:focus-visible,
@@ -176,6 +180,12 @@ button {
 textarea:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.toolbar button:disabled,
+.formatRail button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .viewSwitch {
@@ -291,6 +301,101 @@ textarea:focus-visible {
 
 .tabButton svg[aria-label="Changed on disk"] {
   color: var(--warning);
+}
+
+.formatRail {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--rail-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rail), var(--panel) 35%), var(--panel));
+}
+
+.commandGroup {
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 10px;
+  border-right: 1px solid var(--rail-border);
+}
+
+.commandGroup:last-child {
+  border-right: 0;
+}
+
+.commandGroupLabel {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.commandButtons,
+.replaceActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.formatRail button {
+  min-width: 32px;
+  height: 30px;
+  gap: 5px;
+  padding: 0 8px;
+  border-radius: 6px;
+}
+
+.formatRail button span {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.replaceGroup {
+  flex: 0 0 auto;
+}
+
+.replaceBox {
+  width: 190px;
+  height: 30px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  background: var(--page);
+}
+
+.replaceBox svg {
+  color: var(--muted);
+}
+
+.replaceBox input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.replaceBox input::placeholder {
+  color: var(--faint);
+}
+
+.replaceActions button {
+  width: auto;
+  min-width: 58px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .dirtyDot,
@@ -609,6 +714,51 @@ textarea {
   margin: 0;
 }
 
+.commandStatus {
+  margin: 0 0 10px;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--panel-border) 65%);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.shortcutList {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 10px;
+  margin: 0;
+}
+
+.shortcutList dt,
+.shortcutList dd {
+  margin: 0;
+  font-size: 12px;
+}
+
+.shortcutList dt {
+  padding: 2px 5px;
+  border: 1px solid var(--panel-border);
+  border-radius: 5px;
+  background: var(--page);
+  color: var(--muted);
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.shortcutList dd {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .toc,
 .matches,
 .warnings,
@@ -813,8 +963,28 @@ textarea {
   }
 
   .toolbar,
+  .formatRail,
   .tabStrip {
     overflow-x: auto;
+  }
+
+  .formatRail {
+    align-items: start;
+    gap: 8px;
+    padding: 7px 8px;
+  }
+
+  .commandGroup {
+    gap: 6px;
+    padding-right: 8px;
+  }
+
+  .commandGroupLabel {
+    font-size: 10px;
+  }
+
+  .replaceBox {
+    width: 158px;
   }
 
   .viewSwitch {
@@ -878,6 +1048,7 @@ textarea {
 
 @media print {
   .commandRail,
+  .formatRail,
   .tabStrip,
   .sourcePane,
   .inspector,

@@ -64,7 +64,8 @@ Exit criteria:
 Current status:
 
 - Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, light/dark preferences, native menu event handling, metadata polling for active-file external changes, and a compact document status bar.
-- Prompt-before-close, full command registry, keybinding preferences, real filesystem watching, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
+- Phase 5A added the first typed source-mode command registry, Markdown formatting command rail, core formatting shortcuts, command status feedback, and replace-current/replace-all source search actions.
+- Prompt-before-close, keybinding preferences, command palette, real filesystem watching, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
 
 Exit criteria:
 
@@ -74,6 +75,12 @@ Exit criteria:
 
 - Add WYSIWYG/realtime editing behavior.
 - Add quick insert, format overlay, line transformer, table tools, image tools, autocomplete, linting, formatting, focus/typewriter/distraction-free modes.
+
+Current status:
+
+- Phase 5A source-mode advanced editing is implemented with selection-aware transforms for inline emphasis/code/link, heading application, blockquote/list/task-list prefixes, code fences, horizontal rules, and starter table insertion.
+- Find/replace foundation is implemented for literal source matches through replace current and replace all.
+- WYSIWYG/realtime editing, format overlay, advanced table tools, image workflows, autocomplete, linting, formatter integration, and focus/typewriter modes remain open.
 
 Exit criteria:
 

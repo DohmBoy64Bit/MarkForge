@@ -7,36 +7,36 @@ This matrix is grounded in the repomixr bundle at `docs/research/repomixr/output
 | Area | MarkText Feature | Evidence | MarkForge Status | Target Area | Notes |
 |---|---|---|---|---|---|
 | Editor modes | Realtime/WYSIWYG-style preview editor | `README.md`; `packages/website/public/docs-index.json`; `packages/muya/src`; `packages/muyajs/lib` | deferred | `packages/editor-engine`, `apps/editor` | Required for parity, but implementation waits for editor engine choice. |
-| Editor modes | Source code mode | `packages/desktop/src/main/menu/templates/view.ts`; `components/editorWithTabs/sourceCode.vue` | deferred | `packages/editor-engine` | MarkForge must support first-class source Markdown mode. |
+| Editor modes | Source code mode | `packages/desktop/src/main/menu/templates/view.ts`; `components/editorWithTabs/sourceCode.vue` | partially supported | `apps/editor`, `packages/editor-engine` | Phase 4/5A provide first-class source Markdown editing; dedicated editor engine extraction remains open. |
 | Editor modes | Split editor/preview | No explicit split preview surfaced in audited bundle | intentionally changed | `apps/editor`, `packages/editor-engine` | Required by MarkForge prompt as an optional mode beyond MarkText parity. |
 | Editor modes | Typewriter mode | `packages/desktop/src/main/menu/templates/view.ts`; user docs basics/editing | deferred | `packages/editor-engine`, `packages/ui` | Preserve behavior, design original controls. |
 | Editor modes | Focus mode | `packages/desktop/src/main/menu/templates/view.ts`; user docs basics/editing | deferred | `packages/editor-engine`, `packages/ui` | Include accessible visual treatment. |
 | Editor modes | Distraction-free writing | MarkText docs describe minimal interface and focus/typewriter | deferred | `apps/editor` | MarkForge should add explicit distraction-free layout beyond parity. |
 | Layout | Sidebar toggle | `packages/desktop/src/main/menu/templates/view.ts`; docs basics | deferred | `apps/editor`, `packages/ui` | Sidebar hosts workspace, search, and TOC. |
 | Layout | Tab bar toggle and draggable tabs | docs basics; `components/editorWithTabs/tabs.vue` | deferred | `apps/editor` | Include keyboard-first tab navigation. |
-| Layout | Table of contents panel | docs basics; `components/sideBar/toc.vue`; tests `toc-*` | deferred | `packages/markdown-engine`, `packages/ui` | Required in editor and viewer. |
-| Workspace | Open file/save/save as | menu templates/actions file; docs basics | deferred | `packages/platform`, `apps/editor` | Platform service boundary required. |
+| Layout | Table of contents panel | docs basics; `components/sideBar/toc.vue`; tests `toc-*` | partially supported | `packages/markdown-engine`, `packages/ui` | Editor and viewer expose generated outlines; full sidebar controls and tests remain open. |
+| Workspace | Open file/save/save as | menu templates/actions file; docs basics | partially supported | `packages/platform`, `apps/editor` | Editor and viewer support local file flows; shared platform service boundary remains open. |
 | Workspace | Open directory and file explorer | docs basics; sidebar components | deferred | `packages/platform`, `apps/editor` | Windows network paths must be tested due issue sample. |
 | Workspace | Quick open | docs basics; `commands/quickOpen.ts` | deferred | `apps/editor` | Add fuzzy workspace file open. |
-| Workspace | Opened files list | docs basics; sidebar preference | deferred | `apps/editor` | Backed by session store. |
+| Workspace | Opened files list | docs basics; sidebar preference | partially supported | `apps/editor` | Phase 4 tabs and recent files are backed by local session state; workspace file explorer remains open. |
 | Workspace | File watching/change notifications | editor tabs notifications; watcher code; issue sample | deferred | `packages/platform` | Needs robust file watcher abstraction. |
 | Workspace | File encoding, line ending, trailing newline controls | `commands/fileEncoding.ts`; `commands/lineEnding.ts`; `commands/trailingNewline.ts`; preferences | deferred | `packages/platform`, `packages/core` | Required for professional cross-platform file handling. |
-| Session | Recent files/recent documents | app/menu/window manager evidence | deferred | `packages/platform`, `apps/editor` | Windows jump list planned. |
-| Session | Session restore | editor buffer store/data center evidence | deferred | `packages/core` | Must be test-covered. |
-| Markdown syntax | CommonMark | `README.md`; markdown syntax docs; Muya tests | deferred | `packages/markdown-engine` | Use compliance tests. |
-| Markdown syntax | GitHub Flavored Markdown | `README.md`; markdown syntax docs; GFM fixtures | deferred | `packages/markdown-engine` | Tables, task lists, strikethrough required. |
+| Session | Recent files/recent documents | app/menu/window manager evidence | partially supported | `packages/platform`, `apps/editor` | Editor stores recent paths locally; Windows jump list integration remains open. |
+| Session | Session restore | editor buffer store/data center evidence | partially supported | `packages/core`, `apps/editor` | Editor restores unsaved/dirty tabs locally; core session migrations and tests remain open. |
+| Markdown syntax | CommonMark | `README.md`; markdown syntax docs; Muya tests | partially supported | `packages/markdown-engine` | Renderer handles baseline syntax; broader compliance fixtures remain open. |
+| Markdown syntax | GitHub Flavored Markdown | `README.md`; markdown syntax docs; GFM fixtures | partially supported | `packages/markdown-engine` | Tables, task lists, footnotes, and strikethrough render; full fixture coverage remains open. |
 | Markdown syntax | Selective Pandoc support | `README.md`; docs-index | intentionally changed | `packages/markdown-engine` | Do not promise broad Pandoc parity; track specific extensions. |
-| Markdown syntax | Headings h1-h6 and setext | markdown syntax docs | deferred | `packages/markdown-engine` | Feed TOC and outline. |
-| Markdown syntax | Paragraphs, breaks, horizontal rules | markdown syntax docs | deferred | `packages/markdown-engine` | Baseline CommonMark. |
-| Markdown syntax | Bold, italic, underline, strikethrough | format menu; markdown syntax docs | deferred | `packages/editor-engine` | Underline is an extension/UI command. |
+| Markdown syntax | Headings h1-h6 and setext | markdown syntax docs | partially supported | `packages/markdown-engine`, `apps/editor` | Rendering and H1-H3 source commands exist; full heading command coverage remains open. |
+| Markdown syntax | Paragraphs, breaks, horizontal rules | markdown syntax docs | partially supported | `packages/markdown-engine`, `apps/editor` | Baseline rendering and horizontal-rule insertion exist; conformance fixtures remain open. |
+| Markdown syntax | Bold, italic, underline, strikethrough | format menu; markdown syntax docs | partially supported | `packages/editor-engine`, `apps/editor` | Phase 5A adds bold/italic source commands; underline, strikethrough command coverage, and rich editing remain open. |
 | Markdown syntax | Superscript/subscript/highlight | format menu; changelog | deferred | `packages/markdown-engine` | Treat as opt-in extensions. |
-| Markdown syntax | Links, autolinks, named anchors | markdown syntax docs; issue #4613 | deferred | `packages/markdown-engine` | Anchor navigation must be tested. |
+| Markdown syntax | Links, autolinks, named anchors | markdown syntax docs; issue #4613 | partially supported | `packages/markdown-engine`, `apps/editor` | Links render and Phase 5A adds source link insertion; named anchor navigation tests remain open. |
 | Markdown syntax | Images | markdown syntax docs; image tools docs | deferred | `packages/markdown-engine`, `packages/platform` | Include local path and URL handling. |
-| Markdown syntax | Blockquotes | markdown syntax docs | deferred | `packages/markdown-engine` | Baseline CommonMark. |
-| Markdown syntax | Ordered/unordered lists | markdown syntax docs; menu paragraph | deferred | `packages/editor-engine` | Include list indentation preferences. |
-| Markdown syntax | Task lists | markdown syntax docs; tests `task-list-autocheck` | deferred | `packages/markdown-engine` | Include checkbox interaction tests. |
-| Markdown syntax | Tables and table editing tools | editing docs; Muya table source/tests | deferred | `packages/editor-engine`, `packages/ui` | Required parity; high-risk workflow. |
-| Markdown syntax | Code fences, inline code, syntax highlighting | markdown syntax docs; CodeMirror/prism themes | deferred | `packages/markdown-engine`, `packages/theme-engine` | Viewer copy buttons are MarkForge extension. |
+| Markdown syntax | Blockquotes | markdown syntax docs | partially supported | `packages/markdown-engine`, `apps/editor` | Rendering and source prefix command exist; advanced line transform parity remains open. |
+| Markdown syntax | Ordered/unordered lists | markdown syntax docs; menu paragraph | partially supported | `packages/editor-engine`, `apps/editor` | Phase 5A adds source list commands; indentation preferences remain open. |
+| Markdown syntax | Task lists | markdown syntax docs; tests `task-list-autocheck` | partially supported | `packages/markdown-engine`, `apps/editor` | Rendering and source task-list insertion exist; checkbox interaction tests remain open. |
+| Markdown syntax | Tables and table editing tools | editing docs; Muya table source/tests | partially supported | `packages/editor-engine`, `packages/ui`, `apps/editor` | Rendering and starter table insertion exist; advanced table editing remains high-risk/open. |
+| Markdown syntax | Code fences, inline code, syntax highlighting | markdown syntax docs; CodeMirror/prism themes | partially supported | `packages/markdown-engine`, `packages/theme-engine`, `apps/editor` | Rendering, highlighting path, and source inline/fence commands exist; theme contract and copy buttons remain open. |
 | Markdown syntax | Keyboard keys syntax | markdown syntax docs | deferred | `packages/markdown-engine` | Confirm parser support or extension. |
 | Markdown syntax | Emoji rendering and picker | markdown syntax docs; emoji selector code/data | deferred | `packages/editor-engine` | Use current emoji data at implementation time. |
 | Markdown syntax | YAML/TOML/JSON front matter | markdown syntax docs; paragraph menu; changelog | deferred | `packages/markdown-engine` | MarkForge also needs display options in viewer. |
@@ -48,11 +48,11 @@ This matrix is grounded in the repomixr bundle at `docs/research/repomixr/output
 | Editing tools | Line transformer | editing docs; paragraph front menu | deferred | `packages/editor-engine` | Include duplicate/create/delete line actions. |
 | Editing tools | Bracket/quote/Markdown auto-pairing | editing docs; preference schema | deferred | `packages/editor-engine` | Must be configurable. |
 | Editing tools | Autocomplete for image paths | utils imagePathAutoComplement; tests | deferred | `packages/editor-engine`, `packages/platform` | Expand to links/headings/front matter/templates. |
-| Search | Find and replace in document | edit menu; docs editing | deferred | `packages/editor-engine` | Regex/group replacement inspired by MarkText changelog. |
+| Search | Find and replace in document | edit menu; docs editing | partially supported | `packages/editor-engine`, `apps/editor` | Phase 4/5A provide source find, replace current, and replace all; regex/group replacement remains open. |
 | Search | Find in folder | docs basics/editing; ripgrep IPC | deferred | `packages/platform`, `apps/editor` | Use ripgrep or equivalent behind platform service. |
 | Import | Pandoc-backed import/convert path | `packages/desktop/src/main/utils/pandoc.ts`; file menu actions | intentionally changed | `packages/converters` | MarkForge uses a plugin converter architecture instead of a single import path. |
-| Commands | Command palette | docs basics; commandPalette component | deferred | `packages/ui`, `apps/editor` | Commands must be data-driven. |
-| Menus | File/Edit/Paragraph/Format/View/Theme/Window/Help menus | menu templates | deferred | `apps/editor`, `packages/platform` | Windows first; Linux parity after baseline. |
+| Commands | Command palette | docs basics; commandPalette component | partially supported | `packages/ui`, `apps/editor` | Phase 5A adds a typed command registry; command palette UI remains open. |
+| Menus | File/Edit/Paragraph/Format/View/Theme/Window/Help menus | menu templates | partially supported | `apps/editor`, `packages/platform` | File/view menu foundations and formatting toolbar exist; full native menu parity remains open. |
 | Keybindings | Per-platform default keybindings | `keybindingsWindows.ts`, `keybindingsLinux.ts`, `keybindingsDarwin.ts` | partially supported | `packages/platform`, `packages/ui` | MarkForge supports Windows/Linux first; macOS not required. |
 | Keybindings | User shortcut editor | keybinding pref components; issue #4621 | deferred | `packages/ui`, `packages/core` | Apply changes live, test for regressions. |
 | Preferences | JSON-backed preferences and settings UI | preference schema/static/defaults/components | deferred | `packages/core`, `packages/ui` | Central schema with migrations. |
@@ -60,7 +60,7 @@ This matrix is grounded in the repomixr bundle at `docs/research/repomixr/output
 | Preferences | Disable HTML rendering | changelog; options tests | deferred | `packages/markdown-engine` | Security-relevant. |
 | Preferences | Startup action, restore state, zoom, scrollbar, TOC wrap, sorting, watcher polling | preference schema/defaults/components | deferred | `packages/core`, `packages/platform` | Preserve useful desktop behavior with Windows-first defaults. |
 | Preferences | Custom CSS | theme preference components | deferred | `packages/theme-engine` | Allowed after built-in theme contract is stable. |
-| Clipboard | Copy as Markdown/plain text | edit/context menu evidence | deferred | `packages/platform`, `packages/editor-engine` | Must preserve source fidelity. |
+| Clipboard | Copy as Markdown/plain text | edit/context menu evidence | partially supported | `packages/platform`, `packages/editor-engine`, `apps/editor` | Editor can copy Markdown source; richer context menu/plain text variants remain open. |
 | Clipboard | Copy as HTML/rich text | edit/context menu; issue #4574 | deferred | `packages/platform` | Add regression tests. |
 | Clipboard | Paste as plain text | edit/context menu | deferred | `packages/platform` | Include keyboard/menu parity. |
 | Clipboard | Paste images directly | README; editing docs; image paste issue | deferred | `packages/platform`, `packages/editor-engine` | Windows clipboard behavior tested early. |
