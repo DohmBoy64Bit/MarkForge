@@ -29,8 +29,10 @@ The audit config is:
 - [Architecture](docs/architecture.md)
 - [Implementation roadmap](docs/implementation-roadmap.md)
 - [Desktop stack ADR](docs/adr/0001-desktop-stack.md)
+- [Design principles](docs/design-principles.md)
+- [Phase 1 proof of concept](docs/phase-1-proof-of-concept.md)
+- [Phase 2 markdown engine](docs/phase-2-markdown-engine.md)
 - [Developer documentation](docs/developer-documentation.md)
 - [User documentation](docs/user-documentation.md)
 - [Theming documentation](docs/theming-documentation.md)
 - [Local LLM setup documentation](docs/local-llm-setup.md)
-

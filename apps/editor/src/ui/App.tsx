@@ -21,15 +21,32 @@ type FileInfo = {
   len: number | null
 }
 
-const starter = `# MarkForge Phase 1
+const starter = `---
+title: MarkForge Phase 2
+draft: false
+---
 
-This is the Windows-first desktop proof-of-concept.
+# MarkForge Phase 2
+
+This is the Markdown engine hardening slice running inside the Windows-first desktop proof-of-concept.
 
 - Open and save Markdown files.
 - Render sanitized preview from the markdown engine package.
+- Parse front matter metadata.
+- Highlight fenced code blocks.
+- Render inline math like $x^2$.
+- Warn when a deferred diagram renderer is needed.
 - Exercise clipboard read/write.
 - Receive native menu events.
 - Poll file metadata for external changes.
+
+~~~ts
+const phase: number = 2
+~~~
+
+\`\`\`mermaid
+graph TD; A-->B;
+\`\`\`
 
 <script>alert('sanitization check')</script>
 `
@@ -171,6 +188,10 @@ export function App() {
           <dl>
             <dt>File</dt>
             <dd>{filePath ?? 'Untitled'}</dd>
+            <dt>Front matter</dt>
+            <dd>{rendered.frontMatter ? `${rendered.frontMatter.language}, lines ${rendered.frontMatter.startLine}-${rendered.frontMatter.endLine}` : 'None'}</dd>
+            <dt>Render warnings</dt>
+            <dd>{rendered.warnings.length}</dd>
             <dt>Status</dt>
             <dd>{status}</dd>
             <dt>Clipboard</dt>
@@ -186,6 +207,19 @@ export function App() {
               </li>
             ))}
           </ol>
+          {rendered.warnings.length > 0 && (
+            <>
+              <h2>Warnings</h2>
+              <ol className="warnings">
+                {rendered.warnings.map((warning, index) => (
+                  <li key={`${warning.code}-${warning.line ?? index}`}>
+                    {warning.line ? `Line ${warning.line}: ` : ''}
+                    {warning.message}
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
         </aside>
 
         <section className="editorPane" aria-label="Markdown editor">

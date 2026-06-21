@@ -32,6 +32,11 @@ Exit criteria:
 - Add sanitization, TOC extraction, heading anchors, front matter, math extension, and code highlighting path.
 - Add HTML export foundation.
 
+Current status:
+
+- Initial renderer contract, sanitization, front matter extraction, heading IDs, GFM-style task lists/tables/footnotes, KaTeX math, code highlighting, and renderer warnings are implemented.
+- Full conformance fixtures, full YAML/TOML parsing, diagram rendering, and theme-integrated code highlighting remain open.
+
 Exit criteria:
 
 - Engine unit tests cover required syntax and XSS fixtures.
@@ -117,4 +122,3 @@ Exit criteria:
 - Initial working Windows build is reproducible.
 - Automated tests pass.
 - Linux smoke plan is documented and started.
-

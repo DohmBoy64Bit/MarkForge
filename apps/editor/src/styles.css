@@ -101,15 +101,21 @@ button:hover {
   font-size: 13px;
 }
 
-.toc {
+.toc,
+.warnings {
   margin: 0;
   padding: 0;
   list-style: none;
   font-size: 13px;
 }
 
-.toc li + li {
+.toc li + li,
+.warnings li + li {
   margin-top: 6px;
+}
+
+.warnings {
+  color: #8a5a15;
 }
 
 .editorPane,

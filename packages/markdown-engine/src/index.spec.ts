@@ -12,6 +12,7 @@ describe('renderMarkdown', () => {
       { id: 'heading-title', level: 1, text: 'Title' },
       { id: 'heading-title-2', level: 2, text: 'Title' }
     ])
+    expect(rendered.warnings).toEqual([])
   })
 
   it('sanitizes raw HTML and dangerous links', () => {
@@ -59,17 +60,68 @@ describe('renderMarkdown', () => {
     expect(rendered.html).toContain('target="_blank"')
     expect(rendered.html).toContain('rel="noreferrer noopener"')
   })
+
+  it('highlights known fenced code languages', () => {
+    const rendered = renderMarkdown('```ts\nconst value: number = 1\n```')
+
+    expect(rendered.html).toContain('class="hljs"')
+    expect(rendered.html).toContain('language-ts')
+    expect(rendered.html).toContain('hljs-keyword')
+  })
+
+  it('warns about unknown fenced code languages', () => {
+    const rendered = renderMarkdown('```madeuplang\nhello\n```')
+
+    expect(rendered.warnings).toContainEqual({
+      code: 'unknown-code-language',
+      message: 'No syntax highlighter is registered for "madeuplang".',
+      severity: 'info'
+    })
+  })
+
+  it('can disable code highlighting', () => {
+    const rendered = renderMarkdown('```ts\nconst value = 1\n```', { enableCodeHighlight: false })
+
+    expect(rendered.html).not.toContain('class="hljs"')
+    expect(rendered.html).toContain('<code class="language-ts">')
+  })
+
+  it('renders inline and block math through KaTeX', () => {
+    const rendered = renderMarkdown('Inline $x^2$.\n\n$$\ny = mx + b\n$$')
+
+    expect(rendered.html).toContain('katex')
+    expect(rendered.html).toContain('math')
+  })
+
+  it('can leave math syntax as plain Markdown content when math is disabled', () => {
+    const rendered = renderMarkdown('Inline $x^2$.', { enableMath: false })
+
+    expect(rendered.html).not.toContain('katex')
+    expect(rendered.html).toContain('$x^2$')
+  })
+
+  it('warns when diagram fences are detected before renderer support exists', () => {
+    const rendered = renderMarkdown('```mermaid\ngraph TD; A-->B;\n```')
+
+    expect(rendered.warnings).toContainEqual({
+      code: 'diagram-rendering-deferred',
+      line: 1,
+      message: 'mermaid diagrams are detected but rendered as fenced code until the diagram renderer is implemented.',
+      severity: 'info'
+    })
+  })
 })
 
 describe('parseFrontMatter', () => {
   it('extracts YAML front matter without rendering it as body content', () => {
-    const parsed = parseFrontMatter('---\ntitle: Test\n---\n# Body')
+    const parsed = parseFrontMatter('---\ntitle: Test\ndraft: false\ncount: 3\n---\n# Body')
 
     expect(parsed.frontMatter).toEqual({
+      data: { title: 'Test', draft: false, count: 3 },
       language: 'yaml',
-      raw: 'title: Test',
+      raw: 'title: Test\ndraft: false\ncount: 3',
       startLine: 1,
-      endLine: 3
+      endLine: 5
     })
     expect(parsed.body).toBe('# Body')
 
@@ -79,8 +131,26 @@ describe('parseFrontMatter', () => {
   })
 
   it('extracts TOML and JSON front matter conventions', () => {
-    expect(parseFrontMatter('+++\ntitle = "Test"\n+++\n# Body').frontMatter?.language).toBe('toml')
-    expect(parseFrontMatter(';;;\n{"title":"Test"}\n;;;\n# Body').frontMatter?.language).toBe('json')
+    expect(parseFrontMatter('+++\ntitle = "Test"\n+++\n# Body').frontMatter).toMatchObject({
+      data: { title: 'Test' },
+      language: 'toml'
+    })
+    expect(parseFrontMatter(';;;\n{"title":"Test"}\n;;;\n# Body').frontMatter).toMatchObject({
+      data: { title: 'Test' },
+      language: 'json'
+    })
+  })
+
+  it('returns a warning for invalid JSON front matter', () => {
+    const parsed = parseFrontMatter(';;;\n{"title":\n;;;\n# Body')
+
+    expect(parsed.frontMatter?.data).toBeNull()
+    expect(parsed.warnings).toContainEqual({
+      code: 'front-matter-json-parse-failed',
+      line: 2,
+      message: 'JSON front matter could not be parsed.',
+      severity: 'warning'
+    })
   })
 
   it('leaves unmatched delimiters in the body', () => {
@@ -96,6 +166,12 @@ describe('extractHeadings', () => {
     expect(extractHeadings('# A!\nparagraph\n### A!')).toEqual([
       { id: 'heading-a', level: 1, text: 'A!' },
       { id: 'heading-a-2', level: 3, text: 'A!' }
+    ])
+  })
+
+  it('uses rendered link text for heading labels', () => {
+    expect(extractHeadings('## [Docs](https://example.com)')).toEqual([
+      { id: 'heading-docs', level: 2, text: 'Docs' }
     ])
   })
 })
