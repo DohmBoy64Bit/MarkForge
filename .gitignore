@@ -7,6 +7,6 @@ coverage/
 .cache/
 *.log
 *.tmp
+*.tsbuildinfo
 Thumbs.db
 .DS_Store
-

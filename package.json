@@ -11,6 +11,10 @@
   "scripts": {
     "audit:marktext": "python scripts/audit_marktext.py",
     "docs:check": "node -e \"console.log('MarkForge docs scaffold ready')\"",
-    "test": "node -e \"console.log('No implementation tests exist yet; architecture gate is still active')\""
+    "dev:editor": "pnpm --filter @markforge/editor dev",
+    "build:editor": "pnpm --filter @markforge/editor build",
+    "tauri:dev": "pnpm --filter @markforge/editor tauri dev",
+    "tauri:build": "pnpm --filter @markforge/editor tauri build",
+    "test": "node -e \"console.log('Phase 1 smoke tests are manual until the app shell stabilizes')\""
   }
 }
