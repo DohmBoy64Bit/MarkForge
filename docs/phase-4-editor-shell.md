@@ -22,9 +22,10 @@ The shell uses a workspace-first layout: command rail, tab strip, source/preview
 ## Deferred Items
 
 - Prompt-before-close for dirty tabs.
-- Full command registry and keybinding preference model.
+- Phase 5A superseded the initial command registry and source formatting rail deferral.
+- Command palette UI and user-editable keybinding preference model.
 - Real filesystem watching beyond active-file metadata polling.
-- Rich editing operations, Markdown formatting commands, and WYSIWYG/realtime editing.
+- Rich WYSIWYG/realtime editing, toggle-aware formatting, and advanced Markdown editing tools.
 - Search highlighting inside rendered preview.
 - Export workflows and theme-engine package integration.
 

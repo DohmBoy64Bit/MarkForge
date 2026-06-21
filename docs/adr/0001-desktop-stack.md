@@ -1,6 +1,6 @@
 # ADR 0001: Desktop Stack
 
-Status: proposed
+Status: accepted
 
 Date: 2026-06-21
 
@@ -12,9 +12,9 @@ MarkText currently uses Electron, Vue 3, TypeScript, CodeMirror, and Muya/MuyaJS
 
 ## Decision
 
-Use a TypeScript monorepo with Tauri v2 as the preferred desktop runtime, React for application UI, CodeMirror 6 for source editing, and a dedicated Markdown engine package using unified/remark/rehype-compatible internals where practical.
+Use a TypeScript monorepo with Tauri v2 as the accepted desktop runtime, React for application UI, CodeMirror 6 as the planned full source-editing surface, and a dedicated Markdown engine package using unified/remark/rehype-compatible internals where practical.
 
-Electron remains the fallback if a proof-of-concept shows that Tauri cannot meet required Windows packaging, clipboard, menu, print/PDF, spellcheck, or editor webview behavior without excessive custom native work.
+Phase 1 validated enough of the Tauri v2 baseline to continue implementation on that stack. Electron is no longer the default fallback path, but the decision can be revisited if later native-integration gates prove impractical in Tauri without excessive custom work.
 
 ## Rationale
 
@@ -27,18 +27,27 @@ Electron remains the fallback if a proof-of-concept shows that Tauri cannot meet
 ## Consequences
 
 - The team must maintain Rust platform commands for desktop integration.
-- The first proof-of-concept must validate Windows installer, file associations, clipboard rich text, image paste, print/PDF, native menus, and file watching.
-- If Tauri proof-of-concept fails those gates, switch to Electron before large UI implementation.
+- Phase 1 validated the editor shell, native file dialogs, local file read/write, menu accelerators, clipboard smoke controls, metadata polling, browser print foundation, and Windows x64 NSIS installer creation.
+- Later phases must still validate file associations, rich clipboard formats, image paste, native file watching, spellcheck, export/PDF workflows, and final renderer hardening.
+- If a remaining native-integration gate fails in Tauri, evaluate a targeted Rust/plugin implementation before reconsidering Electron.
 
-## Proof-of-Concept Gate
+## Validation Status
 
-Before broad implementation, build a small Windows proof-of-concept that verifies:
+Validated in the current baseline:
 
 - Open/save file dialogs.
-- Open folder and watch file changes.
-- Clipboard read/write for Markdown, HTML, plain text, and images.
-- Native menus and configurable keyboard shortcuts.
-- Print/PDF export path.
+- Local file read/write through Tauri commands.
+- Native menu accelerators.
+- Clipboard read/write smoke path.
+- Browser print foundation.
 - Sanitized Markdown preview inside the webview.
 - Windows x64 installer creation.
 
+Still open:
+
+- File associations.
+- Open folder and native file watching.
+- Clipboard read/write for HTML, rich text, and images.
+- Native menus and configurable keyboard shortcuts.
+- Export/PDF pipeline beyond browser print.
+- Spellcheck.

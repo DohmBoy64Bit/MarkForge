@@ -1,15 +1,17 @@
 # MarkForge
 
-MarkForge is planned as a professional, local-first Markdown editor and standalone Markdown viewer for Windows and Linux, with Windows as the first production target.
+MarkForge is being built as a professional, local-first Markdown editor and standalone Markdown viewer for Windows and Linux, with Windows as the first production target.
 
-The project is currently in the architecture and parity-audit phase required by [docs/markforge-expert-prompt.md](docs/markforge-expert-prompt.md). Implementation must not proceed until the MarkText parity matrix, product requirements, architecture, and stack decision documents are accepted.
+The initial architecture and parity audit are complete, and implementation has progressed through Phase 5A. MarkForge is not product-ready yet and remains intentionally distinct from a 1:1 MarkText clone.
 
 ## Current Status
 
-- Git repository initialized.
-- Required project directory structure scaffolded.
-- MarkText audit bundle generated with DohmBoy64Bit/repomixr.
-- Product, parity, architecture, roadmap, theming, local LLM, developer, and user documentation started.
+- Phase 1 validated the Tauri v2 Windows x64 editor proof of concept.
+- Phase 2 established the shared Markdown engine contract.
+- Phase 3 added the standalone viewer foundation.
+- Phase 4 added the multi-document editor shell.
+- Phase 5A added the first source-editing command registry, Markdown formatting rail, and replace actions.
+- Several package boundaries are still transitional; see [Architecture](docs/architecture.md).
 
 ## Evidence
 
@@ -33,6 +35,8 @@ The audit config is:
 - [Phase 1 proof of concept](docs/phase-1-proof-of-concept.md)
 - [Phase 2 markdown engine](docs/phase-2-markdown-engine.md)
 - [Phase 3 viewer foundation](docs/phase-3-viewer-foundation.md)
+- [Phase 4 editor shell](docs/phase-4-editor-shell.md)
+- [Phase 5 advanced editing](docs/phase-5-advanced-editing.md)
 - [Developer documentation](docs/developer-documentation.md)
 - [User documentation](docs/user-documentation.md)
 - [Theming documentation](docs/theming-documentation.md)

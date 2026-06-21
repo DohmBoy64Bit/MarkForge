@@ -39,10 +39,10 @@ This matrix is grounded in the repomixr bundle at `docs/research/repomixr/output
 | Markdown syntax | Code fences, inline code, syntax highlighting | markdown syntax docs; CodeMirror/prism themes | partially supported | `packages/markdown-engine`, `packages/theme-engine`, `apps/editor` | Rendering, highlighting path, and source inline/fence commands exist; theme contract and copy buttons remain open. |
 | Markdown syntax | Keyboard keys syntax | markdown syntax docs | deferred | `packages/markdown-engine` | Confirm parser support or extension. |
 | Markdown syntax | Emoji rendering and picker | markdown syntax docs; emoji selector code/data | deferred | `packages/editor-engine` | Use current emoji data at implementation time. |
-| Markdown syntax | YAML/TOML/JSON front matter | markdown syntax docs; paragraph menu; changelog | deferred | `packages/markdown-engine` | MarkForge also needs display options in viewer. |
-| Markdown syntax | Math formulas with KaTeX | README; markdown syntax docs; math source/tests | deferred | `packages/markdown-engine` | Include inline and block math. |
+| Markdown syntax | YAML/TOML/JSON front matter | markdown syntax docs; paragraph menu; changelog | partially supported | `packages/markdown-engine`, `apps/editor`, `apps/viewer` | Phase 2 parses YAML/TOML-style key-value front matter and JSON blocks; editor/viewer inspect it. Full parser coverage and display preferences remain open. |
+| Markdown syntax | Math formulas with KaTeX | README; markdown syntax docs; math source/tests | partially supported | `packages/markdown-engine` | Phase 2 renders inline and block KaTeX math; chemical equations, settings, and broader fixtures remain open. |
 | Markdown syntax | Diagrams: Mermaid, flowchart, sequence, Vega-lite, PlantUML | markdown syntax docs; diagram source/tests | partially supported | `packages/markdown-engine` | MarkForge prompt asks diagrams in viewer; exact parity may be staged. |
-| Markdown syntax | Raw HTML | markdown syntax docs; disable HTML option/tests | deferred | `packages/markdown-engine` | Must be sanitized and user-configurable. |
+| Markdown syntax | Raw HTML | markdown syntax docs; disable HTML option/tests | partially supported | `packages/markdown-engine` | Renderer supports sanitized raw HTML and an `allowHtml` option; user-facing preferences and broader XSS fixtures remain open. |
 | Editing tools | Selection format overlay | editing docs; Muya UI | deferred | `packages/editor-engine`, `packages/ui` | Feature parity with original styling. |
 | Editing tools | Quick insert/block inserter | editing docs; quick insert menu tests | deferred | `packages/editor-engine`, `packages/ui` | MarkForge will extend with templates and converters. |
 | Editing tools | Line transformer | editing docs; paragraph front menu | deferred | `packages/editor-engine` | Include duplicate/create/delete line actions. |
@@ -57,7 +57,7 @@ This matrix is grounded in the repomixr bundle at `docs/research/repomixr/output
 | Keybindings | User shortcut editor | keybinding pref components; issue #4621 | deferred | `packages/ui`, `packages/core` | Apply changes live, test for regressions. |
 | Preferences | JSON-backed preferences and settings UI | preference schema/static/defaults/components | deferred | `packages/core`, `packages/ui` | Central schema with migrations. |
 | Preferences | Editor fonts, line width, list indentation, auto-completion | docs editing/preferences; schema | deferred | `packages/core` | Data-driven settings. |
-| Preferences | Disable HTML rendering | changelog; options tests | deferred | `packages/markdown-engine` | Security-relevant. |
+| Preferences | Disable HTML rendering | changelog; options tests | partially supported | `packages/markdown-engine`, `packages/core` | Markdown engine exposes `allowHtml: false`; app preference schema/UI remains open. |
 | Preferences | Startup action, restore state, zoom, scrollbar, TOC wrap, sorting, watcher polling | preference schema/defaults/components | deferred | `packages/core`, `packages/platform` | Preserve useful desktop behavior with Windows-first defaults. |
 | Preferences | Custom CSS | theme preference components | deferred | `packages/theme-engine` | Allowed after built-in theme contract is stable. |
 | Clipboard | Copy as Markdown/plain text | edit/context menu evidence | partially supported | `packages/platform`, `packages/editor-engine`, `apps/editor` | Editor can copy Markdown source; richer context menu/plain text variants remain open. |
@@ -68,10 +68,10 @@ This matrix is grounded in the repomixr bundle at `docs/research/repomixr/output
 | Images | Image upload support | changelog; uploader IPC | intentionally changed | `packages/converters`, `packages/platform` | MarkForge remains local-first; cloud upload only via future explicit plugin. |
 | Images | Image cache invalidation | changelog; image handling utilities | deferred | `packages/platform`, `packages/editor-engine` | Needed for watched files and changed assets. |
 | Export | HTML export | README; export menu/actions/util/tests | deferred | `packages/markdown-engine`, `packages/converters` | Required baseline. |
-| Export | PDF export | README; export settings/PDF util/e2e tests | deferred | `packages/platform`, `packages/converters` | Windows print/PDF path must be verified. |
+| Export | PDF export | README; export settings/PDF util/e2e tests | partially supported | `packages/platform`, `packages/converters` | Phase 1/3/4 provide browser print foundation; real PDF export pipeline and settings remain open. |
 | Export | Include TOC in exported document | changelog | deferred | `packages/markdown-engine` | Required export option. |
 | Export | Detailed export settings | export settings component/options | deferred | `packages/converters`, `packages/theme-engine` | Page size, orientation, margins, fonts, heading numbering, front matter, headers/footers, TOC, and export theme. |
-| Print | Print options | changelog; file menu export/print | deferred | `packages/platform` | Viewer and editor should share print service. |
+| Print | Print options | changelog; file menu export/print | partially supported | `packages/platform` | Editor and viewer expose print commands through `window.print()`; shared print service and options remain open. |
 | Themes | Application themes | README; theme menu; theme CSS assets | deferred | `packages/theme-engine`, `packages/ui` | MarkForge built-ins differ by prompt. |
 | Themes | Code block themes | Prism theme assets | deferred | `packages/theme-engine` | Theme contract covers code. |
 | Themes | Export themes | export theme assets/settings | deferred | `packages/theme-engine`, `packages/converters` | Separate print/export tokens. |
@@ -80,10 +80,10 @@ This matrix is grounded in the repomixr bundle at `docs/research/repomixr/output
 | Spelling | Spell checker with Hunspell/system providers | spelling docs; spellchecker main/renderer/prefs | deferred | `packages/platform`, `packages/editor-engine` | Windows provider first. |
 | Spelling | Automatic language detection | spelling docs | deferred | `packages/editor-engine` | Consider performance impact. |
 | Spelling | Add/remove/ignore words | spelling docs; context menu spellcheck | deferred | `packages/platform` | Dictionary storage behind platform service. |
-| Security | Sanitized HTML and XSS tests | e2e xss tests; sanitize tests | deferred | `packages/markdown-engine` | Non-negotiable for editor and viewer. |
-| Security | Safe external link handling | hyperlink sanitize tests; recent raw HTML link fix | deferred | `packages/platform`, `packages/markdown-engine` | Open external links via platform shell policy. |
-| Security | Hardened desktop renderer settings | context isolation e2e/config evidence | deferred | `apps/editor`, `apps/viewer`, `packages/platform` | Tauri webview or Electron fallback must preserve isolation guarantees. |
-| Packaging | Windows x64/arm64 installer and zip | latest release assets; electron-builder config | deferred | `apps/editor`, `apps/viewer` | Windows x64 first. |
+| Security | Sanitized HTML and XSS tests | e2e xss tests; sanitize tests | partially supported | `packages/markdown-engine` | DOMPurify-backed sanitization and dangerous-link tests exist; broader XSS regression fixtures remain non-negotiable. |
+| Security | Safe external link handling | hyperlink sanitize tests; recent raw HTML link fix | partially supported | `packages/platform`, `packages/markdown-engine` | Renderer strips dangerous links and adds safe generated-link attributes; platform shell policy remains open. |
+| Security | Hardened desktop renderer settings | context isolation e2e/config evidence | partially supported | `apps/editor`, `apps/viewer`, `packages/platform` | Tauri v2 capabilities and CSP are in place for baseline windows; final renderer/security audit remains open. |
+| Packaging | Windows x64/arm64 installer and zip | latest release assets; electron-builder config | partially supported | `apps/editor`, `apps/viewer` | Editor and viewer have Windows x64 NSIS build paths; arm64, signing, update metadata, and release asset automation remain open. |
 | Packaging | Linux AppImage/deb/rpm/snap/tar.gz | latest release assets | deferred | `apps/editor`, `apps/viewer` | Pick Linux formats after Windows baseline. |
 | Updates | Auto-update metadata | latest release assets; installation docs | deferred | `packages/platform` | Decide update channel after stack selection. |
 | Docs | User documentation website | MarkText website/docs index | partially supported | `docs` | MarkForge docs started; app help panel pending. |

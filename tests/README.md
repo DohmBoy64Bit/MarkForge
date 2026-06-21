@@ -1,4 +1,5 @@
 # tests
 
-Cross-package integration, fixture, and end-to-end tests will live here. Package-level unit tests may live next to implementation source once coding begins.
+Cross-package integration, fixture, and end-to-end tests belong here.
 
+Current package and app unit tests live beside the code they cover, such as `packages/markdown-engine/src/index.spec.ts` and `apps/editor/src/ui/editingTransforms.spec.ts`.

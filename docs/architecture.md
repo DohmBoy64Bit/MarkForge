@@ -105,6 +105,17 @@ Shared types, result/error helpers, event contracts, schema utilities, and const
 
 Cross-package integration, fixture, and end-to-end tests. Package-level unit tests may live beside package source once implementation begins.
 
+## Current Implementation Drift / Transitional Debt
+
+The structure above remains the target architecture, but Phase 1-5A intentionally kept some behavior inside app components while validating the product slices:
+
+- `apps/editor` currently owns temporary session restore, recent files, active-file polling, and source editing command wiring that should move toward `packages/core`, `packages/platform`, and `packages/editor-engine`.
+- `apps/viewer` currently owns its file-open lifecycle, metadata polling, search state, and print command wiring while the shared platform facade is still forming.
+- `packages/markdown-engine` is the strongest extracted boundary today; broader package extraction should follow proven app behavior rather than speculative abstractions.
+- `pnpm docs:check` is still a placeholder and should become a real documentation validation gate.
+
+This drift is tracked debt, not the final intended ownership model.
+
 ## Public API Rules
 
 - Every package exports through a single public entrypoint.
@@ -132,4 +143,3 @@ Cross-package integration, fixture, and end-to-end tests. Package-level unit tes
 - Platform service tests with Windows path, network path, WSL-like path, and Linux path fixtures.
 - UI behavior tests for command palette, menus, keybindings, editor mode toggles, TOC, search, image paste, and export.
 - Packaging smoke tests for Windows before Linux packaging work begins.
-

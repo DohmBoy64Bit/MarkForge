@@ -5,7 +5,7 @@
 - Node.js 22.19.0 or newer.
 - pnpm 10 or newer.
 - Python 3.10 or newer for repomixr audit scripts.
-- Rust toolchain will be required if ADR 0001 is accepted.
+- Rust toolchain for Tauri desktop builds and `cargo check`.
 
 ## Current Commands
 
@@ -13,18 +13,33 @@
 pnpm docs:check
 pnpm test
 pnpm audit:marktext
+pnpm build:editor
+pnpm build:viewer
+pnpm tauri:build
+pnpm tauri:viewer:build
 ```
 
 `pnpm audit:marktext` creates or updates the repomixr checkout under the OS temp directory and runs the required MarkText bundle generation.
 
-## Architecture Gate
+Run Tauri Rust checks from each app's `src-tauri` directory when changing desktop integration:
 
-Implementation work must wait until these documents are reviewed:
+```bash
+cargo check
+```
 
-- `docs/marktext-parity-matrix.md`
-- `docs/product-requirements.md`
-- `docs/architecture.md`
-- `docs/adr/0001-desktop-stack.md`
+`pnpm docs:check` is currently a placeholder scaffold check. Replace it with a real documentation validation pass before relying on it as a release gate.
+
+## Implementation State
+
+Implementation has progressed through Phase 5A:
+
+- Phase 1 Tauri editor proof of concept.
+- Phase 2 shared Markdown engine.
+- Phase 3 standalone viewer foundation.
+- Phase 4 multi-document editor shell.
+- Phase 5A source editing command registry and Markdown formatting rail.
+
+The architecture remains the target contract, but some app components still own temporary platform/session/editing logic while packages are being extracted.
 
 ## Code Rules
 

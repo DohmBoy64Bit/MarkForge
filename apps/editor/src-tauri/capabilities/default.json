@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "main-capability",
-  "description": "Capabilities for the MarkForge Phase 1 editor window.",
+  "description": "Capabilities for the MarkForge editor window.",
   "windows": ["main"],
   "permissions": [
     "core:default",
