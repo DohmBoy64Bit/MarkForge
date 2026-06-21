@@ -14,6 +14,7 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 - Replace-current and replace-all actions backed by the existing source search matches.
 - Command feedback in the status bar plus an inspector command panel showing the last command and shortcut list.
 - Phase 5C command palette opened from the toolbar or Ctrl+Shift+P, with grouped command search, keyboard navigation, empty state, shortcut badges, and execution through the existing source command path.
+- Phase 5D Preferences dialog for local theme/default view choices and editable keybindings for the command palette plus existing editor commands.
 
 ## Selection Behavior
 
@@ -26,12 +27,13 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 
 ## Design Direction
 
-The Phase 5 UI keeps the Phase 4 workbench structure: cool application chrome, warm source and preview surfaces, restrained teal accent, compact icon buttons, and dense inspector panels. The command rail sits between tabs and the editor workspace so Markdown editing feels close to the document, while the command palette adds a fast keyboard-first overlay without changing the main workspace density.
+The Phase 5 UI keeps the Phase 4 workbench structure: cool application chrome, warm source and preview surfaces, restrained teal accent, compact icon buttons, and dense inspector panels. The command rail sits between tabs and the editor workspace so Markdown editing feels close to the document, while the command palette and Preferences dialog add keyboard-first overlays without changing the main workspace density.
 
 ## Deferred
 
 - Rich WYSIWYG/realtime editing behavior.
-- User-editable keybinding preferences.
+- Full preferences schema beyond the Phase 5D local editor settings foundation.
+- Non-format command remapping and platform-native/global shortcut registration.
 - Toggle-aware formatting that removes existing Markdown markers.
 - Regex, case-sensitive, whole-word, and capture-group replace modes.
 - Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.
@@ -50,6 +52,18 @@ Phase 5C adds a compact command palette in `apps/editor` while keeping command b
 - Arrow keys move the active row, Enter executes it, Escape closes the overlay, and Tab stays inside the dialog.
 - Ctrl+Shift+P opens the palette from the editor or command surface, while search and replace inputs keep their normal typing behavior.
 - The inspector shortcut list now includes the Command Palette entry as the first keybinding foundation step.
+
+## Phase 5D Preferences and Keybindings
+
+Phase 5D adds a compact Preferences dialog and moves existing editor shortcut dispatch onto a local preference-backed registry.
+
+- Preferences opens from the top command rail and closes by close button, backdrop click, or Escape.
+- General preferences update the existing light/dark theme and source/split/preview default view mode state.
+- Keybinding rows cover the command palette and every current editor-engine source command, including command id, group, editable shortcut string, per-command reset, and reset all.
+- Blank shortcut values are treated as unassigned and do not trigger.
+- Duplicate non-empty shortcuts are shown as conflicts. Runtime dispatch is deterministic for now: the first action in the keybinding registry wins.
+- Toolbar titles, command palette badges, and the inspector shortcut list use current preference values.
+- The existing `markforge.editor.prefs.v1` localStorage key remains compatible with legacy `{ theme, viewMode }` records and now restores a versioned keybinding shape.
 
 ## Verification
 

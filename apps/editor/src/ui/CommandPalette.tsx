@@ -1,10 +1,12 @@
 import type { EditorCommandIcon, EditorCommandId } from '@markforge/editor-engine'
 import { Command, CornerDownLeft, Search, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useMemo, useRef, type KeyboardEvent } from 'react'
+import { matchesShortcut } from './editorPreferences'
 import { filterCommands, nextPaletteIndex, type PaletteCommand } from './paletteCommandHelpers'
 
 type CommandPaletteProps = {
   activeIndex: number
+  commandPaletteShortcut: string
   commands: PaletteCommand[]
   iconByName: Record<EditorCommandIcon, LucideIcon>
   onActiveIndexChange: (index: number) => void
@@ -22,6 +24,7 @@ type GroupedCommands = Array<{
 
 export function CommandPalette({
   activeIndex,
+  commandPaletteShortcut,
   commands,
   iconByName,
   onActiveIndexChange,
@@ -49,7 +52,7 @@ export function CommandPalette({
   }, [activeId])
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if ((event.ctrlKey || event.metaKey) && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'p') {
+    if (matchesShortcut(commandPaletteShortcut, event.nativeEvent)) {
       event.preventDefault()
       onRequestClose()
       return

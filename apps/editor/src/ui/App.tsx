@@ -38,6 +38,7 @@ import {
   Replace,
   Save,
   Search,
+  Settings,
   ShieldCheck,
   SplitSquareHorizontal,
   Sun,
@@ -49,6 +50,19 @@ import {
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { CommandPalette } from './CommandPalette'
+import { PreferencesDialog } from './PreferencesDialog'
+import {
+  actionIdFromKeyboardEvent,
+  commandPaletteActionId,
+  displayShortcut,
+  keybindingDefinitions,
+  readEditorPreferences,
+  saveEditorPreferences,
+  shortcutForAction,
+  type EditorPreferences,
+  type Theme,
+  type ViewMode
+} from './editorPreferences'
 import type { PaletteCommand } from './paletteCommandHelpers'
 
 type FileInfo = {
@@ -77,22 +91,13 @@ type SearchMatch = {
   end: number
 }
 
-type ViewMode = 'source' | 'split' | 'preview'
-type Theme = 'light' | 'dark'
-
 type PersistedSession = {
   activeId: string | null
   docs: Array<Pick<EditorDocument, 'id' | 'title' | 'path' | 'text' | 'savedText' | 'createdAt' | 'updatedAt'>>
 }
 
-type PersistedPrefs = {
-  theme?: Theme
-  viewMode?: ViewMode
-}
-
 const supportedExtensions = ['md', 'markdown', 'mdown', 'txt']
 const sessionKey = 'markforge.editor.session.v1'
-const prefsKey = 'markforge.editor.prefs.v1'
 const recentKey = 'markforge.editor.recent.v1'
 const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   bold: Bold,
@@ -154,8 +159,7 @@ export function App() {
   const restored = useMemo(() => restoreInitialState(), [])
   const [documents, setDocuments] = useState<EditorDocument[]>(restored.documents)
   const [activeId, setActiveId] = useState(restored.activeId)
-  const [viewMode, setViewMode] = useState<ViewMode>(restored.viewMode)
-  const [theme, setTheme] = useState<Theme>(restored.theme)
+  const [preferences, setPreferences] = useState<EditorPreferences>(restored.preferences)
   const [searchQuery, setSearchQuery] = useState('')
   const [replaceText, setReplaceText] = useState('')
   const [selectedMatch, setSelectedMatch] = useState(0)
@@ -164,11 +168,16 @@ export function App() {
   const [clipboardStatus, setClipboardStatus] = useState('Not checked')
   const [recentFiles, setRecentFiles] = useState<string[]>(restored.recentFiles)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
   const [commandPaletteQuery, setCommandPaletteQuery] = useState('')
   const [commandPaletteActiveIndex, setCommandPaletteActiveIndex] = useState(0)
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
   const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null)
+  const preferencesReturnFocusRef = useRef<HTMLElement | null>(null)
 
+  const theme = preferences.theme
+  const viewMode = preferences.viewMode
+  const commandPaletteShortcut = shortcutForAction(commandPaletteActionId, preferences.keybindings)
   const activeDocument = documents.find(document => document.id === activeId) ?? documents[0] ?? null
   const activeDirty = activeDocument ? isDirty(activeDocument) : false
   const fileName = activeDocument ? activeDocument.title : 'No document'
@@ -180,24 +189,40 @@ export function App() {
     [activeDocument?.text, searchQuery]
   )
   const stats = useMemo(() => documentStats(activeDocument?.text ?? ''), [activeDocument?.text])
+  const commandsWithShortcuts = useMemo(
+    () => editorCommands.map(command => ({
+      ...command,
+      shortcut: shortcutForAction(command.id, preferences.keybindings)
+    })),
+    [preferences.keybindings]
+  )
   const commandsByGroup = useMemo(
     () => commandGroups.map(group => ({
       ...group,
-      commands: editorCommands.filter(command => command.group === group.id)
+      commands: commandsWithShortcuts.filter(command => command.group === group.id)
     })),
-    []
+    [commandsWithShortcuts]
   )
   const paletteCommands = useMemo<PaletteCommand[]>(
     () => commandGroups.flatMap(group =>
-      editorCommands
+      commandsWithShortcuts
         .filter(command => command.group === group.id)
         .map(command => ({
           ...command,
           groupLabel: group.label
         }))
     ),
-    []
+    [commandsWithShortcuts]
   )
+  const setTheme = useCallback((theme: Theme) => {
+    setPreferences(current => ({ ...current, theme }))
+  }, [])
+  const setViewMode = useCallback((viewMode: ViewMode | ((current: ViewMode) => ViewMode)) => {
+    setPreferences(current => ({
+      ...current,
+      viewMode: typeof viewMode === 'function' ? viewMode(current.viewMode) : viewMode
+    }))
+  }, [])
 
   const persistRecentFiles = useCallback((paths: string[]) => {
     setRecentFiles(paths)
@@ -274,6 +299,26 @@ export function App() {
       window.requestAnimationFrame(() => {
         commandPaletteReturnFocusRef.current?.focus()
         commandPaletteReturnFocusRef.current = null
+      })
+    }
+  }, [])
+
+  const openPreferences = useCallback(() => {
+    preferencesReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    setIsCommandPaletteOpen(false)
+    setIsPreferencesOpen(true)
+    setStatus('Preferences opened')
+  }, [])
+
+  const closePreferences = useCallback((restoreFocus = true) => {
+    setIsPreferencesOpen(false)
+
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => {
+        preferencesReturnFocusRef.current?.focus()
+        preferencesReturnFocusRef.current = null
       })
     }
   }, [])
@@ -538,7 +583,11 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (isCommandPaletteShortcut(event) && shouldHandleCommandPaletteShortcut(event, textAreaRef.current)) {
+      const actionId = actionIdFromKeyboardEvent(event, preferences.keybindings)
+
+      if (!actionId || !shouldHandleEditorShortcut(event, textAreaRef.current)) return
+
+      if (actionId === commandPaletteActionId) {
         event.preventDefault()
 
         if (isCommandPaletteOpen) closeCommandPalette()
@@ -547,17 +596,13 @@ export function App() {
         return
       }
 
-      const commandId = commandIdFromKeyboardEvent(event)
-
-      if (!commandId || !shouldHandleFormattingShortcut(event, textAreaRef.current)) return
-
       event.preventDefault()
-      applyEditorCommand(commandId)
+      applyEditorCommand(actionId)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [applyEditorCommand, closeCommandPalette, isCommandPaletteOpen, openCommandPalette])
+  }, [applyEditorCommand, closeCommandPalette, isCommandPaletteOpen, openCommandPalette, preferences.keybindings])
 
   useEffect(() => {
     if (!activeDocument?.path || !activeDocument.lastKnownFileInfo?.modifiedMs) return
@@ -608,8 +653,8 @@ export function App() {
   }, [activeId, documents])
 
   useEffect(() => {
-    saveJson(prefsKey, { theme, viewMode } satisfies PersistedPrefs)
-  }, [theme, viewMode])
+    saveEditorPreferences(preferences)
+  }, [preferences])
 
   const selectedSearchMatch = searchMatches[selectedMatch]
 
@@ -646,10 +691,18 @@ export function App() {
           <button
             type="button"
             onClick={openCommandPalette}
-            title="Command palette (Ctrl+Shift+P)"
+            title={`Command palette (${displayShortcut(commandPaletteShortcut)})`}
             aria-label="Command palette"
           >
             <Command size={18} />
+          </button>
+          <button
+            type="button"
+            onClick={openPreferences}
+            title="Preferences"
+            aria-label="Preferences"
+          >
+            <Settings size={18} />
           </button>
           <button type="button" onClick={() => window.print()} title="Print" aria-label="Print">
             <Printer size={18} />
@@ -735,7 +788,7 @@ export function App() {
             <div className="commandButtons">
               {group.commands.map(command => {
                 const Icon = commandIconByName[command.icon]
-                const title = command.shortcut ? `${command.label} (${command.shortcut})` : command.label
+                const title = command.shortcut ? `${command.label} (${displayShortcut(command.shortcut)})` : command.label
                 const headingLabel = command.id === 'block.heading1'
                   ? 'H1'
                   : command.id === 'block.heading2'
@@ -869,14 +922,10 @@ export function App() {
             </div>
             <p className="commandStatus">{lastCommand}</p>
             <dl className="shortcutList">
-              <Fragment>
-                <dt>Ctrl+Shift+P</dt>
-                <dd>Command Palette</dd>
-              </Fragment>
-              {editorCommands.filter(command => command.shortcut).map(command => (
-                <Fragment key={command.id}>
-                  <dt>{command.shortcut}</dt>
-                  <dd>{command.label}</dd>
+              {keybindingDefinitions.map(definition => (
+                <Fragment key={definition.id}>
+                  <dt>{displayShortcut(shortcutForAction(definition.id, preferences.keybindings))}</dt>
+                  <dd title={definition.id}>{definition.label}</dd>
                 </Fragment>
               ))}
             </dl>
@@ -1009,6 +1058,7 @@ export function App() {
       {isCommandPaletteOpen && (
         <CommandPalette
           activeIndex={commandPaletteActiveIndex}
+          commandPaletteShortcut={commandPaletteShortcut}
           commands={paletteCommands}
           iconByName={commandIconByName}
           onActiveIndexChange={setCommandPaletteActiveIndex}
@@ -1018,6 +1068,14 @@ export function App() {
           query={commandPaletteQuery}
         />
       )}
+
+      {isPreferencesOpen && (
+        <PreferencesDialog
+          preferences={preferences}
+          onPreferencesChange={setPreferences}
+          onRequestClose={closePreferences}
+        />
+      )}
     </main>
   )
 }
@@ -1025,12 +1083,11 @@ export function App() {
 function restoreInitialState(): {
   activeId: string
   documents: EditorDocument[]
+  preferences: EditorPreferences
   recentFiles: string[]
   status: string
-  theme: Theme
-  viewMode: ViewMode
 } {
-  const prefs = readJson<PersistedPrefs>(prefsKey)
+  const preferences = readEditorPreferences()
   const session = readJson<PersistedSession>(sessionKey)
   const recentFiles = readJson<string[]>(recentKey) ?? []
   const restoredDocuments = session?.docs
@@ -1048,10 +1105,9 @@ function restoreInitialState(): {
   return {
     activeId,
     documents,
+    preferences,
     recentFiles,
-    status: restoredDocuments.length > 0 ? 'Restored unsaved session' : 'Ready',
-    theme: prefs?.theme === 'dark' ? 'dark' : 'light',
-    viewMode: isViewMode(prefs?.viewMode) ? prefs.viewMode : 'split'
+    status: restoredDocuments.length > 0 ? 'Restored unsaved session' : 'Ready'
   }
 }
 
@@ -1163,42 +1219,7 @@ function highlightSnippet(text: string, query: string): string {
   return `${prefix}${trimmed.slice(start, end)}${suffix}`
 }
 
-function commandIdFromKeyboardEvent(event: KeyboardEvent): EditorCommandId | null {
-  const hasPrimaryModifier = event.ctrlKey || event.metaKey
-
-  if (!hasPrimaryModifier || event.altKey) return null
-  if (event.shiftKey && event.code === 'Digit7') return 'block.orderedList'
-  if (event.shiftKey && event.code === 'Digit8') return 'block.unorderedList'
-  if (event.shiftKey) return null
-
-  const key = event.key.toLowerCase()
-
-  if (key === 'b') return 'format.bold'
-  if (key === 'i') return 'format.italic'
-  if (key === 'k') return 'format.link'
-
-  return null
-}
-
-function shouldHandleFormattingShortcut(event: KeyboardEvent, textarea: HTMLTextAreaElement | null): boolean {
-  if (event.defaultPrevented) return false
-
-  const target = event.target
-
-  if (!(target instanceof HTMLElement)) return true
-  if (target === textarea) return true
-  if (target.isContentEditable) return false
-
-  return !['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)
-}
-
-function isCommandPaletteShortcut(event: KeyboardEvent): boolean {
-  const hasPrimaryModifier = event.ctrlKey || event.metaKey
-
-  return hasPrimaryModifier && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'p'
-}
-
-function shouldHandleCommandPaletteShortcut(event: KeyboardEvent, textarea: HTMLTextAreaElement | null): boolean {
+function shouldHandleEditorShortcut(event: KeyboardEvent, textarea: HTMLTextAreaElement | null): boolean {
   if (event.defaultPrevented) return false
 
   const target = event.target
@@ -1238,10 +1259,6 @@ function messageFromError(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
   return 'Unexpected editor error'
-}
-
-function isViewMode(value: unknown): value is ViewMode {
-  return value === 'source' || value === 'split' || value === 'preview'
 }
 
 function readJson<T>(key: string): T | null {
