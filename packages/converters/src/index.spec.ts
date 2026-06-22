@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  conversionWarningStatus,
   converterCanHandle,
   createBrowserPrintConverter,
   createCsvToMarkdownTableConverter,
   createHtmlConverter,
   createHtmlToMarkdownConverter,
   createMarkdownCleanupConverter,
-  createPhase7AConverters
+  createPhase7AConverters,
+  defaultHtmlExportPath
 } from './index'
 
 describe('@markforge/converters', () => {
@@ -100,5 +102,15 @@ describe('@markforge/converters', () => {
       ok: false,
       error: { code: 'not-supported' }
     })
+  })
+
+  it('builds compact UI defaults for HTML export paths and warning statuses', () => {
+    expect(defaultHtmlExportPath('C:\\docs\\Guide.markdown')).toBe('C:\\docs\\Guide.html')
+    expect(defaultHtmlExportPath('/tmp/report.txt')).toBe('/tmp/report.html')
+    expect(defaultHtmlExportPath('')).toBe('Untitled.html')
+    expect(conversionWarningStatus('Cleaned Markdown', [])).toBe('Cleaned Markdown')
+    expect(conversionWarningStatus('Cleaned Markdown', [
+      { code: 'normalized-markdown', message: 'Whitespace changed.' }
+    ])).toBe('Cleaned Markdown (1 warning: Whitespace changed.)')
   })
 })

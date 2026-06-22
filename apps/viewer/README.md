@@ -2,14 +2,15 @@
 
 Standalone Markdown viewer app/mode for local Markdown and text files.
 
-## Phase 3 Scope
+## Phase 7B Scope
 
 - Tauri v2 + React + Vite workspace package named `@markforge/viewer`.
 - Local file open and reload for `.md`, `.markdown`, `.mdown`, and `.txt`.
 - Sanitized rendering through `@markforge/markdown-engine`.
 - Inspector sidebar for file status, front matter, table of contents, search matches, and render warnings.
 - Metadata polling for temporary auto-refresh detection.
-- Native menu actions for open, reload, copy source, copy rendered text, print, and quit.
+- Export HTML for the currently rendered Markdown/text document through `@markforge/converters` and a constrained `.html`/`.htm` write path.
+- Native menu actions for open, reload, copy source, copy rendered text, Export HTML, print, and quit.
 
 ## Commands
 

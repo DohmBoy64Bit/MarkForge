@@ -18,11 +18,18 @@ struct FileInfo {
 }
 
 const SUPPORTED_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "txt"];
+const SUPPORTED_WRITE_EXTENSIONS: &[&str] = &["html", "htm"];
 
 #[tauri::command]
 fn read_text_file(path: String) -> Result<String, String> {
     ensure_supported_text_path(&path)?;
     fs::read_to_string(&path).map_err(|error| format!("Failed to read {path}: {error}"))
+}
+
+#[tauri::command]
+fn write_text_file(path: String, contents: String) -> Result<(), String> {
+    ensure_supported_write_path(&path)?;
+    fs::write(&path, contents).map_err(|error| format!("Failed to write {path}: {error}"))
 }
 
 #[tauri::command]
@@ -56,6 +63,18 @@ fn ensure_supported_text_path(path: &str) -> Result<(), String> {
     }
 }
 
+fn ensure_supported_write_path(path: &str) -> Result<(), String> {
+    let extension = Path::new(path)
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| value.to_ascii_lowercase());
+
+    match extension.as_deref() {
+        Some(extension) if SUPPORTED_WRITE_EXTENSIONS.contains(&extension) => Ok(()),
+        _ => Err("Viewer HTML export supports .html and .htm files.".to_string()),
+    }
+}
+
 fn system_time_to_ms(value: SystemTime) -> Option<u128> {
     value
         .duration_since(UNIX_EPOCH)
@@ -67,7 +86,11 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .invoke_handler(tauri::generate_handler![read_text_file, get_file_info])
+        .invoke_handler(tauri::generate_handler![
+            read_text_file,
+            write_text_file,
+            get_file_info
+        ])
         .setup(|app| {
             configure_menu(app)?;
             Ok(())
@@ -87,6 +110,8 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
         .accelerator("Ctrl+Shift+C")
         .build(app)?;
     let copy_rendered = MenuItemBuilder::with_id("file.copyRendered", "Copy Rendered Text").build(app)?;
+    let export_html = MenuItemBuilder::with_id("file.exportHtml", "Export HTML...")
+        .build(app)?;
     let print = MenuItemBuilder::with_id("file.print", "Print")
         .accelerator("Ctrl+P")
         .build(app)?;
@@ -97,6 +122,7 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
         .separator()
         .item(&copy_source)
         .item(&copy_rendered)
+        .item(&export_html)
         .separator()
         .item(&print)
         .separator()

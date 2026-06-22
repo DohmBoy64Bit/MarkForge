@@ -1,13 +1,19 @@
-import { createBrowserPrintConverter } from '@markforge/converters'
+import {
+  conversionWarningStatus,
+  createBrowserPrintConverter,
+  createHtmlConverter,
+  defaultHtmlExportPath
+} from '@markforge/converters'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
 import { createPlatformServices, type FileInfo } from '@markforge/platform'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { writeText } from '@tauri-apps/plugin-clipboard-manager'
-import { open } from '@tauri-apps/plugin-dialog'
+import { open, save } from '@tauri-apps/plugin-dialog'
 import {
   Clipboard,
   Copy,
+  FileCode,
   FileInput,
   FileSearch,
   ListTree,
@@ -29,10 +35,12 @@ type SearchMatch = {
 const platform = createPlatformServices({
   filesystem: {
     getFileInfo: path => invoke<FileInfo>('get_file_info', { path }),
-    readTextFile: path => invoke<string>('read_text_file', { path })
+    readTextFile: path => invoke<string>('read_text_file', { path }),
+    writeTextFile: (path, contents) => invoke<void>('write_text_file', { path, contents })
   },
   dialogs: {
-    open
+    open,
+    save
   },
   clipboard: {
     readText: async () => '',
@@ -46,6 +54,7 @@ const browserPrintConverter = createBrowserPrintConverter(() => {
   const result = platform.print.print()
   if (!result.ok) throw new Error(result.error.message)
 })
+const htmlConverter = createHtmlConverter()
 
 const sampleDocument = `---
 title: Viewer foundation
@@ -135,6 +144,38 @@ export function App() {
     }
   }, [])
 
+  const exportHtml = useCallback(async () => {
+    try {
+      const result = await htmlConverter.convert({
+        format: 'html',
+        markdown: documentText,
+        title: filePath ? titleWithoutExtension(fileName) : 'Sample document'
+      })
+
+      if (!result.ok) {
+        setStatus(result.error.message)
+        return
+      }
+
+      if (!result.value.html) {
+        setStatus('HTML export produced no output')
+        return
+      }
+
+      const selected = await selectSaveHtmlPathFromPlatform(defaultHtmlExportPath(filePath ?? fileName))
+
+      if (!selected) {
+        setStatus('HTML export canceled')
+        return
+      }
+
+      await writeDocumentToPlatform(selected, result.value.html)
+      setStatus(conversionWarningStatus(`Exported HTML to ${selected}`, result.value.warnings))
+    } catch (error) {
+      setStatus(messageFromError(error))
+    }
+  }, [documentText, fileName, filePath])
+
   const printDocument = useCallback(async () => {
     const result = await browserPrintConverter.convert({
       format: 'browser-print',
@@ -151,6 +192,7 @@ export function App() {
       const id = event.payload
       if (id === 'file.open') void openDocument()
       if (id === 'file.reload') void reloadDocument()
+      if (id === 'file.exportHtml') void exportHtml()
       if (id === 'file.copySource') void copySource()
       if (id === 'file.copyRendered') void copyRendered()
       if (id === 'file.print') void printDocument()
@@ -163,7 +205,7 @@ export function App() {
     return () => {
       unlisten?.()
     }
-  }, [copyRendered, copySource, openDocument, printDocument, reloadDocument])
+  }, [copyRendered, copySource, exportHtml, openDocument, printDocument, reloadDocument])
 
   useEffect(() => {
     if (!filePath || !lastKnownFileInfo?.modifiedMs) return
@@ -229,6 +271,9 @@ export function App() {
           </button>
           <button type="button" onClick={() => void copySource()} title="Copy source" aria-label="Copy source">
             <Clipboard size={18} />
+          </button>
+          <button type="button" onClick={() => void exportHtml()} title="Export HTML" aria-label="Export HTML">
+            <FileCode size={18} />
           </button>
           <button type="button" onClick={() => void printDocument()} title="Print" aria-label="Print">
             <Printer size={18} />
@@ -441,6 +486,10 @@ function formatBytes(value: number): string {
   return `${(value / (1024 * 1024)).toFixed(1)} MB`
 }
 
+function titleWithoutExtension(title: string): string {
+  return title.replace(/\.(md|markdown|mdown|txt)$/i, '') || title
+}
+
 function messageFromError(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
@@ -453,6 +502,12 @@ async function selectOpenPathFromPlatform(): Promise<string | null> {
   return result.value
 }
 
+async function selectSaveHtmlPathFromPlatform(defaultPath: string): Promise<string | null> {
+  const result = await platform.dialogs.saveHtmlFile(defaultPath)
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
 async function readDocumentFromPlatform(path: string): Promise<{ contents: string; info: FileInfo }> {
   const contents = await platform.filesystem.readTextFile(path)
   if (!contents.ok) throw new Error(contents.error.message)
@@ -461,6 +516,11 @@ async function readDocumentFromPlatform(path: string): Promise<{ contents: strin
   if (!info.ok) throw new Error(info.error.message)
 
   return { contents: contents.value, info: info.value }
+}
+
+async function writeDocumentToPlatform(path: string, contents: string): Promise<void> {
+  const written = await platform.filesystem.writeTextFile(path, contents)
+  if (!written.ok) throw new Error(written.error.message)
 }
 
 async function getFileInfoFromPlatform(path: string): Promise<FileInfo> {

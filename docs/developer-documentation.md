@@ -31,7 +31,7 @@ cargo check
 
 ## Implementation State
 
-Implementation has progressed through Phase 7A:
+Implementation has progressed through Phase 7B:
 
 - Phase 1 Tauri editor proof of concept.
 - Phase 2 shared Markdown engine.
@@ -39,7 +39,7 @@ Implementation has progressed through Phase 7A:
 - Phase 4 multi-document editor shell.
 - Phase 5 source-mode command/editing foundations through Phase 5G.
 - Phase 6B templates/help, guided template variables, local custom templates, and bounded `/template`/`/tpl` source suggestions.
-- Phase 7A converter package capabilities for Markdown-to-HTML export, browser print handoff, HTML-to-Markdown import, CSV-to-Markdown table conversion, Markdown cleanup, and explicit unsupported results for heavier conversion targets.
+- Phase 7B converter app integration for editor Export HTML and Clean Markdown actions, viewer Export HTML, browser print handoff preservation, and explicit unsupported results for heavier conversion targets.
 
 The architecture remains the target contract, but some app components still own temporary platform/session/editing logic while packages are being extracted.
 

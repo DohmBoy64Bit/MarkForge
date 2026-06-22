@@ -3,6 +3,7 @@ import { createPlatformServices } from './index'
 
 describe('@markforge/platform', () => {
   it('wraps filesystem, dialog, clipboard, and print adapters in typed results', async () => {
+    const save = vi.fn(async () => 'saved.md')
     const services = createPlatformServices({
       filesystem: {
         getFileInfo: async () => ({ exists: true, modifiedMs: 1, len: 3 }),
@@ -11,7 +12,7 @@ describe('@markforge/platform', () => {
       },
       dialogs: {
         open: async () => 'note.md',
-        save: async () => 'saved.md'
+        save
       },
       clipboard: {
         readText: async () => 'clip',
@@ -22,8 +23,29 @@ describe('@markforge/platform', () => {
 
     await expect(services.filesystem.readTextFile('note.md')).resolves.toEqual({ ok: true, value: 'doc' })
     await expect(services.dialogs.openMarkdownFile()).resolves.toEqual({ ok: true, value: 'note.md' })
+    await expect(services.dialogs.saveMarkdownFile('draft.md')).resolves.toEqual({ ok: true, value: 'saved.md' })
     await expect(services.clipboard.readText()).resolves.toEqual({ ok: true, value: 'clip' })
     expect(services.print.print()).toEqual({ ok: true, value: undefined })
+    expect(save).toHaveBeenCalledWith({
+      defaultPath: 'draft.md',
+      filters: [{ name: 'Markdown and text', extensions: ['md', 'markdown', 'mdown', 'txt'] }]
+    })
+  })
+
+  it('offers an HTML save dialog filter for converter exports', async () => {
+    const save = vi.fn(async () => 'export.html')
+    const services = createPlatformServices({
+      dialogs: {
+        open: async () => null,
+        save
+      }
+    })
+
+    await expect(services.dialogs.saveHtmlFile('draft.html')).resolves.toEqual({ ok: true, value: 'export.html' })
+    expect(save).toHaveBeenCalledWith({
+      defaultPath: 'draft.html',
+      filters: [{ name: 'HTML document', extensions: ['html', 'htm'] }]
+    })
   })
 
   it('reports unsupported capabilities explicitly', async () => {

@@ -1,6 +1,6 @@
 # MarkForge Editor
 
-Phase 6B Tauri editor shell for the Windows-first local Markdown workspace.
+Phase 7B Tauri editor shell for the Windows-first local Markdown workspace.
 
 ## Commands
 
@@ -14,7 +14,7 @@ pnpm --filter @markforge/editor tauri build
 ## Current Scope
 
 - Tabbed Markdown document foundation with per-tab dirty state.
-- New, open, save, save as, copy Markdown, clipboard check, and print actions.
+- New, open, save, save as, Export HTML, Clean Markdown, copy Markdown, clipboard check, and print actions.
 - Source, split, and preview view modes.
 - Sanitized preview rendering through `@markforge/markdown-engine`.
 - Source search with match counts, match navigation, case-sensitive/whole-word/regex options, replace current, and replace all.
@@ -25,6 +25,8 @@ pnpm --filter @markforge/editor tauri build
 - Quick insert opened by the toolbar or Ctrl+/, with searchable block/insert commands, keyboard navigation, Escape/backdrop close, focus restoration, and execution through the same editor-engine command path.
 - Templates and help dialog opened by the toolbar or Ctrl+Alt+T, with searchable typed templates from `@markforge/templates`, guided variable fields, live resolved preview, insertion into the active source document, local custom-template create/delete/reset behavior, and a compact Markdown syntax reference.
 - Source template suggestions for line-leading `/template` and `/tpl` triggers, with filtering, Arrow key navigation, Enter insertion through the shared template resolver, and Escape close.
+- Converter-backed Export HTML writes the active Markdown document to a selected `.html` file through `@markforge/converters` and `@markforge/platform`.
+- Converter-backed Clean Markdown normalizes whitespace in the active document through the same source document update path as other editing actions.
 - Selection formatting overlay for non-empty source selections with bold, italic, inline code, strikethrough, and link buttons.
 - Preferences dialog for local theme, default view mode, editable source command keybindings, per-command reset, reset all, and duplicate shortcut conflict display.
 - Prompted close/reload protection for dirty tabs with Save, Discard, and Cancel decisions.
@@ -46,3 +48,4 @@ pnpm --filter @markforge/editor tauri build
 - Filesystem/workspace template loading and syncable template libraries beyond editor-local custom templates.
 - General Markdown autocomplete beyond the Phase 6B template suggestion foundation.
 - Full preference schema beyond the Phase 5D local editor settings foundation.
+- DOCX, native PDF, OCR, URL/article, and rich clipboard converter UI beyond explicit unsupported package boundaries.

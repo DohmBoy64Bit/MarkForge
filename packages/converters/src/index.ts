@@ -256,6 +256,26 @@ export function converterCanHandle(converter: MarkdownConverter, format: Convers
     converter.canConvert(format)
 }
 
+export function defaultHtmlExportPath(sourcePathOrTitle: string | null | undefined): string {
+  const fallback = 'Untitled.html'
+  const value = sourcePathOrTitle?.trim()
+  if (!value) return fallback
+
+  const separatorIndex = Math.max(value.lastIndexOf('/'), value.lastIndexOf('\\'))
+  const directory = separatorIndex >= 0 ? value.slice(0, separatorIndex + 1) : ''
+  const name = separatorIndex >= 0 ? value.slice(separatorIndex + 1) : value
+  const baseName = name.replace(/\.(md|markdown|mdown|txt|html?)$/i, '') || 'Untitled'
+
+  return `${directory}${baseName}.html`
+}
+
+export function conversionWarningStatus(action: string, warnings: ConversionWarning[]): string {
+  if (warnings.length === 0) return action
+  const warningLabel = warnings.length === 1 ? '1 warning' : `${warnings.length} warnings`
+
+  return `${action} (${warningLabel}: ${warnings.map(warning => warning.message).join(' ')})`
+}
+
 async function createTurndownService() {
   const { default: TurndownService } = await import('turndown')
   const service = new TurndownService({

@@ -2,11 +2,11 @@
 
 Date: 2026-06-22
 
-Scope: architecture-completion slice after `docs/drift-debt-remediation-report.md`. The pass converted all required README-only package boundaries into real packages where safe, moved low-risk core/platform/converter ownership out of app code, expanded validation, and documented remaining unsupported capabilities with evidence.
+Scope: architecture-completion slice after `docs/audits/drift-debt-remediation-report.md`. The pass converted all required README-only package boundaries into real packages where safe, moved low-risk core/platform/converter ownership out of app code, expanded validation, and documented remaining unsupported capabilities with evidence.
 
 ## Verification Summary
 
-- Before editing pass 1: started from `docs/drift-debt-remediation-report.md` and confirmed 21 unresolved/deferred/partial issues.
+- Before editing pass 1: started from `docs/audits/drift-debt-remediation-report.md` and confirmed 21 unresolved/deferred/partial issues.
 - Before editing pass 2: started from source/config and confirmed missing manifests/source/tests for `packages/core`, `packages/platform`, `packages/shared`, `packages/converters`, `packages/theme-engine`, `packages/llm`, and `packages/ui`; confirmed app-local storage/platform/print behavior.
 - After editing pass 1: code now has real package entrypoints/tests and editor/viewer delegate core/platform/browser-print paths through packages.
 - After editing pass 2: docs/package READMEs/architecture now describe implemented package boundaries and explicitly unsupported capabilities.
@@ -46,7 +46,7 @@ Scope: architecture-completion slice after `docs/drift-debt-remediation-report.m
 - `apps/viewer/src/ui/App.tsx`
 - `docs/architecture.md`
 - `docs/changelogs/final-deferred-work-implementation-changelog.md`
-- `docs/final-pre-next-phase-implementation-report.md`
+- `docs/audits/final-pre-next-phase-implementation-report.md`
 - `package.json`
 - `pnpm-lock.yaml`
 - `packages/converters/README.md`

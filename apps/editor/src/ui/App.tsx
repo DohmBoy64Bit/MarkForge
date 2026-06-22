@@ -5,7 +5,13 @@ import {
   type EditorCommandIcon,
   type EditorCommandId
 } from '@markforge/editor-engine'
-import { createBrowserPrintConverter } from '@markforge/converters'
+import {
+  conversionWarningStatus,
+  createBrowserPrintConverter,
+  createHtmlConverter,
+  createMarkdownCleanupConverter,
+  defaultHtmlExportPath
+} from '@markforge/converters'
 import {
   readEditorSession,
   readRecentFiles,
@@ -29,6 +35,7 @@ import {
   Code2,
   Command,
   CopyPlus,
+  FileCode,
   FileDown,
   FileInput,
   FilePenLine,
@@ -64,6 +71,7 @@ import {
   Table2,
   TextCursorInput,
   TriangleAlert,
+  Wand2,
   WholeWord,
   X,
   type LucideIcon
@@ -162,6 +170,8 @@ const browserPrintConverter = createBrowserPrintConverter(() => {
   const result = platform.print.print()
   if (!result.ok) throw new Error(result.error.message)
 })
+const htmlConverter = createHtmlConverter()
+const markdownCleanupConverter = createMarkdownCleanupConverter()
 const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   bold: Bold,
   italic: Italic,
@@ -838,6 +848,73 @@ export function App() {
     }
   }, [activeDocument])
 
+  const exportHtml = useCallback(async () => {
+    if (!activeDocument) {
+      setStatus('No active document to export')
+      return
+    }
+
+    try {
+      const result = await htmlConverter.convert({
+        format: 'html',
+        markdown: activeDocument.text,
+        title: titleWithoutExtension(activeDocument.title)
+      })
+
+      if (!result.ok) {
+        setStatus(result.error.message)
+        return
+      }
+
+      if (!result.value.html) {
+        setStatus('HTML export produced no output')
+        return
+      }
+
+      const selected = await selectSaveHtmlPathFromPlatform(defaultHtmlExportPath(activeDocument.path ?? activeDocument.title))
+
+      if (!selected) {
+        setStatus('HTML export canceled')
+        return
+      }
+
+      await writeDocumentToPlatform(selected, result.value.html)
+      setStatus(conversionWarningStatus(`Exported HTML to ${selected}`, result.value.warnings))
+    } catch (error) {
+      setStatus(messageFromError(error))
+    }
+  }, [activeDocument])
+
+  const cleanMarkdown = useCallback(async () => {
+    if (!activeDocument) {
+      setStatus('No active document to clean')
+      return
+    }
+
+    try {
+      const result = await markdownCleanupConverter.convert({
+        format: 'markdown-cleanup',
+        markdown: activeDocument.text
+      })
+
+      if (!result.ok) {
+        setStatus(result.error.message)
+        return
+      }
+
+      const markdown = result.value.markdown ?? activeDocument.text
+      const changed = markdown !== activeDocument.text
+      if (changed) updateActiveDocument({ text: markdown })
+
+      const action = changed ? 'Cleaned Markdown' : 'Markdown already clean'
+      const message = conversionWarningStatus(action, result.value.warnings)
+      setLastCommand(message)
+      setStatus(message)
+    } catch (error) {
+      setStatus(messageFromError(error))
+    }
+  }, [activeDocument, updateActiveDocument])
+
   const checkClipboard = useCallback(async () => {
     try {
       const value = await readClipboardText()
@@ -1018,7 +1095,9 @@ export function App() {
       else if (id === 'file.open') void openDocument()
       else if (id === 'file.save') void saveDocument()
       else if (id === 'file.saveAs') void saveDocumentAs()
+      else if (id === 'file.exportHtml') void exportHtml()
       else if (id === 'edit.copyMarkdown') void copyMarkdown()
+      else if (id === 'edit.cleanMarkdown') void cleanMarkdown()
       else if (id === 'view.print') void printDocument()
       else if (id === 'help.phase1') setStatus('Phase 1 help menu received; Phase 4 shell is active')
       else setStatus(`Unsupported menu command: ${id}`)
@@ -1031,7 +1110,7 @@ export function App() {
     return () => {
       unlisten?.()
     }
-  }, [copyMarkdown, createDocument, openDocument, printDocument, saveDocument, saveDocumentAs])
+  }, [cleanMarkdown, copyMarkdown, createDocument, exportHtml, openDocument, printDocument, saveDocument, saveDocumentAs])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1238,6 +1317,24 @@ export function App() {
           </button>
           <button type="button" onClick={() => void saveDocumentAs()} title="Save as" aria-label="Save as">
             <FileDown size={18} />
+          </button>
+          <button
+            type="button"
+            disabled={!activeDocument}
+            onClick={() => void exportHtml()}
+            title="Export HTML"
+            aria-label="Export HTML"
+          >
+            <FileCode size={18} />
+          </button>
+          <button
+            type="button"
+            disabled={!activeDocument}
+            onClick={() => void cleanMarkdown()}
+            title="Clean Markdown"
+            aria-label="Clean Markdown"
+          >
+            <Wand2 size={18} />
           </button>
           <button type="button" onClick={() => void copyMarkdown()} title="Copy Markdown" aria-label="Copy Markdown">
             <ClipboardCopy size={18} />
@@ -1999,6 +2096,12 @@ async function selectOpenPathFromPlatform(): Promise<string | null> {
 
 async function selectSavePathFromPlatform(defaultPath: string): Promise<string | null> {
   const result = await platform.dialogs.saveMarkdownFile(defaultPath)
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
+async function selectSaveHtmlPathFromPlatform(defaultPath: string): Promise<string | null> {
+  const result = await platform.dialogs.saveHtmlFile(defaultPath)
   if (!result.ok) throw new Error(result.error.message)
   return result.value
 }

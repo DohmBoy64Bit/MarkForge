@@ -65,9 +65,11 @@ The `packages/converters` package must expose a plugin-style conversion architec
 
 Each converter must be independently testable and report confidence, warnings, and unsupported structures.
 
-Phase 7A baseline:
+Phase 7B baseline:
 
 - `packages/converters` exposes tested Markdown-to-HTML export, browser-print handoff, HTML-to-Markdown import, CSV-to-Markdown table conversion, and Markdown cleanup.
+- The editor exposes supported active-document converter UI for Export HTML and Clean Markdown.
+- The viewer exposes Export HTML for the currently rendered Markdown/text document.
 - HTML-to-Markdown reports lossy conversion because styling/layout are not preserved.
 - DOCX, native PDF import/export, rich clipboard import, URL/article extraction, and OCR return explicit unsupported capability results until their parsing/runtime/trust requirements are defined.
 

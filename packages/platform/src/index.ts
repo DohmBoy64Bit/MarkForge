@@ -67,6 +67,7 @@ export type ClipboardService = {
 
 export type DialogService = {
   openMarkdownFile(options?: CancellableOptions): Promise<Result<string | null>>
+  saveHtmlFile(defaultPath?: string, options?: CancellableOptions): Promise<Result<string | null>>
   saveMarkdownFile(defaultPath?: string, options?: CancellableOptions): Promise<Result<string | null>>
 }
 
@@ -82,6 +83,10 @@ export type PrintService = {
 
 export const markdownFileFilters: FileDialogFilter[] = [
   { name: 'Markdown and text', extensions: ['md', 'markdown', 'mdown', 'txt'] }
+]
+
+export const htmlFileFilters: FileDialogFilter[] = [
+  { name: 'HTML document', extensions: ['html', 'htm'] }
 ]
 
 export function createPlatformServices(adapters: PlatformAdapters): PlatformServices {
@@ -136,6 +141,17 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
           return ok(typeof selected === 'string' ? selected : null)
         } catch (error) {
           return { ok: false, error: toError(error, 'Open dialog failed.') }
+        }
+      },
+      async saveHtmlFile(defaultPath, options) {
+        const cancelled = assertNotCancelled(options?.signal)
+        if (!cancelled.ok) return cancelled
+        if (!adapters.dialogs?.save) return err('not-supported', 'Save dialog adapter is not available.')
+
+        try {
+          return ok(await adapters.dialogs.save({ defaultPath, filters: htmlFileFilters }))
+        } catch (error) {
+          return { ok: false, error: toError(error, 'Save dialog failed.') }
         }
       },
       async saveMarkdownFile(defaultPath, options) {

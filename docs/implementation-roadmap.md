@@ -123,6 +123,7 @@ Exit criteria:
 Current status:
 
 - Phase 7A expands `packages/converters` beyond the remediation package boundary with tested conversion capabilities for Markdown-to-HTML export, browser-print handoff, HTML-to-Markdown import through Turndown, CSV-to-Markdown table conversion, and Markdown whitespace cleanup.
+- Phase 7B exposes the safe converter subset in the apps: editor toolbar/menu actions for Export HTML and Clean Markdown, plus viewer Export HTML backed by a constrained HTML save/write path.
 - DOCX, native PDF import/export, rich clipboard import, URL/article extraction, and OCR are exposed as explicit unsupported converter boundaries until file parsing, platform MIME access, network/readability policy, OCR runtime, and fixture requirements are defined.
 
 Exit criteria:

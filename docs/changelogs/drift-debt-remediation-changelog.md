@@ -2,7 +2,7 @@
 
 Date: 2026-06-22
 
-Scope: remediation of every confirmed issue in `docs/documentation-code-drift-debt-audit.md` against `docs/architecture.md`, related product docs, package READMEs, app/package source, config, and tests.
+Scope: remediation of every confirmed issue in `docs/audits/documentation-code-drift-debt-audit.md` against `docs/architecture.md`, related product docs, package READMEs, app/package source, config, and tests.
 
 ## Verification Summary
 
@@ -235,7 +235,7 @@ Scope: remediation of every confirmed issue in `docs/documentation-code-drift-de
 - Verification pass 2 result: final self-audit checks every issue has a status.
 - Final status: Required reporting artifact.
 
-### `docs/drift-debt-remediation-report.md`
+### `docs/audits/drift-debt-remediation-report.md`
 
 - Changed for: all issues
 - Why changed: required final remediation report.

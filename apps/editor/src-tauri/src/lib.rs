@@ -80,8 +80,12 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
     let save_file_as = MenuItemBuilder::with_id("file.saveAs", "Save As...")
         .accelerator("Ctrl+Shift+S")
         .build(app)?;
+    let export_html = MenuItemBuilder::with_id("file.exportHtml", "Export HTML...")
+        .build(app)?;
     let copy_markdown = MenuItemBuilder::with_id("edit.copyMarkdown", "Copy Markdown")
         .accelerator("Ctrl+Shift+C")
+        .build(app)?;
+    let clean_markdown = MenuItemBuilder::with_id("edit.cleanMarkdown", "Clean Markdown")
         .build(app)?;
     let print = MenuItemBuilder::with_id("view.print", "Print")
         .accelerator("Ctrl+P")
@@ -93,6 +97,7 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
         .separator()
         .item(&save_file)
         .item(&save_file_as)
+        .item(&export_html)
         .separator()
         .quit()
         .build()?;
@@ -106,6 +111,7 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
         .paste()
         .separator()
         .item(&copy_markdown)
+        .item(&clean_markdown)
         .build()?;
 
     let view = SubmenuBuilder::new(app, "View")
