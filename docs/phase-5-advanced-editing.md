@@ -20,6 +20,8 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 - Phase 5E external-change reconciliation built on metadata polling across open file-backed tabs, with changed/missing-on-disk notices, Reload from disk, Keep local, and clearer inspector status labels.
 - Phase 5F reversible source formatting for inline wrappers, headings, quote/list/task-list prefixes, plus H4-H6, strikethrough, and duplicate selection/current-line command coverage.
 - Phase 5F source search options for case-sensitive, whole-word, and regex matching, with shared match navigation and replace-current/replace-all behavior.
+- Phase 5G quick insert opened from the toolbar or Ctrl+/ with searchable block/insert commands, keyboard navigation, Enter execution, Escape/backdrop close, and focus restoration.
+- Phase 5G selection formatting overlay for non-empty source selections with bold, italic, inline code, strikethrough, and link commands.
 
 ## Selection Behavior
 
@@ -29,13 +31,15 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 - Commands update the active document text through the editor app while the source transforms live in `packages/editor-engine`.
 - When no match or no active search exists, replace actions report a status message instead of changing text.
 - Command palette execution closes the overlay, applies the selected editor-engine command, and restores the useful textarea selection through the app's existing focus path.
+- Quick insert execution follows the same editor-engine command path as the command rail and command palette.
+- The source selection overlay appears only while the textarea owns a non-empty selection and hides for cleared selections, preview-only view, other overlays/dialogs, or missing active documents.
 - Inline source commands toggle existing Markdown markers when the selected text includes the wrapper or the selected text is already surrounded by the wrapper.
 - Heading commands cover H1-H6 and remove the matching heading marker when the selected line range already uses that level.
 - Blockquote, unordered list, ordered list, and task list commands remove their prefixes when every selected line already has the target marker.
 
 ## Design Direction
 
-The Phase 5 UI keeps the Phase 4 workbench structure: cool application chrome, warm source and preview surfaces, restrained teal accent, compact icon buttons, and dense inspector panels. The command rail sits between tabs and the editor workspace so Markdown editing feels close to the document, while the command palette and Preferences dialog add keyboard-first overlays without changing the main workspace density.
+The Phase 5 UI keeps the Phase 4 workbench structure: cool application chrome, warm source and preview surfaces, restrained teal accent, compact icon buttons, and dense inspector panels. The command rail sits between tabs and the editor workspace so Markdown editing feels close to the document, while the command palette, quick insert, selection overlay, and Preferences dialog add keyboard-first surfaces without changing the main workspace density.
 
 ## Phase 5E Reliability
 
@@ -62,6 +66,18 @@ Phase 5F makes source-mode editing behave more like a Markdown editor than a one
 - The command registry remains the source of truth for the toolbar, command palette, shortcut inspector, and preference restoration.
 - Source search now has compact case-sensitive, whole-word, and regex option buttons. Invalid regex input reports a status/error state and disables replacement.
 - Replace current and replace all share the same matcher/options as the match list. Regex mode supports capture-group replacement, while literal mode treats replacement text literally.
+
+## Phase 5G Quick Insert and Selection Overlay
+
+Phase 5G adds compact insertion and inline-format surfaces for source editing while keeping command execution centralized in `@markforge/editor-engine`.
+
+- Quick insert is registered as the `app.quickInsert` preference action with a default `Ctrl+/` shortcut and a toolbar entry.
+- The quick insert dialog filters block and insert commands, including H1-H6, blockquote, unordered list, ordered list, task list, code fence, horizontal rule, and table.
+- Arrow keys, Home/End, Enter, Escape, backdrop click, and focus restoration follow the command palette interaction model.
+- Filtering is backed by focused helper tests and searches command labels, groups, ids, shortcuts, and compact insertion hints.
+- A floating selection toolbar appears near the source pane when the source textarea has a non-empty selection.
+- Selection toolbar buttons expose accessible labels/titles and run bold, italic, inline code, strikethrough, and link through the existing app command path.
+- The overlay avoids caret-coordinate math; it stays anchored near the source pane header and hides when another overlay/dialog is open or the source selection is no longer active.
 
 ## Phase 5B Extraction
 
@@ -95,7 +111,7 @@ Phase 5D adds a compact Preferences dialog and moves existing editor shortcut di
 - Full preferences schema beyond the Phase 5D local editor settings foundation.
 - Non-format command remapping and platform-native/global shortcut registration.
 - Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.
-- Selection format overlay, quick insert/block inserter, and richer line transformer menus beyond the duplicate command.
+- Richer line transformer menus beyond the duplicate command.
 - Native filesystem watching beyond metadata polling and native Tauri close-event protection.
 
 ## Verification

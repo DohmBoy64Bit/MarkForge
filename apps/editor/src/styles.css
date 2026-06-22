@@ -173,6 +173,7 @@ button {
 
 .toolbar button:focus-visible,
 .formatRail button:focus-visible,
+.selectionOverlay button:focus-visible,
 .searchOptions button:focus-visible,
 .themeSwitch button:focus-visible,
 .viewSwitch button:focus-visible,
@@ -182,6 +183,8 @@ button {
 .tabCloseButton:focus-visible,
   .matches button:focus-visible,
   .recentFiles button:focus-visible,
+  .quickInsertInputRow button:focus-visible,
+  .quickInsertResults button:focus-visible,
   .paletteInputRow button:focus-visible,
   .paletteResults button:focus-visible,
   .preferencesHeader button:focus-visible,
@@ -513,6 +516,7 @@ button {
 }
 
 .sourcePane {
+  position: relative;
   border-right: 1px solid var(--panel-border);
   background: var(--source);
 }
@@ -572,6 +576,50 @@ textarea {
   font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   font-size: 15px;
   line-height: 1.66;
+}
+
+.selectionOverlay {
+  position: absolute;
+  top: 47px;
+  right: 12px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 24px);
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--panel-border) 48%);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rail), var(--page) 46%), var(--panel));
+  box-shadow:
+    0 12px 28px rgba(14, 24, 32, 0.2),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset;
+}
+
+.dark .selectionOverlay {
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.42),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
+}
+
+.selectionOverlay button {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.selectionOverlay button:hover {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 35%);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .previewStage {
@@ -1028,6 +1076,216 @@ textarea {
   margin-left: auto;
   color: var(--text);
   font-weight: 700;
+}
+
+.quickInsertBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: start center;
+  padding: clamp(18px, 8vh, 72px) 12px 18px;
+  background:
+    linear-gradient(180deg, rgba(17, 24, 31, 0.28), rgba(17, 24, 31, 0.14)),
+    color-mix(in srgb, var(--app-bg), transparent 40%);
+}
+
+.quickInsertPanel {
+  width: min(430px, 100%);
+  max-height: min(520px, calc(100vh - 36px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--rail-border) 58%);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rail), var(--page) 50%), var(--panel));
+  box-shadow:
+    0 22px 58px rgba(14, 24, 32, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.72) inset;
+}
+
+.dark .quickInsertPanel {
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.quickInsertInputRow {
+  min-width: 0;
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border-bottom: 1px solid var(--rail-border);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft), transparent 36%), transparent 58%),
+    var(--rail);
+}
+
+.quickInsertInputRow > svg {
+  color: var(--accent);
+}
+
+.quickInsertInputRow label {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.quickInsertInputRow label span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.quickInsertInputRow input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.quickInsertInputRow input::placeholder {
+  color: var(--faint);
+}
+
+.quickInsertInputRow button {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  background: var(--page);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.quickInsertInputRow button:hover {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 30%);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.quickInsertMeta {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 9px;
+  border-bottom: 1px solid var(--rail-border);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.quickInsertMeta span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickInsertResults {
+  min-height: 0;
+  overflow: auto;
+  padding: 7px;
+}
+
+.quickInsertResults button {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 6px 7px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.quickInsertResults button + button {
+  margin-top: 4px;
+}
+
+.quickInsertResults button:hover,
+.quickInsertResults button.active {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 42%);
+  background: color-mix(in srgb, var(--accent-soft), var(--page) 36%);
+}
+
+.quickInsertIcon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--page), var(--panel) 16%);
+  color: var(--accent-strong);
+}
+
+.quickInsertCopy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.quickInsertCopy strong,
+.quickInsertCopy small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickInsertCopy strong {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.quickInsertCopy small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.quickInsertEmpty {
+  min-height: 150px;
+  display: grid;
+  place-content: center;
+  gap: 6px;
+  padding: 20px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.quickInsertEmpty strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.quickInsertEmpty span {
+  font-size: 12px;
 }
 
 .paletteBackdrop {
@@ -1942,7 +2200,15 @@ textarea {
     padding: 12px;
   }
 
+  .quickInsertBackdrop {
+    padding: 12px;
+  }
+
   .commandPalette {
+    max-height: calc(100vh - 24px);
+  }
+
+  .quickInsertPanel {
     max-height: calc(100vh - 24px);
   }
 
@@ -1966,6 +2232,17 @@ textarea {
 }
 
 @media (max-width: 560px) {
+  .selectionOverlay {
+    top: 44px;
+    right: 8px;
+    gap: 3px;
+  }
+
+  .selectionOverlay button {
+    width: 28px;
+    height: 28px;
+  }
+
   .preferencesBackdrop {
     align-items: stretch;
     padding: 8px;
@@ -2037,6 +2314,7 @@ textarea {
   .commandRail,
   .formatRail,
   .tabStrip,
+  .quickInsertBackdrop,
   .sourcePane,
   .inspector,
   .statusBar,

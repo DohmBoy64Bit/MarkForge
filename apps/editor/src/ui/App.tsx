@@ -59,6 +59,7 @@ import {
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { CommandPalette } from './CommandPalette'
 import { PreferencesDialog } from './PreferencesDialog'
+import { QuickInsert } from './QuickInsert'
 import { UnsavedChangesDialog } from './UnsavedChangesDialog'
 import {
   closeStatusLabel,
@@ -76,6 +77,7 @@ import {
   commandPaletteActionId,
   displayShortcut,
   keybindingDefinitions,
+  quickInsertActionId,
   readEditorPreferences,
   saveEditorPreferences,
   shortcutForAction,
@@ -84,6 +86,7 @@ import {
   type ViewMode
 } from './editorPreferences'
 import type { PaletteCommand } from './paletteCommandHelpers'
+import { toQuickInsertCommands } from './quickInsertHelpers'
 import {
   defaultSearchOptions,
   findSourceMatches,
@@ -115,6 +118,12 @@ type PendingLifecycleAction =
   | { kind: 'close'; documentId: string }
   | { kind: 'reload'; documentId: string }
 
+type SourceSelectionState = {
+  end: number
+  hasFocus: boolean
+  start: number
+}
+
 const supportedExtensions = ['md', 'markdown', 'mdown', 'txt']
 const sessionKey = 'markforge.editor.session.v1'
 const recentKey = 'markforge.editor.recent.v1'
@@ -139,6 +148,14 @@ const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   table: Table2,
   duplicate: CopyPlus
 }
+
+const selectionOverlayCommandIds: EditorCommandId[] = [
+  'format.bold',
+  'format.italic',
+  'format.inlineCode',
+  'format.strikethrough',
+  'format.link'
+]
 
 const starter = `---
 title: Editor shell foundation
@@ -193,18 +210,24 @@ export function App() {
   const [clipboardStatus, setClipboardStatus] = useState('Not checked')
   const [recentFiles, setRecentFiles] = useState<string[]>(restored.recentFiles)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
+  const [isQuickInsertOpen, setIsQuickInsertOpen] = useState(false)
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
   const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingLifecycleAction | null>(null)
   const [commandPaletteQuery, setCommandPaletteQuery] = useState('')
   const [commandPaletteActiveIndex, setCommandPaletteActiveIndex] = useState(0)
+  const [quickInsertQuery, setQuickInsertQuery] = useState('')
+  const [quickInsertActiveIndex, setQuickInsertActiveIndex] = useState(0)
+  const [sourceSelection, setSourceSelection] = useState<SourceSelectionState>({ start: 0, end: 0, hasFocus: false })
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
   const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null)
+  const quickInsertReturnFocusRef = useRef<HTMLElement | null>(null)
   const preferencesReturnFocusRef = useRef<HTMLElement | null>(null)
   const unsavedDialogReturnFocusRef = useRef<HTMLElement | null>(null)
 
   const theme = preferences.theme
   const viewMode = preferences.viewMode
   const commandPaletteShortcut = shortcutForAction(commandPaletteActionId, preferences.keybindings)
+  const quickInsertShortcut = shortcutForAction(quickInsertActionId, preferences.keybindings)
   const activeDocument = documents.find(document => document.id === activeId) ?? documents[0] ?? null
   const activeDirty = activeDocument ? isDirty(activeDocument) : false
   const activeFileStatus = useMemo(() => fileStatusLabel(activeDocument), [activeDocument])
@@ -243,6 +266,14 @@ export function App() {
         }))
     ),
     [commandsWithShortcuts]
+  )
+  const quickInsertCommands = useMemo(
+    () => toQuickInsertCommands(paletteCommands),
+    [paletteCommands]
+  )
+  const selectionOverlayCommands = useMemo(
+    () => selectionOverlayCommandIds.map(commandId => commandById[commandId]),
+    []
   )
   const setTheme = useCallback((theme: Theme) => {
     setPreferences(current => ({ ...current, theme }))
@@ -291,6 +322,22 @@ export function App() {
       textarea.focus()
       if (typeof scrollTop === 'number') textarea.scrollTop = scrollTop
       textarea.setSelectionRange(start, end)
+      setSourceSelection({ start, end, hasFocus: true })
+    })
+  }, [])
+
+  const updateSourceSelection = useCallback((hasFocus = document.activeElement === textAreaRef.current) => {
+    const textarea = textAreaRef.current
+
+    if (!textarea) {
+      setSourceSelection({ start: 0, end: 0, hasFocus: false })
+      return
+    }
+
+    setSourceSelection({
+      start: textarea.selectionStart,
+      end: textarea.selectionEnd,
+      hasFocus
     })
   }, [])
 
@@ -322,6 +369,7 @@ export function App() {
       : null
     setCommandPaletteQuery('')
     setCommandPaletteActiveIndex(0)
+    setIsQuickInsertOpen(false)
     setIsCommandPaletteOpen(true)
     setStatus('Command palette opened')
   }, [])
@@ -339,11 +387,41 @@ export function App() {
     }
   }, [])
 
+  const openQuickInsert = useCallback(() => {
+    if (!activeDocument) {
+      setStatus('No active document for quick insert')
+      return
+    }
+
+    quickInsertReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    setQuickInsertQuery('')
+    setQuickInsertActiveIndex(0)
+    setIsCommandPaletteOpen(false)
+    setIsQuickInsertOpen(true)
+    setStatus('Quick insert opened')
+  }, [activeDocument])
+
+  const closeQuickInsert = useCallback((restoreFocus = true) => {
+    setIsQuickInsertOpen(false)
+    setQuickInsertQuery('')
+    setQuickInsertActiveIndex(0)
+
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => {
+        quickInsertReturnFocusRef.current?.focus()
+        quickInsertReturnFocusRef.current = null
+      })
+    }
+  }, [])
+
   const openPreferences = useCallback(() => {
     preferencesReturnFocusRef.current = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null
     setIsCommandPaletteOpen(false)
+    setIsQuickInsertOpen(false)
     setIsPreferencesOpen(true)
     setStatus('Preferences opened')
   }, [])
@@ -363,6 +441,11 @@ export function App() {
     closeCommandPalette(false)
     applyEditorCommand(commandId)
   }, [applyEditorCommand, closeCommandPalette])
+
+  const executeQuickInsertCommand = useCallback((commandId: EditorCommandId) => {
+    closeQuickInsert(false)
+    applyEditorCommand(commandId)
+  }, [applyEditorCommand, closeQuickInsert])
 
   const createDocument = useCallback((text = '# Untitled\n\n', title = 'Untitled.md') => {
     const document = createEditorDocument({ title, text })
@@ -786,13 +869,31 @@ export function App() {
         return
       }
 
+      if (actionId === quickInsertActionId) {
+        event.preventDefault()
+
+        if (isQuickInsertOpen) closeQuickInsert()
+        else openQuickInsert()
+
+        return
+      }
+
       event.preventDefault()
       applyEditorCommand(actionId)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [applyEditorCommand, closeCommandPalette, isCommandPaletteOpen, openCommandPalette, preferences.keybindings])
+  }, [
+    applyEditorCommand,
+    closeCommandPalette,
+    closeQuickInsert,
+    isCommandPaletteOpen,
+    isQuickInsertOpen,
+    openCommandPalette,
+    openQuickInsert,
+    preferences.keybindings
+  ])
 
   useEffect(() => {
     const trackedDocuments = documents.filter(document => document.path)
@@ -897,6 +998,16 @@ export function App() {
   const pendingLifecycleDocument = pendingLifecycleAction
     ? documents.find(document => document.id === pendingLifecycleAction.documentId) ?? null
     : null
+  const showSelectionOverlay = Boolean(
+    activeDocument &&
+    sourceSelection.hasFocus &&
+    sourceSelection.end > sourceSelection.start &&
+    viewMode !== 'preview' &&
+    !isCommandPaletteOpen &&
+    !isQuickInsertOpen &&
+    !isPreferencesOpen &&
+    !pendingLifecycleAction
+  )
 
   return (
     <main className={`editorShell ${theme}`} data-theme={theme}>
@@ -935,6 +1046,15 @@ export function App() {
             aria-label="Command palette"
           >
             <Command size={18} />
+          </button>
+          <button
+            type="button"
+            disabled={!activeDocument}
+            onClick={openQuickInsert}
+            title={`Quick insert (${displayShortcut(quickInsertShortcut)})`}
+            aria-label="Quick insert"
+          >
+            <TextCursorInput size={18} />
           </button>
           <button
             type="button"
@@ -1141,9 +1261,37 @@ export function App() {
             ref={textAreaRef}
             value={activeDocument?.text ?? ''}
             spellCheck
-            onChange={event => updateActiveDocument({ text: event.target.value })}
+            onBlur={() => setSourceSelection(current => ({ ...current, hasFocus: false }))}
+            onChange={event => {
+              updateActiveDocument({ text: event.target.value })
+              updateSourceSelection(true)
+            }}
+            onFocus={() => updateSourceSelection(true)}
+            onKeyUp={() => updateSourceSelection(true)}
+            onMouseUp={() => updateSourceSelection(true)}
+            onSelect={() => updateSourceSelection(true)}
             aria-label="Markdown source"
           />
+          {showSelectionOverlay && (
+            <div className="selectionOverlay" role="toolbar" aria-label="Selection formatting">
+              {selectionOverlayCommands.map(command => {
+                const Icon = commandIconByName[command.icon]
+
+                return (
+                  <button
+                    key={command.id}
+                    type="button"
+                    onClick={() => applyEditorCommand(command.id)}
+                    onMouseDown={event => event.preventDefault()}
+                    title={command.label}
+                    aria-label={command.label}
+                  >
+                    <Icon size={15} aria-hidden="true" />
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </section>
 
         <section
@@ -1370,6 +1518,20 @@ export function App() {
           onQueryChange={setCommandPaletteQuery}
           onRequestClose={closeCommandPalette}
           query={commandPaletteQuery}
+        />
+      )}
+
+      {isQuickInsertOpen && (
+        <QuickInsert
+          activeIndex={quickInsertActiveIndex}
+          commands={quickInsertCommands}
+          iconByName={commandIconByName}
+          onActiveIndexChange={setQuickInsertActiveIndex}
+          onExecute={executeQuickInsertCommand}
+          onQueryChange={setQuickInsertQuery}
+          onRequestClose={closeQuickInsert}
+          query={quickInsertQuery}
+          shortcut={quickInsertShortcut}
         />
       )}
 

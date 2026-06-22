@@ -69,6 +69,7 @@ Current status:
 - Phase 5D added a compact Preferences dialog for theme/default view selection and a local preference-backed keybinding foundation for the command palette plus existing editor commands, including editable shortcut strings, reset controls, duplicate conflict display, and deterministic first-registry-item shortcut dispatch.
 - Phase 5E added dirty-tab close/reload protection, browser `beforeunload` guarding, all-open-file metadata polling, changed/missing-on-disk reconciliation notices, Keep local snoozing, and clearer inspector file status labels.
 - Phase 5F added reversible source formatting, H1-H6 command coverage, strikethrough, duplicate selection/current-line, and compact source search options for case-sensitive, whole-word, and regex matching/replacement.
+- Phase 5G added quick insert and a source selection formatting overlay, both backed by the existing editor-engine command registry and app command execution path.
 - Full preferences schema, non-format command remapping, native filesystem watching, native Tauri close interception, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
 
 Exit criteria:
@@ -88,7 +89,8 @@ Current status:
 - Phase 5D added the editor Preferences dialog and keybinding foundation, with preference-backed shortcut labels and keyboard dispatch across the toolbar, command palette, inspector, and source textarea.
 - Phase 5E added unsaved-work protection and external-change reconciliation around the existing metadata polling foundation.
 - Phase 5F added toggle-aware Markdown transforms, H4-H6, strikethrough, duplicate selection/current-line, and shared search/replace matching for literal, case-sensitive, whole-word, and regex modes.
-- WYSIWYG/realtime editing, quick insert, format overlay, advanced table tools, image workflows, autocomplete, linting, formatter integration, non-format command remapping, full settings schema, native filesystem watching, and focus/typewriter modes remain open.
+- Phase 5G added a compact quick insert surface for block/insert commands and a floating selection overlay for common inline formatting in source mode.
+- WYSIWYG/realtime editing, advanced table tools, image workflows, autocomplete, linting, formatter integration, non-format command remapping, full settings schema, native filesystem watching, and focus/typewriter modes remain open.
 
 Exit criteria:
 

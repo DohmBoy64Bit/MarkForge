@@ -1,6 +1,6 @@
 # MarkForge Editor
 
-Phase 5F Tauri editor shell for the Windows-first local Markdown workspace.
+Phase 5G Tauri editor shell for the Windows-first local Markdown workspace.
 
 ## Commands
 
@@ -20,8 +20,10 @@ pnpm --filter @markforge/editor tauri build
 - Source search with match counts, match navigation, case-sensitive/whole-word/regex options, replace current, and replace all.
 - Typed Markdown command registry for source-mode editing commands.
 - Formatting command rail for reversible bold, italic, inline code, strikethrough, link, H1-H6, blockquote, unordered list, ordered list, task list, code fence, horizontal rule, table scaffold, and duplicate selection/current-line.
-- Preference-backed keyboard shortcuts for Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+D, Ctrl+Shift+7, Ctrl+Shift+8, and the command palette when focus is in the editor or command surface.
+- Preference-backed keyboard shortcuts for Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+D, Ctrl+Shift+7, Ctrl+Shift+8, quick insert, and the command palette when focus is in the editor or command surface.
 - Command palette opened by the toolbar or the configured shortcut, with searchable command metadata, grouped results, keyboard navigation, shortcut badges, empty state, and execution through the shared editor-engine commands.
+- Quick insert opened by the toolbar or Ctrl+/, with searchable block/insert commands, keyboard navigation, Escape/backdrop close, focus restoration, and execution through the same editor-engine command path.
+- Selection formatting overlay for non-empty source selections with bold, italic, inline code, strikethrough, and link buttons.
 - Preferences dialog for local theme, default view mode, editable source command keybindings, per-command reset, reset all, and duplicate shortcut conflict display.
 - Prompted close/reload protection for dirty tabs with Save, Discard, and Cancel decisions.
 - Browser `beforeunload` protection when any open document has unsaved edits.
@@ -38,5 +40,5 @@ pnpm --filter @markforge/editor tauri build
 - Native Tauri window-close interception before process exit.
 - Rich WYSIWYG/realtime editing.
 - Table editing beyond starter scaffold insertion.
-- Quick insert, selection format overlay, and richer line transform menus.
+- Richer line transform menus.
 - Full preference schema beyond the Phase 5D local editor settings foundation.

@@ -2,7 +2,7 @@ import { commandGroups, editorCommands, type EditorCommandId } from '@markforge/
 
 export type Theme = 'light' | 'dark'
 export type ViewMode = 'source' | 'split' | 'preview'
-export type KeybindingActionId = 'app.commandPalette' | EditorCommandId
+export type KeybindingActionId = 'app.commandPalette' | 'app.quickInsert' | EditorCommandId
 
 export type KeybindingDefinition = {
   id: KeybindingActionId
@@ -27,6 +27,7 @@ type ShortcutEvent = Pick<KeyboardEvent, 'altKey' | 'code' | 'ctrlKey' | 'key' |
 
 export const editorPrefsKey = 'markforge.editor.prefs.v1'
 export const commandPaletteActionId = 'app.commandPalette' as const
+export const quickInsertActionId = 'app.quickInsert' as const
 
 export const keybindingDefinitions: KeybindingDefinition[] = [
   {
@@ -34,6 +35,12 @@ export const keybindingDefinitions: KeybindingDefinition[] = [
     label: 'Command Palette',
     group: 'Application',
     defaultShortcut: 'Ctrl+Shift+P'
+  },
+  {
+    id: quickInsertActionId,
+    label: 'Quick Insert',
+    group: 'Application',
+    defaultShortcut: 'Ctrl+/'
   },
   ...editorCommands.map(command => ({
     id: command.id,

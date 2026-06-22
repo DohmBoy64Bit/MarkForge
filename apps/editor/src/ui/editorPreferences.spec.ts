@@ -5,6 +5,7 @@ import {
   detectShortcutConflicts,
   displayShortcut,
   keybindingDefinitions,
+  quickInsertActionId,
   resetKeybinding,
   restoreEditorPreferences
 } from './editorPreferences'
@@ -32,6 +33,7 @@ describe('editor preferences', () => {
       viewMode: 'preview'
     })
     expect(preferences.keybindings[commandPaletteActionId]).toBe('Ctrl+Shift+P')
+    expect(preferences.keybindings[quickInsertActionId]).toBe('Ctrl+/')
     expect(preferences.keybindings['format.bold']).toBe('Ctrl+B')
     expect(preferences.keybindings['format.strikethrough']).toBe('')
     expect(preferences.keybindings['edit.duplicate']).toBe('Ctrl+D')
@@ -90,6 +92,15 @@ describe('editor preferences', () => {
       keyboardEvent({ code: 'Digit7', ctrlKey: true, key: '&', shiftKey: true }),
       preferences.keybindings
     )).toBe('block.orderedList')
+  })
+
+  it('matches the quick insert app shortcut', () => {
+    const preferences = restoreEditorPreferences(null)
+
+    expect(actionIdFromKeyboardEvent(
+      keyboardEvent({ code: 'Slash', ctrlKey: true, key: '/' }),
+      preferences.keybindings
+    )).toBe(quickInsertActionId)
   })
 
   it('does not match blank shortcuts', () => {
