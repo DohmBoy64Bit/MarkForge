@@ -13,6 +13,7 @@ export type MarkdownTemplate = {
   id: string
   tags: string[]
   title: string
+  variables?: TemplateVariableDefinition[]
 }
 
 export type TemplateFilter = {
@@ -23,9 +24,40 @@ export type TemplateFilter = {
 
 export type TemplateVariables = Record<string, string | number | boolean | null | undefined>
 
+export type TemplateVariableDefinition = {
+  defaultValue?: string
+  description?: string
+  label: string
+  name: string
+  required?: boolean
+}
+
 export type ApplyTemplateVariablesOptions = {
   preserveUnknown?: boolean
 }
+
+export type NormalizeCustomTemplateInput = Omit<Partial<MarkdownTemplate>, 'category' | 'tags' | 'variables'> & {
+  body?: string
+  category?: TemplateCategory | string
+  description?: string
+  id?: string
+  tags?: string[] | string
+  title?: string
+  variables?: TemplateVariableDefinition[]
+}
+
+export type NormalizedCustomTemplateResult =
+  | { errors: string[]; template: null }
+  | { errors: []; template: MarkdownTemplate }
+
+const templateCategoriesSet = new Set<TemplateCategory>([
+  'collaboration',
+  'documentation',
+  'engineering',
+  'planning',
+  'publishing',
+  'release'
+])
 
 export const templateCatalog: MarkdownTemplate[] = [
   {
@@ -34,6 +66,36 @@ export const templateCatalog: MarkdownTemplate[] = [
     category: 'documentation',
     description: 'Project landing page with setup, usage, and contribution notes.',
     tags: ['project', 'overview', 'setup'],
+    variables: [
+      {
+        name: 'title',
+        label: 'Project title',
+        defaultValue: 'Project Name',
+        description: 'The name shown as the README heading.',
+        required: true
+      },
+      {
+        name: 'description',
+        label: 'Description',
+        defaultValue: 'A concise project description.',
+        description: 'A short summary of what the project does.',
+        required: true
+      },
+      {
+        name: 'install_command',
+        label: 'Install command',
+        defaultValue: 'pnpm install',
+        description: 'The shell command readers should run first.',
+        required: true
+      },
+      {
+        name: 'license',
+        label: 'License',
+        defaultValue: 'TBD',
+        description: 'The license identifier or status.',
+        required: false
+      }
+    ],
     body: `# {{title}}
 
 {{description}}
@@ -66,6 +128,29 @@ export const templateCatalog: MarkdownTemplate[] = [
     category: 'collaboration',
     description: 'Agenda, decisions, and action items for working sessions.',
     tags: ['notes', 'agenda', 'actions'],
+    variables: [
+      {
+        name: 'title',
+        label: 'Meeting title',
+        defaultValue: 'Team Sync',
+        description: 'The meeting name shown in the heading.',
+        required: true
+      },
+      {
+        name: 'date',
+        label: 'Date',
+        defaultValue: '',
+        description: 'Meeting date in your preferred format.',
+        required: true
+      },
+      {
+        name: 'owner',
+        label: 'Facilitator',
+        defaultValue: '',
+        description: 'The person guiding the meeting.',
+        required: false
+      }
+    ],
     body: `# {{title}} Meeting Notes
 
 Date: {{date}}
@@ -95,6 +180,29 @@ Facilitator: {{owner}}
     category: 'release',
     description: 'Keep user-visible changes grouped by release.',
     tags: ['release', 'version', 'history'],
+    variables: [
+      {
+        name: 'title',
+        label: 'Project title',
+        defaultValue: 'Project Name',
+        description: 'The project or product name.',
+        required: true
+      },
+      {
+        name: 'version',
+        label: 'Version',
+        defaultValue: 'Unreleased',
+        description: 'The release version or channel.',
+        required: true
+      },
+      {
+        name: 'date',
+        label: 'Date',
+        defaultValue: '',
+        description: 'Release date or target date.',
+        required: false
+      }
+    ],
     body: `# Changelog
 
 All notable changes to {{title}} are documented here.
@@ -120,6 +228,22 @@ All notable changes to {{title}} are documented here.
     category: 'planning',
     description: 'Scope, goals, constraints, and delivery checkpoints.',
     tags: ['spec', 'planning', 'requirements'],
+    variables: [
+      {
+        name: 'title',
+        label: 'Project title',
+        defaultValue: 'Project Name',
+        description: 'The initiative or project name.',
+        required: true
+      },
+      {
+        name: 'owner',
+        label: 'Owner',
+        defaultValue: '',
+        description: 'The accountable owner or team.',
+        required: false
+      }
+    ],
     body: `# {{title}} Project Spec
 
 Owner: {{owner}}
@@ -160,6 +284,22 @@ What user or business problem does this solve?
     category: 'publishing',
     description: 'Front matter and article structure for a technical post.',
     tags: ['article', 'front matter', 'publishing'],
+    variables: [
+      {
+        name: 'title',
+        label: 'Post title',
+        defaultValue: 'Post Title',
+        description: 'The front matter and H1 title.',
+        required: true
+      },
+      {
+        name: 'date',
+        label: 'Date',
+        defaultValue: '',
+        description: 'Publication date.',
+        required: false
+      }
+    ],
     body: `---
 title: "{{title}}"
 date: "{{date}}"
@@ -192,6 +332,15 @@ Explain the practical problem.
     category: 'collaboration',
     description: 'Bug or task report with expected behavior and acceptance checks.',
     tags: ['github', 'issue', 'bug'],
+    variables: [
+      {
+        name: 'description',
+        label: 'Summary',
+        defaultValue: 'Describe the issue or task.',
+        description: 'A short problem summary.',
+        required: true
+      }
+    ],
     body: `## Summary
 
 {{description}}
@@ -328,7 +477,87 @@ export function applyTemplate(
   variables: TemplateVariables = {},
   options?: ApplyTemplateVariablesOptions
 ): string {
-  return applyTemplateVariables(template.body, variables, options)
+  return applyTemplateVariables(template.body, mergeTemplateVariables(template, variables), options)
+}
+
+export function extractTemplatePlaceholders(body: string): string[] {
+  const names = new Set<string>()
+  const pattern = /\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g
+  let match: RegExpExecArray | null
+
+  while ((match = pattern.exec(body)) !== null) {
+    names.add(match[1])
+  }
+
+  return Array.from(names)
+}
+
+export function deriveTemplateVariables(
+  template: Pick<MarkdownTemplate, 'body' | 'variables'>
+): TemplateVariableDefinition[] {
+  const explicitVariables = template.variables ?? []
+  const definitionsByName = new Map(explicitVariables.map(definition => [definition.name, normalizeVariableDefinition(definition)]))
+
+  for (const name of extractTemplatePlaceholders(template.body)) {
+    if (!definitionsByName.has(name)) {
+      definitionsByName.set(name, {
+        name,
+        label: labelFromVariableName(name),
+        defaultValue: '',
+        description: `Value for {{${name}}}.`,
+        required: false
+      })
+    }
+  }
+
+  return Array.from(definitionsByName.values())
+}
+
+export function mergeTemplateVariables(
+  template: Pick<MarkdownTemplate, 'body' | 'variables'>,
+  overrides: TemplateVariables = {}
+): TemplateVariables {
+  const merged: TemplateVariables = {}
+
+  for (const definition of deriveTemplateVariables(template)) {
+    if (definition.defaultValue !== undefined) merged[definition.name] = definition.defaultValue
+  }
+
+  return {
+    ...merged,
+    ...overrides
+  }
+}
+
+export function normalizeCustomTemplate(input: NormalizeCustomTemplateInput): NormalizedCustomTemplateResult {
+  const errors: string[] = []
+  const title = String(input.title ?? '').trim()
+  const body = String(input.body ?? '').trim()
+  const description = String(input.description ?? '').trim()
+  const category = normalizeCategory(input.category)
+  const tags = normalizeTags(input.tags)
+
+  if (!title) errors.push('Title is required.')
+  if (!body) errors.push('Markdown body is required.')
+  if (!category) errors.push('Category must be one of the built-in template categories.')
+
+  if (errors.length > 0 || !category) return { errors, template: null }
+
+  const id = normalizeTemplateId(input.id, title)
+  const template: MarkdownTemplate = {
+    id,
+    title,
+    category,
+    description: description || 'Local custom template.',
+    tags,
+    body,
+    variables: deriveTemplateVariables({
+      body,
+      variables: input.variables?.map(normalizeVariableDefinition)
+    })
+  }
+
+  return { errors: [], template }
 }
 
 function templateSearchText(template: MarkdownTemplate): string {
@@ -348,4 +577,51 @@ function searchTerms(query: string): string[] {
     .toLowerCase()
     .split(/\s+/)
     .filter(Boolean)
+}
+
+function normalizeVariableDefinition(definition: TemplateVariableDefinition): TemplateVariableDefinition {
+  return {
+    name: definition.name.trim(),
+    label: definition.label.trim() || labelFromVariableName(definition.name),
+    defaultValue: definition.defaultValue ?? '',
+    description: definition.description?.trim() || `Value for {{${definition.name}}}.`,
+    required: Boolean(definition.required)
+  }
+}
+
+function labelFromVariableName(name: string): string {
+  return name
+    .replace(/[_.-]+/g, ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase())
+}
+
+function normalizeCategory(category: NormalizeCustomTemplateInput['category']): TemplateCategory | null {
+  if (typeof category !== 'string') return 'documentation'
+
+  const normalized = category.trim().toLowerCase()
+  return templateCategoriesSet.has(normalized as TemplateCategory) ? normalized as TemplateCategory : null
+}
+
+function normalizeTags(tags: NormalizeCustomTemplateInput['tags']): string[] {
+  const rawTags = Array.isArray(tags) ? tags : String(tags ?? '').split(',')
+  const uniqueTags = new Set<string>()
+
+  for (const tag of rawTags) {
+    const normalized = String(tag).trim().toLowerCase()
+    if (normalized) uniqueTags.add(normalized)
+  }
+
+  return Array.from(uniqueTags)
+}
+
+function normalizeTemplateId(id: string | undefined, title: string): string {
+  const source = id?.trim() || title
+  if (source.startsWith('custom-')) return source
+
+  const slug = source
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return slug ? `custom-${slug}` : `custom-${Date.now()}`
 }

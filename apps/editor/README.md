@@ -1,6 +1,6 @@
 # MarkForge Editor
 
-Phase 6A Tauri editor shell for the Windows-first local Markdown workspace.
+Phase 6B Tauri editor shell for the Windows-first local Markdown workspace.
 
 ## Commands
 
@@ -23,7 +23,8 @@ pnpm --filter @markforge/editor tauri build
 - Preference-backed keyboard shortcuts for Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+D, Ctrl+Shift+7, Ctrl+Shift+8, quick insert, and the command palette when focus is in the editor or command surface.
 - Command palette opened by the toolbar or the configured shortcut, with searchable command metadata, grouped results, keyboard navigation, shortcut badges, empty state, and execution through the shared editor-engine commands.
 - Quick insert opened by the toolbar or Ctrl+/, with searchable block/insert commands, keyboard navigation, Escape/backdrop close, focus restoration, and execution through the same editor-engine command path.
-- Templates and help dialog opened by the toolbar or Ctrl+Alt+T, with searchable typed templates from `@markforge/templates`, preview, insertion into the active source document, and a compact Markdown syntax reference.
+- Templates and help dialog opened by the toolbar or Ctrl+Alt+T, with searchable typed templates from `@markforge/templates`, guided variable fields, live resolved preview, insertion into the active source document, local custom-template create/delete/reset behavior, and a compact Markdown syntax reference.
+- Source template suggestions for line-leading `/template` and `/tpl` triggers, with filtering, Arrow key navigation, Enter insertion through the shared template resolver, and Escape close.
 - Selection formatting overlay for non-empty source selections with bold, italic, inline code, strikethrough, and link buttons.
 - Preferences dialog for local theme, default view mode, editable source command keybindings, per-command reset, reset all, and duplicate shortcut conflict display.
 - Prompted close/reload protection for dirty tabs with Save, Discard, and Cancel decisions.
@@ -31,7 +32,7 @@ pnpm --filter @markforge/editor tauri build
 - Metadata polling across open file-backed tabs, with changed-on-disk and missing-on-disk reconciliation notices.
 - Reload from disk and Keep local actions for external changes, including dirty-document confirmation before replacing local edits.
 - Inspector panels for file state, command status, search, outline, recent files, front matter, warnings, clipboard state, and external-change state.
-- LocalStorage-backed restore for unsaved/dirty tabs, recent file paths, theme, view mode, and editor keybindings.
+- LocalStorage-backed restore for unsaved/dirty tabs, recent file paths, theme, view mode, editor keybindings, and editor-local custom templates.
 - Light and dark MarkForge-native workspace themes.
 - Compact status bar with file, save, line, word, character, and warning counts.
 
@@ -42,5 +43,6 @@ pnpm --filter @markforge/editor tauri build
 - Rich WYSIWYG/realtime editing.
 - Table editing beyond starter scaffold insertion.
 - Richer line transform menus.
-- Template variable wizard, user-authored template storage, and template autocomplete.
+- Filesystem/workspace template loading and syncable template libraries beyond editor-local custom templates.
+- General Markdown autocomplete beyond the Phase 6B template suggestion foundation.
 - Full preference schema beyond the Phase 5D local editor settings foundation.

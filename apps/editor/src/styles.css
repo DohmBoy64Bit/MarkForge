@@ -23,6 +23,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -190,7 +191,12 @@ button {
   .templateSearch:focus-within,
   .templateCategory select:focus-visible,
   .templateList button:focus-visible,
+  .templateVariableEditor input:focus-visible,
+  .customTemplateComposer input:focus-visible,
+  .customTemplateComposer select:focus-visible,
+  .customTemplateComposer textarea:focus-visible,
   .templatePreviewFooter button:focus-visible,
+  .templateSuggestionMenu button:focus-visible,
   .paletteInputRow button:focus-visible,
   .paletteResults button:focus-visible,
   .preferencesHeader button:focus-visible,
@@ -626,6 +632,110 @@ textarea {
   border-color: color-mix(in srgb, var(--accent), var(--rail-border) 35%);
   background: var(--accent-soft);
   color: var(--accent-strong);
+}
+
+.templateSuggestionMenu {
+  position: absolute;
+  top: 48px;
+  left: 18px;
+  z-index: 6;
+  width: min(390px, calc(100% - 36px));
+  max-height: min(330px, calc(100% - 66px));
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--panel-border) 42%);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rail), var(--page) 48%), var(--panel));
+  box-shadow:
+    0 18px 44px rgba(14, 24, 32, 0.24),
+    0 1px 0 rgba(255, 255, 255, 0.68) inset;
+}
+
+.dark .templateSuggestionMenu {
+  box-shadow:
+    0 22px 52px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.templateSuggestionHint {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 7px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.templateSuggestionHint svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.templateSuggestionHint span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.templateSuggestionMenu button {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 2px 9px;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.templateSuggestionMenu button + button {
+  margin-top: 3px;
+}
+
+.templateSuggestionMenu button:hover,
+.templateSuggestionMenu button.active {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 42%);
+  background: color-mix(in srgb, var(--accent-soft), var(--page) 34%);
+}
+
+.templateSuggestionMenu button span {
+  grid-row: 1 / 3;
+  align-self: center;
+  overflow: hidden;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.templateSuggestionMenu button strong,
+.templateSuggestionMenu button small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.templateSuggestionMenu button strong {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.templateSuggestionMenu button small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .previewStage {
@@ -1430,6 +1540,10 @@ textarea {
   grid-template-rows: auto minmax(0, 1fr);
 }
 
+.customTemplatesBody {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
 .templateFilters {
   min-width: 0;
   display: grid;
@@ -1584,7 +1698,7 @@ textarea {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   overflow: hidden;
 }
 
@@ -1617,6 +1731,92 @@ textarea {
   color: var(--muted);
   font-size: 12px;
   font-weight: 650;
+}
+
+.templateVariableEditor {
+  min-width: 0;
+  max-height: 190px;
+  display: grid;
+  gap: 7px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rail-border);
+  background: color-mix(in srgb, var(--panel), var(--page) 26%);
+}
+
+.templateVariableHeader {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.templateVariableHeader svg {
+  color: var(--accent);
+}
+
+.templateVariableHeader span {
+  margin-left: auto;
+  color: var(--warning);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.templateVariableEditor label {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(88px, 0.44fr) minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.templateVariableEditor label > span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.templateVariableEditor label.required > span::after {
+  content: " *";
+  color: var(--warning);
+}
+
+.templateVariableEditor input {
+  min-width: 0;
+  height: 30px;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  padding: 0 8px;
+  outline: 0;
+  background: var(--page);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.templateVariableEditor small {
+  grid-column: 2;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.templateVariableEditor > p {
+  padding: 3px 0;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .templatePreview pre,
@@ -1663,6 +1863,135 @@ textarea {
   color: var(--text);
   font-size: 12px;
   font-weight: 850;
+}
+
+.templatePreviewFooter button + button {
+  margin-left: 0;
+}
+
+.templatePreviewFooter button.danger {
+  border-color: color-mix(in srgb, var(--danger), var(--rail-border) 48%);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.templatePreviewFooter button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+.customTemplateComposer {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(116px, 0.62fr) minmax(116px, 0.74fr) minmax(140px, 1fr);
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--rail-border);
+  background: color-mix(in srgb, var(--panel), var(--rail) 46%);
+}
+
+.customTemplateComposerHeader,
+.customTemplateBodyField,
+.customTemplateActions {
+  grid-column: 1 / -1;
+}
+
+.customTemplateComposerHeader {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.customTemplateComposerHeader strong {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.customTemplateComposerHeader span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customTemplateComposer label {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.customTemplateComposer label > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.customTemplateComposer input,
+.customTemplateComposer select,
+.customTemplateComposer textarea {
+  min-width: 0;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  outline: 0;
+  background: var(--page);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.customTemplateComposer input,
+.customTemplateComposer select {
+  height: 32px;
+  padding: 0 8px;
+}
+
+.customTemplateComposer textarea {
+  height: 78px;
+  min-height: 78px;
+  resize: vertical;
+  padding: 8px;
+  background: var(--page);
+  background-size: auto;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.customTemplateActions {
+  display: flex;
+  justify-content: end;
+  gap: 8px;
+}
+
+.customTemplateActions button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--rail), var(--page) 52%);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.customTemplateActions button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 30%);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.customTemplateActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
 }
 
 .referenceBody {
@@ -2667,7 +2996,7 @@ textarea {
 
   .templatePicker {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(148px, 0.74fr) minmax(210px, 1fr);
+    grid-template-rows: minmax(148px, 0.58fr) minmax(260px, 1fr);
   }
 
   .templateList {
@@ -2678,6 +3007,10 @@ textarea {
   .referenceBody {
     grid-template-columns: minmax(0, 1fr);
     grid-auto-rows: max-content;
+  }
+
+  .customTemplateComposer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -2720,8 +3053,35 @@ textarea {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .customTemplatesBody {
+    display: block;
+    overflow: auto;
+  }
+
+  .customTemplatesBody .templateFilters,
+  .customTemplatesBody .templatePicker,
+  .customTemplatesBody .customTemplateComposer {
+    flex: 0 0 auto;
+  }
+
   .templatePicker {
-    grid-template-rows: minmax(132px, 0.7fr) minmax(210px, 1fr);
+    grid-template-rows: minmax(132px, 0.52fr) minmax(280px, 1fr);
+  }
+
+  .customTemplatesBody .templatePicker {
+    min-height: 412px;
+  }
+
+  .templateVariableEditor {
+    max-height: 166px;
+  }
+
+  .templateVariableEditor label {
+    grid-template-columns: 1fr;
+  }
+
+  .templateVariableEditor small {
+    grid-column: 1;
   }
 
   .templatePreviewFooter {
@@ -2731,6 +3091,37 @@ textarea {
   .templatePreviewFooter button {
     width: 100%;
     margin-left: 0;
+  }
+
+  .templateSuggestionMenu {
+    top: 44px;
+    left: 8px;
+    width: calc(100% - 16px);
+  }
+
+  .templateSuggestionMenu button {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .templateSuggestionMenu button span {
+    grid-row: auto;
+  }
+
+  .customTemplateComposer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .customTemplateComposerHeader {
+    display: grid;
+    gap: 4px;
+  }
+
+  .customTemplateActions {
+    flex-wrap: wrap;
+  }
+
+  .customTemplateActions button {
+    flex: 1 1 128px;
   }
 
   .referenceItem {
@@ -2813,6 +3204,7 @@ textarea {
   .preferencesBackdrop,
   .paletteBackdrop,
   .templatesHelpBackdrop,
+  .templateSuggestionMenu,
   .changeNotice,
   .renderError {
     display: none;

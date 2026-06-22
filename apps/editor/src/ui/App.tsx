@@ -23,6 +23,7 @@ import {
   FileInput,
   FilePenLine,
   FilePlus2,
+  FileText,
   Files,
   Heading1,
   Heading2,
@@ -57,13 +58,14 @@ import {
   X,
   type LucideIcon
 } from 'lucide-react'
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import type { MarkdownTemplate, TemplateVariables } from '@markforge/templates'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { templateCatalog, type MarkdownTemplate, type TemplateVariables } from '@markforge/templates'
 import { CommandPalette } from './CommandPalette'
 import { PreferencesDialog } from './PreferencesDialog'
 import { QuickInsert } from './QuickInsert'
 import { TemplatesHelpDialog } from './TemplatesHelpDialog'
 import { UnsavedChangesDialog } from './UnsavedChangesDialog'
+import { loadCustomTemplates } from './customTemplates'
 import {
   closeStatusLabel,
   externalChangeLabel,
@@ -100,6 +102,12 @@ import {
   type SourceSearchMatch,
   type SourceSearchOptions
 } from './sourceSearch'
+import {
+  filterTemplateSuggestions,
+  findTemplateSuggestionTrigger,
+  replaceTemplateTrigger,
+  resolveTemplateSuggestion
+} from './templateAutocomplete'
 
 type EditorDocument = {
   id: string
@@ -213,6 +221,7 @@ export function App() {
   const [lastCommand, setLastCommand] = useState('No formatting command yet')
   const [clipboardStatus, setClipboardStatus] = useState('Not checked')
   const [recentFiles, setRecentFiles] = useState<string[]>(restored.recentFiles)
+  const [customTemplates, setCustomTemplates] = useState<MarkdownTemplate[]>(() => loadCustomTemplates())
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [isQuickInsertOpen, setIsQuickInsertOpen] = useState(false)
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
@@ -223,6 +232,8 @@ export function App() {
   const [quickInsertQuery, setQuickInsertQuery] = useState('')
   const [quickInsertActiveIndex, setQuickInsertActiveIndex] = useState(0)
   const [sourceSelection, setSourceSelection] = useState<SourceSelectionState>({ start: 0, end: 0, hasFocus: false })
+  const [templateSuggestionActiveIndex, setTemplateSuggestionActiveIndex] = useState(0)
+  const [dismissedTemplateSuggestionKey, setDismissedTemplateSuggestionKey] = useState<string | null>(null)
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
   const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null)
   const quickInsertReturnFocusRef = useRef<HTMLElement | null>(null)
@@ -281,6 +292,25 @@ export function App() {
   const templateVariables = useMemo<TemplateVariables>(
     () => templateVariablesForDocument(activeDocument),
     [activeDocument]
+  )
+  const allTemplates = useMemo(
+    () => [...templateCatalog, ...customTemplates],
+    [customTemplates]
+  )
+  const templateSuggestionTrigger = useMemo(
+    () => activeDocument && sourceSelection.hasFocus
+      ? findTemplateSuggestionTrigger(activeDocument.text, sourceSelection.end)
+      : null,
+    [activeDocument, sourceSelection.end, sourceSelection.hasFocus]
+  )
+  const templateSuggestionKey = templateSuggestionTrigger
+    ? `${templateSuggestionTrigger.start}:${templateSuggestionTrigger.end}:${templateSuggestionTrigger.query}`
+    : null
+  const templateSuggestions = useMemo(
+    () => templateSuggestionTrigger
+      ? filterTemplateSuggestions(allTemplates, templateSuggestionTrigger.query)
+      : [],
+    [allTemplates, templateSuggestionTrigger]
   )
   const selectionOverlayCommands = useMemo(
     () => selectionOverlayCommandIds.map(commandId => commandById[commandId]),
@@ -498,6 +528,71 @@ export function App() {
     closeTemplatesHelp(false)
     setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
   }, [activeDocument, closeTemplatesHelp, setEditorSelection, updateActiveDocument])
+
+  const insertTemplateSuggestion = useCallback((template: MarkdownTemplate) => {
+    const document = activeDocument
+    const trigger = templateSuggestionTrigger
+    const textarea = textAreaRef.current
+
+    if (!document || !trigger) return
+
+    const scrollTop = textarea?.scrollTop
+    const body = resolveTemplateSuggestion(template, templateVariables)
+    const edit = replaceTemplateTrigger(document.text, trigger, body)
+
+    updateActiveDocument({ text: edit.text })
+    setLastCommand(`${template.title} template inserted`)
+    setStatus(`Inserted ${template.title}`)
+    setDismissedTemplateSuggestionKey(null)
+    setTemplateSuggestionActiveIndex(0)
+    setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+  }, [activeDocument, setEditorSelection, templateSuggestionTrigger, templateVariables, updateActiveDocument])
+
+  const handleSourceKeyDown = useCallback((event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    const canUseSuggestions = templateSuggestionTrigger &&
+      templateSuggestionKey !== dismissedTemplateSuggestionKey &&
+      templateSuggestions.length > 0 &&
+      !isCommandPaletteOpen &&
+      !isQuickInsertOpen &&
+      !isPreferencesOpen &&
+      !isTemplatesHelpOpen
+
+    if (!canUseSuggestions) return
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, 1, templateSuggestions.length))
+      return
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, -1, templateSuggestions.length))
+      return
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setDismissedTemplateSuggestionKey(templateSuggestionKey)
+      return
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      insertTemplateSuggestion(templateSuggestions[templateSuggestionActiveIndex] ?? templateSuggestions[0])
+    }
+  }, [
+    dismissedTemplateSuggestionKey,
+    insertTemplateSuggestion,
+    isCommandPaletteOpen,
+    isPreferencesOpen,
+    isQuickInsertOpen,
+    isTemplatesHelpOpen,
+    templateSuggestionActiveIndex,
+    templateSuggestionKey,
+    templateSuggestionTrigger,
+    templateSuggestions
+  ])
 
   const executePaletteCommand = useCallback((commandId: EditorCommandId) => {
     closeCommandPalette(false)
@@ -1072,6 +1167,17 @@ export function App() {
   const pendingLifecycleDocument = pendingLifecycleAction
     ? documents.find(document => document.id === pendingLifecycleAction.documentId) ?? null
     : null
+  const showTemplateSuggestions = Boolean(
+    activeDocument &&
+    templateSuggestionTrigger &&
+    templateSuggestionKey !== dismissedTemplateSuggestionKey &&
+    templateSuggestions.length > 0 &&
+    viewMode !== 'preview' &&
+    !isCommandPaletteOpen &&
+    !isQuickInsertOpen &&
+    !isPreferencesOpen &&
+    !isTemplatesHelpOpen
+  )
   const showSelectionOverlay = Boolean(
     activeDocument &&
     sourceSelection.hasFocus &&
@@ -1081,6 +1187,7 @@ export function App() {
     !isQuickInsertOpen &&
     !isPreferencesOpen &&
     !isTemplatesHelpOpen &&
+    !showTemplateSuggestions &&
     !pendingLifecycleAction
   )
 
@@ -1348,14 +1455,45 @@ export function App() {
             onBlur={() => setSourceSelection(current => ({ ...current, hasFocus: false }))}
             onChange={event => {
               updateActiveDocument({ text: event.target.value })
+              setDismissedTemplateSuggestionKey(null)
+              setTemplateSuggestionActiveIndex(0)
               updateSourceSelection(true)
             }}
             onFocus={() => updateSourceSelection(true)}
+            onKeyDown={handleSourceKeyDown}
             onKeyUp={() => updateSourceSelection(true)}
             onMouseUp={() => updateSourceSelection(true)}
             onSelect={() => updateSourceSelection(true)}
             aria-label="Markdown source"
           />
+          {showTemplateSuggestions && (
+            <div
+              className="templateSuggestionMenu"
+              role="listbox"
+              aria-label="Template suggestions"
+              onMouseDown={event => event.preventDefault()}
+            >
+              <div className="templateSuggestionHint">
+                <FileText size={14} aria-hidden="true" />
+                <span>{templateSuggestionTrigger?.query ? `Templates matching "${templateSuggestionTrigger.query}"` : 'Template suggestions'}</span>
+              </div>
+              {templateSuggestions.map((template, index) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  className={index === templateSuggestionActiveIndex ? 'active' : ''}
+                  onClick={() => insertTemplateSuggestion(template)}
+                  onMouseEnter={() => setTemplateSuggestionActiveIndex(index)}
+                  role="option"
+                  aria-selected={index === templateSuggestionActiveIndex}
+                >
+                  <span>{template.category}</span>
+                  <strong>{template.title}</strong>
+                  <small>{template.description}</small>
+                </button>
+              ))}
+            </div>
+          )}
           {showSelectionOverlay && (
             <div className="selectionOverlay" role="toolbar" aria-label="Selection formatting">
               {selectionOverlayCommands.map(command => {
@@ -1629,6 +1767,8 @@ export function App() {
 
       {isTemplatesHelpOpen && (
         <TemplatesHelpDialog
+          customTemplates={customTemplates}
+          onCustomTemplatesChange={setCustomTemplates}
           onInsert={insertTemplate}
           onRequestClose={closeTemplatesHelp}
           shortcut={templatesHelpShortcut}
@@ -1779,12 +1919,17 @@ function insertTextAtSelection(
   }
 }
 
+function nextTemplateIndex(current: number, delta: number, count: number): number {
+  if (count <= 0) return 0
+
+  return (current + delta + count) % count
+}
+
 function templateVariablesForDocument(document: EditorDocument | null): TemplateVariables {
   const title = document ? titleWithoutExtension(document.title) : 'Untitled'
 
   return {
     date: new Date().toISOString().slice(0, 10),
-    description: '',
     install_command: 'pnpm install',
     license: 'TBD',
     owner: '',

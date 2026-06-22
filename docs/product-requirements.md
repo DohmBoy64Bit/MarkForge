@@ -42,11 +42,13 @@ MarkForge is a modern, fast, local-first Markdown editor and standalone Markdown
 - Keyboard shortcut editor.
 - Data-driven templates for README, documentation, notes, changelogs, blog posts, meeting notes, project specs, GitHub issues, pull requests, and technical docs.
 
-Phase 6A baseline:
+Phase 6B baseline:
 
-- `packages/templates` owns the initial typed built-in catalog and simple variable substitution helpers.
-- The editor exposes template search, preview, and insertion plus compact Markdown reference help.
-- Template autocomplete, user-created template libraries, and guided variable forms remain later requirements.
+- `packages/templates` owns the typed built-in catalog, variable metadata, placeholder extraction, default merging, and custom-template normalization helpers.
+- The editor exposes template search, guided variable editing, live resolved preview, and insertion plus compact Markdown reference help.
+- Local custom templates are supported through editor `localStorage` with create, search, insert, delete, and reset behavior.
+- Source-mode template suggestions are supported for line-leading `/template` and `/tpl` triggers.
+- Filesystem/workspace template loading, syncable template libraries, and general Markdown autocomplete remain later requirements.
 
 ## Conversion Requirements
 

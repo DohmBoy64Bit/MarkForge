@@ -1,24 +1,60 @@
 import {
   applyTemplate,
+  deriveTemplateVariables,
   filterTemplates,
+  mergeTemplateVariables,
   templateCatalog,
   templateCategories,
   type MarkdownTemplate,
   type TemplateCategory,
   type TemplateVariables
 } from '@markforge/templates'
-import { BookOpenText, CornerDownLeft, FileText, Search, X } from 'lucide-react'
+import {
+  BookOpenText,
+  CornerDownLeft,
+  FileText,
+  Plus,
+  RotateCcw,
+  Save,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  X
+} from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import {
+  deleteCustomTemplate,
+  resetCustomTemplates,
+  upsertCustomTemplate
+} from './customTemplates'
 import { displayShortcut, matchesShortcut } from './editorPreferences'
 
 type TemplatesHelpDialogProps = {
+  customTemplates: MarkdownTemplate[]
+  onCustomTemplatesChange: (templates: MarkdownTemplate[]) => void
   onInsert: (template: MarkdownTemplate, body: string) => void
   onRequestClose: () => void
   shortcut: string
   variables: TemplateVariables
 }
 
-type TemplatesHelpTab = 'templates' | 'help'
+type TemplatesHelpTab = 'templates' | 'custom' | 'help'
+
+type CustomTemplateDraft = {
+  body: string
+  category: TemplateCategory
+  description: string
+  tags: string
+  title: string
+}
+
+const emptyCustomDraft: CustomTemplateDraft = {
+  body: '# {{title}}\n\n',
+  category: 'documentation',
+  description: '',
+  tags: '',
+  title: ''
+}
 
 const helpSections = [
   {
@@ -74,6 +110,8 @@ const helpSections = [
 ]
 
 export function TemplatesHelpDialog({
+  customTemplates,
+  onCustomTemplatesChange,
   onInsert,
   onRequestClose,
   shortcut,
@@ -83,33 +121,49 @@ export function TemplatesHelpDialog({
   const [category, setCategory] = useState<TemplateCategory | 'all'>('all')
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
+  const [templateVariableValues, setTemplateVariableValues] = useState<TemplateVariables>({})
+  const [customDraft, setCustomDraft] = useState<CustomTemplateDraft>(emptyCustomDraft)
+  const [customStatus, setCustomStatus] = useState('Local templates stay in this browser profile.')
   const dialogRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+  const activeSource = activeTab === 'custom' ? customTemplates : templateCatalog
   const filteredTemplates = useMemo(
-    () => filterTemplates(templateCatalog, {
+    () => filterTemplates(activeSource, {
       category: category === 'all' ? undefined : category,
       query
     }),
-    [category, query]
+    [activeSource, category, query]
   )
   const activeTemplate = filteredTemplates[activeIndex] ?? filteredTemplates[0] ?? null
-  const activePreview = activeTemplate ? applyTemplate(activeTemplate, variables) : ''
+  const activeVariableDefinitions = useMemo(
+    () => activeTemplate ? deriveTemplateVariables(activeTemplate) : [],
+    [activeTemplate]
+  )
+  const resolvedVariables = useMemo(
+    () => activeTemplate ? mergeTemplateVariables(activeTemplate, { ...variables, ...templateVariableValues }) : {},
+    [activeTemplate, templateVariableValues, variables]
+  )
+  const activePreview = activeTemplate ? applyTemplate(activeTemplate, resolvedVariables) : ''
+  const missingRequiredVariables = activeVariableDefinitions.filter(definition =>
+    definition.required && String(resolvedVariables[definition.name] ?? '').trim() === ''
+  )
 
   useEffect(() => {
-    if (activeTab === 'templates') inputRef.current?.focus()
+    if (activeTab === 'templates' || activeTab === 'custom') inputRef.current?.focus()
     else closeButtonRef.current?.focus()
   }, [activeTab])
 
   useEffect(() => {
     setActiveIndex(0)
-  }, [category, query])
+  }, [activeTab, category, query])
 
   useEffect(() => {
     if (!activeTemplate) return
 
     document.getElementById(templateOptionId(activeTemplate.id))?.scrollIntoView({ block: 'nearest' })
-  }, [activeTemplate])
+    setTemplateVariableValues(mergeTemplateVariables(activeTemplate, variables))
+  }, [activeTemplate, variables])
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (matchesShortcut(shortcut, event.nativeEvent)) {
@@ -124,27 +178,75 @@ export function TemplatesHelpDialog({
       return
     }
 
-    if (activeTab === 'templates' && event.key === 'ArrowDown') {
+    const isEditingField = isFormField(event.target) && event.target !== inputRef.current
+
+    if (!isEditingField && (activeTab === 'templates' || activeTab === 'custom') && event.key === 'ArrowDown') {
       event.preventDefault()
       setActiveIndex(nextTemplateIndex(activeIndex, 1, filteredTemplates.length))
       return
     }
 
-    if (activeTab === 'templates' && event.key === 'ArrowUp') {
+    if (!isEditingField && (activeTab === 'templates' || activeTab === 'custom') && event.key === 'ArrowUp') {
       event.preventDefault()
       setActiveIndex(nextTemplateIndex(activeIndex, -1, filteredTemplates.length))
       return
     }
 
-    if (activeTab === 'templates' && event.key === 'Enter') {
+    if (!isEditingField && (activeTab === 'templates' || activeTab === 'custom') && event.key === 'Enter') {
       event.preventDefault()
-      if (activeTemplate) onInsert(activeTemplate, activePreview)
+      if (activeTemplate && missingRequiredVariables.length === 0) onInsert(activeTemplate, activePreview)
       return
     }
 
     if (event.key === 'Tab') {
       trapDialogTab(event, dialogRef.current)
     }
+  }
+
+  const saveCustomDraft = () => {
+    const result = upsertCustomTemplate(customDraft, customTemplates)
+
+    if (result.template) {
+      onCustomTemplatesChange(result.templates)
+      setCustomDraft(emptyCustomDraft)
+      setCustomStatus(`Saved ${result.template.title}`)
+      setActiveTab('custom')
+      setQuery('')
+      setCategory('all')
+      restoreDialogFocus()
+      return
+    }
+
+    setCustomStatus(result.errors.join(' '))
+    restoreDialogFocus()
+  }
+
+  const deleteActiveCustomTemplate = () => {
+    if (!activeTemplate || activeTab !== 'custom') return
+
+    const nextTemplates = deleteCustomTemplate(activeTemplate.id, customTemplates)
+    onCustomTemplatesChange(nextTemplates)
+    setCustomStatus(`Deleted ${activeTemplate.title}`)
+    setActiveIndex(0)
+    restoreDialogFocus()
+  }
+
+  const resetCustomEntries = () => {
+    const nextTemplates = resetCustomTemplates()
+    onCustomTemplatesChange(nextTemplates)
+    setCustomStatus('Custom templates reset.')
+    setActiveIndex(0)
+    restoreDialogFocus()
+  }
+
+  const restoreDialogFocus = () => {
+    window.requestAnimationFrame(() => {
+      if (!dialogRef.current) return
+
+      if (!dialogRef.current.contains(document.activeElement) || document.activeElement === document.body) {
+        inputRef.current?.focus()
+      }
+    })
   }
 
   return (
@@ -184,7 +286,15 @@ export function TemplatesHelpDialog({
             onClick={() => setActiveTab('templates')}
           >
             <FileText size={15} />
-            <span>Templates</span>
+            <span>Built-ins</span>
+          </button>
+          <button
+            type="button"
+            className={activeTab === 'custom' ? 'active' : ''}
+            onClick={() => setActiveTab('custom')}
+          >
+            <Plus size={15} />
+            <span>Custom</span>
           </button>
           <button
             type="button"
@@ -196,8 +306,8 @@ export function TemplatesHelpDialog({
           </button>
         </nav>
 
-        {activeTab === 'templates' ? (
-          <section className="templatesHelpBody templatesBody" aria-label="Template catalog">
+        {activeTab === 'templates' || activeTab === 'custom' ? (
+          <section className={`templatesHelpBody templatesBody ${activeTab === 'custom' ? 'customTemplatesBody' : ''}`} aria-label="Template catalog">
             <div className="templateFilters">
               <label className="templateSearch">
                 <Search size={15} aria-hidden="true" />
@@ -205,7 +315,7 @@ export function TemplatesHelpDialog({
                   ref={inputRef}
                   value={query}
                   onChange={event => setQuery(event.target.value)}
-                  placeholder="Search templates"
+                  placeholder={activeTab === 'custom' ? 'Search custom templates' : 'Search templates'}
                   aria-label="Search templates"
                 />
               </label>
@@ -238,7 +348,7 @@ export function TemplatesHelpDialog({
                         aria-selected={isActive}
                         className={isActive ? 'active' : ''}
                         onClick={() => setActiveIndex(index)}
-                        onDoubleClick={() => onInsert(template, applyTemplate(template, variables))}
+                        onDoubleClick={() => onInsert(template, applyTemplate(template, resolvedVariables))}
                         onMouseEnter={() => setActiveIndex(index)}
                         role="option"
                       >
@@ -250,8 +360,8 @@ export function TemplatesHelpDialog({
                   })
                 ) : (
                   <div className="templateEmpty" role="status">
-                    <strong>No templates found</strong>
-                    <span>Try README, meeting, GitHub, release, or docs.</span>
+                    <strong>{activeTab === 'custom' ? 'No custom templates yet' : 'No templates found'}</strong>
+                    <span>{activeTab === 'custom' ? 'Create one below, then insert it from here.' : 'Try README, meeting, GitHub, release, or docs.'}</span>
                   </div>
                 )}
               </div>
@@ -260,14 +370,50 @@ export function TemplatesHelpDialog({
                 {activeTemplate ? (
                   <>
                     <div>
-                      <span>{activeTemplate.category}</span>
+                      <span>{activeTab === 'custom' ? 'local custom' : activeTemplate.category}</span>
                       <h3>{activeTemplate.title}</h3>
                       <p>{activeTemplate.description}</p>
                     </div>
+                    <div className="templateVariableEditor" aria-label="Template variables">
+                      <div className="templateVariableHeader">
+                        <SlidersHorizontal size={14} aria-hidden="true" />
+                        <strong>Variables</strong>
+                        {missingRequiredVariables.length > 0 && <span>{missingRequiredVariables.length} required</span>}
+                      </div>
+                      {activeVariableDefinitions.length > 0 ? (
+                        activeVariableDefinitions.map(definition => (
+                          <label key={definition.name} className={definition.required ? 'required' : ''}>
+                            <span>{definition.label}</span>
+                            <input
+                              value={String(resolvedVariables[definition.name] ?? '')}
+                              onChange={event => setTemplateVariableValues(current => ({
+                                ...current,
+                                [definition.name]: event.target.value
+                              }))}
+                              placeholder={definition.defaultValue ?? definition.name}
+                              aria-label={definition.label}
+                            />
+                            <small>{definition.description}</small>
+                          </label>
+                        ))
+                      ) : (
+                        <p>No placeholders in this template.</p>
+                      )}
+                    </div>
                     <pre>{activePreview}</pre>
                     <div className="templatePreviewFooter">
-                      <span>{activeTemplate.tags.join(', ')}</span>
-                      <button type="button" onClick={() => onInsert(activeTemplate, activePreview)}>
+                      <span>{activeTemplate.tags.join(', ') || 'No tags'}</span>
+                      {activeTab === 'custom' && (
+                        <button type="button" className="danger" onClick={deleteActiveCustomTemplate}>
+                          <Trash2 size={14} />
+                          <span>Delete</span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => onInsert(activeTemplate, activePreview)}
+                        disabled={missingRequiredVariables.length > 0}
+                      >
                         <CornerDownLeft size={14} />
                         <span>Insert</span>
                       </button>
@@ -278,6 +424,75 @@ export function TemplatesHelpDialog({
                 )}
               </aside>
             </div>
+
+            {activeTab === 'custom' && (
+              <form
+                className="customTemplateComposer"
+                onSubmit={event => {
+                  event.preventDefault()
+                  saveCustomDraft()
+                }}
+                aria-label="Create a custom template"
+              >
+                <div className="customTemplateComposerHeader">
+                  <strong>Create Custom Template</strong>
+                  <span>{customStatus}</span>
+                </div>
+                <label>
+                  <span>Title</span>
+                  <input
+                    value={customDraft.title}
+                    onChange={event => setCustomDraft(current => ({ ...current, title: event.target.value }))}
+                    placeholder="Runbook"
+                  />
+                </label>
+                <label>
+                  <span>Category</span>
+                  <select
+                    value={customDraft.category}
+                    onChange={event => setCustomDraft(current => ({ ...current, category: event.target.value as TemplateCategory }))}
+                  >
+                    {templateCategories.map(categoryName => (
+                      <option key={categoryName} value={categoryName}>{categoryName}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Tags</span>
+                  <input
+                    value={customDraft.tags}
+                    onChange={event => setCustomDraft(current => ({ ...current, tags: event.target.value }))}
+                    placeholder="ops, weekly, release"
+                  />
+                </label>
+                <label>
+                  <span>Description</span>
+                  <input
+                    value={customDraft.description}
+                    onChange={event => setCustomDraft(current => ({ ...current, description: event.target.value }))}
+                    placeholder="Short note shown in search"
+                  />
+                </label>
+                <label className="customTemplateBodyField">
+                  <span>Markdown Body</span>
+                  <textarea
+                    value={customDraft.body}
+                    onChange={event => setCustomDraft(current => ({ ...current, body: event.target.value }))}
+                    placeholder="# {{title}}"
+                  />
+                </label>
+                <div className="customTemplateActions">
+                  <button type="button" onClick={resetCustomEntries} disabled={customTemplates.length === 0}>
+                    <RotateCcw size={14} />
+                    <span>Reset Local</span>
+                  </button>
+                  <button type="submit">
+                    <Save size={14} />
+                    <span>Save Template</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </section>
         ) : (
           <section className="templatesHelpBody referenceBody" aria-label="Markdown reference">
@@ -311,7 +526,7 @@ function trapDialogTab(event: KeyboardEvent, dialog: HTMLElement | null): void {
   if (!dialog) return
 
   const focusable = Array.from(
-    dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])')
+    dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])')
   ).filter(element => !element.hasAttribute('aria-hidden'))
 
   if (focusable.length === 0) return
@@ -327,4 +542,10 @@ function trapDialogTab(event: KeyboardEvent, dialog: HTMLElement | null): void {
     event.preventDefault()
     first.focus()
   }
+}
+
+function isFormField(target: EventTarget | null): target is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
+  return target instanceof HTMLInputElement ||
+    target instanceof HTMLSelectElement ||
+    target instanceof HTMLTextAreaElement
 }

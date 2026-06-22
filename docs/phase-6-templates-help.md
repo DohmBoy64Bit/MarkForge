@@ -11,10 +11,19 @@ Phase 6 starts the MarkForge-owned templates and help track without turning the 
 - Template insertion uses the active source document update path and restores the inserted range selection.
 - The help tab covers currently supported syntax: headings, emphasis, links, lists, task lists, code fences, tables, front matter, math, diagrams, and raw HTML sanitization.
 
+## Phase 6B Shipped Scope
+
+- Built-in templates now carry typed variable metadata: name, label, default value, description, and required status where useful.
+- `@markforge/templates` exports helpers for placeholder extraction, derived variable definitions, default/override merging, and custom-template validation/normalization.
+- The Templates and Help dialog now includes guided variable fields for the selected template. The preview updates live and insertion uses the resolved Markdown.
+- A Custom tab lets users create local templates with title, category, tags, description, and Markdown body. Entries are stored in `localStorage`, searchable, insertable, deletable, and resettable.
+- The source editor has a bounded template suggestion surface. When the current source line starts with `/template` or `/tpl`, MarkForge filters template suggestions by the trigger text; Arrow keys navigate, Enter inserts through the shared template resolver, and Escape closes the menu.
+- Helper tests cover variable extraction, default merging, custom-template validation/storage, source trigger detection, and suggestion insertion.
+
 ## Deferred
 
-- Guided variable forms.
-- User-authored template libraries.
-- Template autocomplete in the source editor.
+- Filesystem/workspace template loading.
+- Syncable or shared user-authored template libraries beyond local browser-profile storage.
+- General Markdown autocomplete for links, headings, front matter, images, tables, and code fences.
 - Full documentation website.
 - Converter-backed insertion flows.

@@ -71,7 +71,8 @@ Current status:
 - Phase 5F added reversible source formatting, H1-H6 command coverage, strikethrough, duplicate selection/current-line, and compact source search options for case-sensitive, whole-word, and regex matching/replacement.
 - Phase 5G added quick insert and a source selection formatting overlay, both backed by the existing editor-engine command registry and app command execution path.
 - Phase 6A added a compact templates/help dialog, a preference-backed Templates and Help shortcut, and template insertion through the existing source document update path.
-- Full preferences schema, non-format command remapping, native filesystem watching, native Tauri close interception, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
+- Phase 6B added template variable metadata/editing, local custom templates in editor `localStorage`, and a bounded `/template`/`/tpl` source suggestion surface.
+- Full preferences schema, non-format command remapping, native filesystem watching, native Tauri close interception, rendered-preview search highlighting, filesystem/workspace template loading, and rich/WYSIWYG editing remain open.
 
 Exit criteria:
 
@@ -106,8 +107,9 @@ Exit criteria:
 Current status:
 
 - Phase 6A activates `packages/templates` with a typed starter catalog, search/filter helpers, simple variable application, and package tests.
-- The editor exposes a compact toolbar/shortcut dialog for template search, preview, insertion, and a concise Markdown reference.
-- Template autocomplete, variable wizarding, user-authored template storage, and a docs website remain open.
+- Phase 6B adds typed variable metadata/helpers, guided variable editing in the dialog, local custom templates with create/delete/reset behavior, and a first source suggestion surface for `/template` and `/tpl`.
+- The editor exposes a compact toolbar/shortcut dialog for built-in/custom template search, live resolved preview, insertion, and a concise Markdown reference.
+- Filesystem/workspace template loading, general Markdown autocomplete, syncable user template libraries, and a docs website remain open.
 
 Exit criteria:
 

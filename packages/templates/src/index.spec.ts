@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   applyTemplate,
   applyTemplateVariables,
+  deriveTemplateVariables,
+  extractTemplatePlaceholders,
   filterTemplates,
   getTemplateById,
+  mergeTemplateVariables,
+  normalizeCustomTemplate,
   searchTemplates,
   templateCatalog,
   templateCategories
@@ -56,6 +60,56 @@ describe('@markforge/templates', () => {
     expect(applyTemplateVariables('{{missing}}', {}, { preserveUnknown: false })).toBe('')
   })
 
+  it('extracts unique placeholder names in first-seen order', () => {
+    expect(extractTemplatePlaceholders('{{ title }} {{owner}}\n{{title}}\n{{front-matter.value}}')).toEqual([
+      'title',
+      'owner',
+      'front-matter.value'
+    ])
+  })
+
+  it('derives missing variable definitions from template bodies', () => {
+    expect(deriveTemplateVariables({
+      body: '# {{title}}\nOwner: {{owner}}',
+      variables: [
+        {
+          name: 'title',
+          label: 'Document title',
+          defaultValue: 'Plan',
+          description: 'Heading text.',
+          required: true
+        }
+      ]
+    })).toEqual([
+      {
+        name: 'title',
+        label: 'Document title',
+        defaultValue: 'Plan',
+        description: 'Heading text.',
+        required: true
+      },
+      {
+        name: 'owner',
+        label: 'Owner',
+        defaultValue: '',
+        description: 'Value for {{owner}}.',
+        required: false
+      }
+    ])
+  })
+
+  it('merges template defaults with caller overrides', () => {
+    const readme = getTemplateById('readme')
+
+    expect(readme).not.toBeNull()
+    expect(mergeTemplateVariables(readme!, { title: 'MarkForge' })).toMatchObject({
+      title: 'MarkForge',
+      description: 'A concise project description.',
+      install_command: 'pnpm install',
+      license: 'TBD'
+    })
+  })
+
   it('applies variables to catalog templates', () => {
     const readme = getTemplateById('readme')
 
@@ -66,5 +120,39 @@ describe('@markforge/templates', () => {
       license: 'MIT',
       title: 'MarkForge'
     })).toContain('A local-first Markdown editor.')
+  })
+
+  it('normalizes valid custom templates with derived variables', () => {
+    const result = normalizeCustomTemplate({
+      title: 'Runbook',
+      category: 'engineering',
+      description: 'Incident response notes.',
+      tags: 'ops, incident, ops',
+      body: '# {{service}}\nOwner: {{owner}}'
+    })
+
+    expect(result.errors).toEqual([])
+    expect(result.template).toMatchObject({
+      id: 'custom-runbook',
+      title: 'Runbook',
+      category: 'engineering',
+      tags: ['ops', 'incident']
+    })
+    expect(result.template?.variables?.map(variable => variable.name)).toEqual(['service', 'owner'])
+  })
+
+  it('rejects invalid custom templates with actionable errors', () => {
+    const result = normalizeCustomTemplate({
+      title: '',
+      category: 'not-real',
+      body: ''
+    })
+
+    expect(result.template).toBeNull()
+    expect(result.errors).toEqual([
+      'Title is required.',
+      'Markdown body is required.',
+      'Category must be one of the built-in template categories.'
+    ])
   })
 })
