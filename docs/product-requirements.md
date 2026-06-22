@@ -42,6 +42,12 @@ MarkForge is a modern, fast, local-first Markdown editor and standalone Markdown
 - Keyboard shortcut editor.
 - Data-driven templates for README, documentation, notes, changelogs, blog posts, meeting notes, project specs, GitHub issues, pull requests, and technical docs.
 
+Phase 6A baseline:
+
+- `packages/templates` owns the initial typed built-in catalog and simple variable substitution helpers.
+- The editor exposes template search, preview, and insertion plus compact Markdown reference help.
+- Template autocomplete, user-created template libraries, and guided variable forms remain later requirements.
+
 ## Conversion Requirements
 
 The `packages/converters` package must expose a plugin-style conversion architecture. Initial targets:

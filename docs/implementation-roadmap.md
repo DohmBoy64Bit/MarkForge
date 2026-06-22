@@ -70,6 +70,7 @@ Current status:
 - Phase 5E added dirty-tab close/reload protection, browser `beforeunload` guarding, all-open-file metadata polling, changed/missing-on-disk reconciliation notices, Keep local snoozing, and clearer inspector file status labels.
 - Phase 5F added reversible source formatting, H1-H6 command coverage, strikethrough, duplicate selection/current-line, and compact source search options for case-sensitive, whole-word, and regex matching/replacement.
 - Phase 5G added quick insert and a source selection formatting overlay, both backed by the existing editor-engine command registry and app command execution path.
+- Phase 6A added a compact templates/help dialog, a preference-backed Templates and Help shortcut, and template insertion through the existing source document update path.
 - Full preferences schema, non-format command remapping, native filesystem watching, native Tauri close interception, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
 
 Exit criteria:
@@ -101,6 +102,12 @@ Exit criteria:
 - Implement data-driven templates.
 - Add Markdown reference/help panel.
 - Add template autocomplete and insertion flows.
+
+Current status:
+
+- Phase 6A activates `packages/templates` with a typed starter catalog, search/filter helpers, simple variable application, and package tests.
+- The editor exposes a compact toolbar/shortcut dialog for template search, preview, insertion, and a concise Markdown reference.
+- Template autocomplete, variable wizarding, user-authored template storage, and a docs website remain open.
 
 Exit criteria:
 

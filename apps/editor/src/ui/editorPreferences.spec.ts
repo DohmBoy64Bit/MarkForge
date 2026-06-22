@@ -7,7 +7,8 @@ import {
   keybindingDefinitions,
   quickInsertActionId,
   resetKeybinding,
-  restoreEditorPreferences
+  restoreEditorPreferences,
+  templatesHelpActionId
 } from './editorPreferences'
 
 const keyboardEvent = (input: Partial<KeyboardEvent>): KeyboardEvent => ({
@@ -34,6 +35,7 @@ describe('editor preferences', () => {
     })
     expect(preferences.keybindings[commandPaletteActionId]).toBe('Ctrl+Shift+P')
     expect(preferences.keybindings[quickInsertActionId]).toBe('Ctrl+/')
+    expect(preferences.keybindings[templatesHelpActionId]).toBe('Ctrl+Alt+T')
     expect(preferences.keybindings['format.bold']).toBe('Ctrl+B')
     expect(preferences.keybindings['format.strikethrough']).toBe('')
     expect(preferences.keybindings['edit.duplicate']).toBe('Ctrl+D')
@@ -101,6 +103,15 @@ describe('editor preferences', () => {
       keyboardEvent({ code: 'Slash', ctrlKey: true, key: '/' }),
       preferences.keybindings
     )).toBe(quickInsertActionId)
+  })
+
+  it('matches the templates and help app shortcut', () => {
+    const preferences = restoreEditorPreferences(null)
+
+    expect(actionIdFromKeyboardEvent(
+      keyboardEvent({ altKey: true, code: 'KeyT', ctrlKey: true, key: 't' }),
+      preferences.keybindings
+    )).toBe(templatesHelpActionId)
   })
 
   it('does not match blank shortcuts', () => {

@@ -11,6 +11,7 @@ import { listen } from '@tauri-apps/api/event'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import {
+  BookOpenText,
   Bold,
   CaseSensitive,
   ClipboardCheck,
@@ -57,9 +58,11 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import type { MarkdownTemplate, TemplateVariables } from '@markforge/templates'
 import { CommandPalette } from './CommandPalette'
 import { PreferencesDialog } from './PreferencesDialog'
 import { QuickInsert } from './QuickInsert'
+import { TemplatesHelpDialog } from './TemplatesHelpDialog'
 import { UnsavedChangesDialog } from './UnsavedChangesDialog'
 import {
   closeStatusLabel,
@@ -81,6 +84,7 @@ import {
   readEditorPreferences,
   saveEditorPreferences,
   shortcutForAction,
+  templatesHelpActionId,
   type EditorPreferences,
   type Theme,
   type ViewMode
@@ -212,6 +216,7 @@ export function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [isQuickInsertOpen, setIsQuickInsertOpen] = useState(false)
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
+  const [isTemplatesHelpOpen, setIsTemplatesHelpOpen] = useState(false)
   const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingLifecycleAction | null>(null)
   const [commandPaletteQuery, setCommandPaletteQuery] = useState('')
   const [commandPaletteActiveIndex, setCommandPaletteActiveIndex] = useState(0)
@@ -222,12 +227,14 @@ export function App() {
   const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null)
   const quickInsertReturnFocusRef = useRef<HTMLElement | null>(null)
   const preferencesReturnFocusRef = useRef<HTMLElement | null>(null)
+  const templatesHelpReturnFocusRef = useRef<HTMLElement | null>(null)
   const unsavedDialogReturnFocusRef = useRef<HTMLElement | null>(null)
 
   const theme = preferences.theme
   const viewMode = preferences.viewMode
   const commandPaletteShortcut = shortcutForAction(commandPaletteActionId, preferences.keybindings)
   const quickInsertShortcut = shortcutForAction(quickInsertActionId, preferences.keybindings)
+  const templatesHelpShortcut = shortcutForAction(templatesHelpActionId, preferences.keybindings)
   const activeDocument = documents.find(document => document.id === activeId) ?? documents[0] ?? null
   const activeDirty = activeDocument ? isDirty(activeDocument) : false
   const activeFileStatus = useMemo(() => fileStatusLabel(activeDocument), [activeDocument])
@@ -270,6 +277,10 @@ export function App() {
   const quickInsertCommands = useMemo(
     () => toQuickInsertCommands(paletteCommands),
     [paletteCommands]
+  )
+  const templateVariables = useMemo<TemplateVariables>(
+    () => templateVariablesForDocument(activeDocument),
+    [activeDocument]
   )
   const selectionOverlayCommands = useMemo(
     () => selectionOverlayCommandIds.map(commandId => commandById[commandId]),
@@ -370,6 +381,7 @@ export function App() {
     setCommandPaletteQuery('')
     setCommandPaletteActiveIndex(0)
     setIsQuickInsertOpen(false)
+    setIsTemplatesHelpOpen(false)
     setIsCommandPaletteOpen(true)
     setStatus('Command palette opened')
   }, [])
@@ -399,6 +411,7 @@ export function App() {
     setQuickInsertQuery('')
     setQuickInsertActiveIndex(0)
     setIsCommandPaletteOpen(false)
+    setIsTemplatesHelpOpen(false)
     setIsQuickInsertOpen(true)
     setStatus('Quick insert opened')
   }, [activeDocument])
@@ -422,6 +435,7 @@ export function App() {
       : null
     setIsCommandPaletteOpen(false)
     setIsQuickInsertOpen(false)
+    setIsTemplatesHelpOpen(false)
     setIsPreferencesOpen(true)
     setStatus('Preferences opened')
   }, [])
@@ -436,6 +450,54 @@ export function App() {
       })
     }
   }, [])
+
+  const openTemplatesHelp = useCallback(() => {
+    if (!activeDocument) {
+      setStatus('No active document for templates')
+      return
+    }
+
+    templatesHelpReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    setIsCommandPaletteOpen(false)
+    setIsQuickInsertOpen(false)
+    setIsPreferencesOpen(false)
+    setIsTemplatesHelpOpen(true)
+    setStatus('Templates and help opened')
+  }, [activeDocument])
+
+  const closeTemplatesHelp = useCallback((restoreFocus = true) => {
+    setIsTemplatesHelpOpen(false)
+
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => {
+        templatesHelpReturnFocusRef.current?.focus()
+        templatesHelpReturnFocusRef.current = null
+      })
+    }
+  }, [])
+
+  const insertTemplate = useCallback((template: MarkdownTemplate, body: string) => {
+    const document = activeDocument
+    const textarea = textAreaRef.current
+
+    if (!document) {
+      setStatus('No active document for template insertion')
+      return
+    }
+
+    const selectionStart = textarea?.selectionStart ?? document.text.length
+    const selectionEnd = textarea?.selectionEnd ?? selectionStart
+    const scrollTop = textarea?.scrollTop
+    const edit = insertTextAtSelection(document.text, body, selectionStart, selectionEnd)
+
+    updateActiveDocument({ text: edit.text })
+    setLastCommand(`${template.title} template inserted`)
+    setStatus(`Inserted ${template.title}`)
+    closeTemplatesHelp(false)
+    setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+  }, [activeDocument, closeTemplatesHelp, setEditorSelection, updateActiveDocument])
 
   const executePaletteCommand = useCallback((commandId: EditorCommandId) => {
     closeCommandPalette(false)
@@ -878,6 +940,15 @@ export function App() {
         return
       }
 
+      if (actionId === templatesHelpActionId) {
+        event.preventDefault()
+
+        if (isTemplatesHelpOpen) closeTemplatesHelp()
+        else openTemplatesHelp()
+
+        return
+      }
+
       event.preventDefault()
       applyEditorCommand(actionId)
     }
@@ -888,10 +959,13 @@ export function App() {
     applyEditorCommand,
     closeCommandPalette,
     closeQuickInsert,
+    closeTemplatesHelp,
     isCommandPaletteOpen,
     isQuickInsertOpen,
+    isTemplatesHelpOpen,
     openCommandPalette,
     openQuickInsert,
+    openTemplatesHelp,
     preferences.keybindings
   ])
 
@@ -1006,6 +1080,7 @@ export function App() {
     !isCommandPaletteOpen &&
     !isQuickInsertOpen &&
     !isPreferencesOpen &&
+    !isTemplatesHelpOpen &&
     !pendingLifecycleAction
   )
 
@@ -1055,6 +1130,15 @@ export function App() {
             aria-label="Quick insert"
           >
             <TextCursorInput size={18} />
+          </button>
+          <button
+            type="button"
+            disabled={!activeDocument}
+            onClick={openTemplatesHelp}
+            title={`Templates and help (${displayShortcut(templatesHelpShortcut)})`}
+            aria-label="Templates and help"
+          >
+            <BookOpenText size={18} />
           </button>
           <button
             type="button"
@@ -1543,6 +1627,15 @@ export function App() {
         />
       )}
 
+      {isTemplatesHelpOpen && (
+        <TemplatesHelpDialog
+          onInsert={insertTemplate}
+          onRequestClose={closeTemplatesHelp}
+          shortcut={templatesHelpShortcut}
+          variables={templateVariables}
+        />
+      )}
+
       {pendingLifecycleAction && pendingLifecycleDocument && (
         <UnsavedChangesDialog
           documentPath={pendingLifecycleDocument.path}
@@ -1662,6 +1755,46 @@ function documentStats(source: string): { characters: number; lines: number; wor
     lines: source ? source.split(/\r?\n/).length : 0,
     words
   }
+}
+
+function insertTextAtSelection(
+  source: string,
+  insertion: string,
+  selectionStart: number,
+  selectionEnd: number
+): { selectionEnd: number; selectionStart: number; text: string } {
+  const start = Math.max(0, Math.min(selectionStart, source.length))
+  const end = Math.max(start, Math.min(selectionEnd, source.length))
+  const before = source.slice(0, start)
+  const after = source.slice(end)
+  const prefix = before && !before.endsWith('\n') ? '\n\n' : ''
+  const suffix = after && !insertion.endsWith('\n') ? '\n\n' : ''
+  const insertedStart = before.length + prefix.length
+  const insertedEnd = insertedStart + insertion.length
+
+  return {
+    selectionStart: insertedStart,
+    selectionEnd: insertedEnd,
+    text: `${before}${prefix}${insertion}${suffix}${after}`
+  }
+}
+
+function templateVariablesForDocument(document: EditorDocument | null): TemplateVariables {
+  const title = document ? titleWithoutExtension(document.title) : 'Untitled'
+
+  return {
+    date: new Date().toISOString().slice(0, 10),
+    description: '',
+    install_command: 'pnpm install',
+    license: 'TBD',
+    owner: '',
+    title,
+    version: 'Unreleased'
+  }
+}
+
+function titleWithoutExtension(title: string): string {
+  return title.replace(/\.(md|markdown|mdown|txt)$/i, '') || title
 }
 
 function titleFromPath(path: string): string {

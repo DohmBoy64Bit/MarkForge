@@ -1,6 +1,6 @@
 # MarkForge Editor
 
-Phase 5G Tauri editor shell for the Windows-first local Markdown workspace.
+Phase 6A Tauri editor shell for the Windows-first local Markdown workspace.
 
 ## Commands
 
@@ -23,6 +23,7 @@ pnpm --filter @markforge/editor tauri build
 - Preference-backed keyboard shortcuts for Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+D, Ctrl+Shift+7, Ctrl+Shift+8, quick insert, and the command palette when focus is in the editor or command surface.
 - Command palette opened by the toolbar or the configured shortcut, with searchable command metadata, grouped results, keyboard navigation, shortcut badges, empty state, and execution through the shared editor-engine commands.
 - Quick insert opened by the toolbar or Ctrl+/, with searchable block/insert commands, keyboard navigation, Escape/backdrop close, focus restoration, and execution through the same editor-engine command path.
+- Templates and help dialog opened by the toolbar or Ctrl+Alt+T, with searchable typed templates from `@markforge/templates`, preview, insertion into the active source document, and a compact Markdown syntax reference.
 - Selection formatting overlay for non-empty source selections with bold, italic, inline code, strikethrough, and link buttons.
 - Preferences dialog for local theme, default view mode, editable source command keybindings, per-command reset, reset all, and duplicate shortcut conflict display.
 - Prompted close/reload protection for dirty tabs with Save, Discard, and Cancel decisions.
@@ -41,4 +42,5 @@ pnpm --filter @markforge/editor tauri build
 - Rich WYSIWYG/realtime editing.
 - Table editing beyond starter scaffold insertion.
 - Richer line transform menus.
+- Template variable wizard, user-authored template storage, and template autocomplete.
 - Full preference schema beyond the Phase 5D local editor settings foundation.
