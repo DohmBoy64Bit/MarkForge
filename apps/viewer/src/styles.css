@@ -53,45 +53,14 @@ button {
 }
 
 .viewerShell {
-  --app-bg: #e7ebef;
-  --rail: #f8fafb;
-  --rail-border: #cbd4dd;
-  --panel: #f6f8fa;
-  --panel-border: #d6dde4;
-  --page: #fffdf8;
-  --text: #1f2c38;
-  --muted: #667584;
-  --accent: #176b75;
-  --accent-soft: #d9eef0;
-  --warning: #9a5f00;
-  --warning-soft: #fff3d6;
-  --code-bg: #18202b;
-  --code-text: #ecf4f8;
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr;
   color: var(--text);
   background:
-    linear-gradient(90deg, rgba(31, 44, 56, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
     var(--app-bg);
   background-size: 48px 48px;
-}
-
-.viewerShell.dark {
-  --app-bg: #15181b;
-  --rail: #1d2227;
-  --rail-border: #343d46;
-  --panel: #1a1f24;
-  --panel-border: #313941;
-  --page: #20262c;
-  --text: #e7edf2;
-  --muted: #9ca9b5;
-  --accent: #71c5bd;
-  --accent-soft: #203f42;
-  --warning: #f5c66c;
-  --warning-soft: #3a301e;
-  --code-bg: #11161d;
-  --code-text: #edf5f8;
 }
 
 .commandRail {

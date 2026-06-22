@@ -1,6 +1,6 @@
 # MarkForge Editor
 
-Phase 7F Tauri editor shell for the Windows-first local Markdown workspace.
+Phase 8D Tauri editor shell for the Windows-first local Markdown workspace.
 
 ## Commands
 
@@ -29,14 +29,14 @@ pnpm --filter @markforge/editor tauri build
 - Converter-backed Import Conversion accepts supported HTML and CSV source input, then inserts converted Markdown by selection, cursor, or append mode.
 - Converter-backed Clean Markdown normalizes whitespace in the active document through the same source document update path as other editing actions.
 - Selection formatting overlay for non-empty source selections with bold, italic, inline code, strikethrough, and link buttons.
-- Preferences dialog for local theme, default view mode, editable source command keybindings, per-command reset, reset all, and duplicate shortcut conflict display.
+- Preferences dialog for package-backed Light, Dark, and Sepia Paper themes, default view mode, editable source command keybindings, per-command reset, reset all, and duplicate shortcut conflict display.
 - Prompted close/reload protection for dirty tabs with Save, Discard, and Cancel decisions.
 - Browser `beforeunload` protection when any open document has unsaved edits.
 - Metadata polling across open file-backed tabs, with changed-on-disk and missing-on-disk reconciliation notices.
 - Reload from disk and Keep local actions for external changes, including dirty-document confirmation before replacing local edits.
 - Inspector panels for file state, command status, converter activity history, search, outline, recent files, front matter, warnings, clipboard state, and external-change state.
 - LocalStorage-backed restore for unsaved/dirty tabs, recent file paths, theme, view mode, editor keybindings, and editor-local custom templates.
-- Light and dark MarkForge-native workspace themes.
+- Light, Dark, and Sepia Paper MarkForge-native workspace themes backed by `@markforge/theme-engine` app variables.
 - Compact status bar with file, save, line, word, character, and warning counts.
 
 ## Deferred

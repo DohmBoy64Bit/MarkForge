@@ -28,6 +28,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open, save } from '@tauri-apps/plugin-dialog'
+import { builtInThemes, getTheme, themeToAppCssVariables } from '@markforge/theme-engine'
 import {
   BookOpenText,
   ArrowDownToLine,
@@ -185,6 +186,7 @@ const htmlConverter = createHtmlConverter()
 const htmlToMarkdownConverter = createHtmlToMarkdownConverter()
 const csvToMarkdownTableConverter = createCsvToMarkdownTableConverter()
 const markdownCleanupConverter = createMarkdownCleanupConverter()
+const appThemeOptions = builtInThemes.filter(theme => theme.id === 'light' || theme.id === 'dark' || theme.id === 'sepia')
 const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   bold: Bold,
   italic: Italic,
@@ -292,6 +294,8 @@ export function App() {
   const unsavedDialogReturnFocusRef = useRef<HTMLElement | null>(null)
 
   const theme = preferences.theme
+  const activeTheme = useMemo(() => getTheme(theme), [theme])
+  const themeVariables = useMemo(() => themeToAppCssVariables(activeTheme) as CSSProperties, [activeTheme])
   const viewMode = preferences.viewMode
   const commandPaletteShortcut = shortcutForAction(commandPaletteActionId, preferences.keybindings)
   const quickInsertShortcut = shortcutForAction(quickInsertActionId, preferences.keybindings)
@@ -1459,7 +1463,7 @@ export function App() {
   )
 
   return (
-    <main className={`editorShell ${theme}`} data-theme={theme}>
+    <main className={`editorShell ${activeTheme.mode}`} data-theme={theme} style={themeVariables}>
       <header className="commandRail" aria-label="Editor commands">
         <div className="brandLockup">
           <FilePenLine size={20} aria-hidden="true" />
@@ -1618,24 +1622,22 @@ export function App() {
         </div>
 
         <div className="themeSwitch" aria-label="Theme">
-          <button
-            type="button"
-            className={theme === 'light' ? 'active' : ''}
-            onClick={() => setTheme('light')}
-            title="Light mode"
-            aria-label="Light mode"
-          >
-            <Sun size={16} />
-          </button>
-          <button
-            type="button"
-            className={theme === 'dark' ? 'active' : ''}
-            onClick={() => setTheme('dark')}
-            title="Dark mode"
-            aria-label="Dark mode"
-          >
-            <Moon size={16} />
-          </button>
+          {appThemeOptions.map(option => {
+            const Icon = iconForTheme(option.id)
+
+            return (
+              <button
+                key={option.id}
+                type="button"
+                className={theme === option.id ? 'active' : ''}
+                onClick={() => setTheme(option.id)}
+                title={`${option.label} theme`}
+                aria-label={`${option.label} theme`}
+              >
+                <Icon size={16} />
+              </button>
+            )
+          })}
         </div>
       </header>
 
@@ -2267,6 +2269,12 @@ function templateVariablesForDocument(document: EditorDocument | null): Template
 
 function titleWithoutExtension(title: string): string {
   return title.replace(/\.(md|markdown|mdown|txt)$/i, '') || title
+}
+
+function iconForTheme(theme: Theme): LucideIcon {
+  if (theme === 'dark') return Moon
+  if (theme === 'sepia') return BookOpenText
+  return Sun
 }
 
 function titleFromPath(path: string): string {

@@ -6,6 +6,7 @@ import {
 } from '@markforge/converters'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
 import { createPlatformServices, type FileInfo } from '@markforge/platform'
+import { builtInThemes, getTheme, themeToAppCssVariables, type ThemeId } from '@markforge/theme-engine'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { writeText } from '@tauri-apps/plugin-clipboard-manager'
@@ -13,6 +14,7 @@ import { open, save } from '@tauri-apps/plugin-dialog'
 import {
   Clipboard,
   Copy,
+  BookOpenText,
   FileCode,
   FileInput,
   FileSearch,
@@ -55,6 +57,7 @@ const browserPrintConverter = createBrowserPrintConverter(() => {
   if (!result.ok) throw new Error(result.error.message)
 })
 const htmlConverter = createHtmlConverter()
+const appThemeOptions = builtInThemes.filter(theme => theme.id === 'light' || theme.id === 'dark' || theme.id === 'sepia')
 
 const sampleDocument = `---
 title: Viewer foundation
@@ -87,7 +90,7 @@ export function App() {
   const [lastLoadedAt, setLastLoadedAt] = useState<Date | null>(null)
   const [externalChange, setExternalChange] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [theme, setTheme] = useState<'light' | 'dark'>('light')
+  const [theme, setTheme] = useState<ThemeId>('light')
   const [selectedMatch, setSelectedMatch] = useState(0)
   const articleRef = useRef<HTMLElement | null>(null)
 
@@ -99,6 +102,8 @@ export function App() {
   )
   const fileName = filePath ? filePath.split(/[\\/]/).pop() ?? filePath : 'Sample document'
   const frontMatterRows = useMemo(() => frontMatterEntries(rendered.frontMatter?.data), [rendered.frontMatter])
+  const activeTheme = useMemo(() => getTheme(theme), [theme])
+  const themeVariables = useMemo(() => themeToAppCssVariables(activeTheme) as CSSProperties, [activeTheme])
 
   const openDocument = useCallback(async () => {
     try {
@@ -249,7 +254,7 @@ export function App() {
   const selectedSearchMatch = searchMatches[selectedMatch]
 
   return (
-    <main className={`viewerShell ${theme}`} data-theme={theme}>
+    <main className={`viewerShell ${activeTheme.mode}`} data-theme={theme} style={themeVariables}>
       <header className="commandRail" aria-label="Viewer commands">
         <div className="brandLockup">
           <FileSearch size={20} aria-hidden="true" />
@@ -292,24 +297,22 @@ export function App() {
         </label>
 
         <div className="themeSwitch" aria-label="Theme">
-          <button
-            type="button"
-            className={theme === 'light' ? 'active' : ''}
-            onClick={() => setTheme('light')}
-            title="Light mode"
-            aria-label="Light mode"
-          >
-            <Sun size={16} />
-          </button>
-          <button
-            type="button"
-            className={theme === 'dark' ? 'active' : ''}
-            onClick={() => setTheme('dark')}
-            title="Dark mode"
-            aria-label="Dark mode"
-          >
-            <Moon size={16} />
-          </button>
+          {appThemeOptions.map(option => {
+            const Icon = iconForTheme(option.id)
+
+            return (
+              <button
+                key={option.id}
+                type="button"
+                className={theme === option.id ? 'active' : ''}
+                onClick={() => setTheme(option.id)}
+                title={`${option.label} theme`}
+                aria-label={`${option.label} theme`}
+              >
+                <Icon size={16} />
+              </button>
+            )
+          })}
         </div>
       </header>
 
@@ -488,6 +491,12 @@ function formatBytes(value: number): string {
 
 function titleWithoutExtension(title: string): string {
   return title.replace(/\.(md|markdown|mdown|txt)$/i, '') || title
+}
+
+function iconForTheme(theme: ThemeId): typeof Sun {
+  if (theme === 'dark') return Moon
+  if (theme === 'sepia') return BookOpenText
+  return Sun
 }
 
 function messageFromError(error: unknown): string {

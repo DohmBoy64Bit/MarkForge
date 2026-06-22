@@ -1,4 +1,5 @@
 import {
+  BookOpenText,
   Keyboard,
   Moon,
   RotateCcw,
@@ -8,6 +9,7 @@ import {
   Sun,
   X
 } from 'lucide-react'
+import { builtInThemes, getTheme } from '@markforge/theme-engine'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import {
   conflictForAction,
@@ -34,6 +36,7 @@ const tabs: Array<{ id: PreferencesTab; label: string }> = [
   { id: 'general', label: 'General' },
   { id: 'keybindings', label: 'Keybindings' }
 ]
+const appThemeOptions = builtInThemes.filter(theme => theme.id === 'light' || theme.id === 'dark' || theme.id === 'sepia')
 
 export function PreferencesDialog({
   onPreferencesChange,
@@ -47,6 +50,7 @@ export function PreferencesDialog({
     () => detectShortcutConflicts(preferences.keybindings),
     [preferences.keybindings]
   )
+  const activeTheme = useMemo(() => getTheme(preferences.theme), [preferences.theme])
   const definitionById = useMemo(
     () => Object.fromEntries(keybindingDefinitions.map(definition => [definition.id, definition])),
     []
@@ -150,25 +154,24 @@ export function PreferencesDialog({
                 <div className="preferenceBlock">
                   <div>
                     <h3>Theme</h3>
-                    <p>{preferences.theme === 'dark' ? 'Dark application chrome' : 'Light application chrome'}</p>
+                    <p>{activeTheme.label} application chrome</p>
                   </div>
                   <div className="preferenceSegment" aria-label="Theme preference">
-                    <button
-                      type="button"
-                      className={preferences.theme === 'light' ? 'active' : ''}
-                      onClick={() => updateTheme('light')}
-                    >
-                      <Sun size={15} />
-                      <span>Light</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={preferences.theme === 'dark' ? 'active' : ''}
-                      onClick={() => updateTheme('dark')}
-                    >
-                      <Moon size={15} />
-                      <span>Dark</span>
-                    </button>
+                    {appThemeOptions.map(option => {
+                      const Icon = iconForTheme(option.id)
+
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={preferences.theme === option.id ? 'active' : ''}
+                          onClick={() => updateTheme(option.id)}
+                        >
+                          <Icon size={15} />
+                          <span>{option.label}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -266,6 +269,12 @@ export function PreferencesDialog({
       </div>
     </div>
   )
+}
+
+function iconForTheme(theme: Theme): typeof Sun {
+  if (theme === 'dark') return Moon
+  if (theme === 'sepia') return BookOpenText
+  return Sun
 }
 
 function trapDialogTab(event: KeyboardEvent, dialog: HTMLElement | null): void {

@@ -61,6 +61,11 @@ describe('@markforge/core', () => {
     expect(readEditorPreferences(storage, definitions).theme).toBe('dark')
   })
 
+  it('restores non-light/dark app chrome theme preferences', () => {
+    expect(restoreEditorPreferences({ theme: 'sepia' }, definitions).theme).toBe('sepia')
+    expect(restoreEditorPreferences({ theme: 'not-real' }, definitions).theme).toBe('light')
+  })
+
   it('normalizes sessions and recent files', () => {
     expect(restoreEditorSession({
       activeId: 'a',

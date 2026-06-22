@@ -33,56 +33,15 @@ button {
 }
 
 .editorShell {
-  --app-bg: #e6eaed;
-  --rail: #f7f9fa;
-  --rail-border: #c8d1da;
-  --panel: #f2f5f6;
-  --panel-border: #d3dbe2;
-  --source: #fbfcfd;
-  --page: #fffdf7;
-  --text: #1f2b36;
-  --muted: #667481;
-  --faint: #8996a1;
-  --accent: #176f70;
-  --accent-strong: #0f575b;
-  --accent-soft: #dcefed;
-  --warning: #965f00;
-  --warning-soft: #fff2d3;
-  --danger: #ad3328;
-  --danger-soft: #fff0ee;
-  --code-bg: #17202b;
-  --code-text: #ecf4f8;
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   color: var(--text);
   background:
-    linear-gradient(90deg, rgba(31, 43, 54, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
     linear-gradient(180deg, rgba(255, 255, 255, 0.56), transparent 220px),
     var(--app-bg);
   background-size: 46px 46px, auto, auto;
-}
-
-.editorShell.dark {
-  --app-bg: #15191c;
-  --rail: #1d2226;
-  --rail-border: #333c44;
-  --panel: #1a1f23;
-  --panel-border: #303840;
-  --source: #161b1f;
-  --page: #20252a;
-  --text: #e8edf1;
-  --muted: #9ba8b3;
-  --faint: #798692;
-  --accent: #78c7be;
-  --accent-strong: #9bded7;
-  --accent-soft: #1f3c3d;
-  --warning: #f3c46d;
-  --warning-soft: #3a2f1d;
-  --danger: #ff9f94;
-  --danger-soft: #3b2423;
-  --code-bg: #10161d;
-  --code-text: #eff6f8;
 }
 
 .commandRail {

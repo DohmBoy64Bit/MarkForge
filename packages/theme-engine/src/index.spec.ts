@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { builtInThemes, codeThemeForTheme, exportThemeForTheme, getTheme, themeToCssVariables, validateTheme } from './index'
+import {
+  builtInThemes,
+  codeThemeForTheme,
+  exportThemeForTheme,
+  getTheme,
+  themeToAppCssVariables,
+  themeToAppTokens,
+  themeToCssVariables,
+  validateTheme
+} from './index'
 
 describe('@markforge/theme-engine', () => {
   it('ships the required built-in theme registry', () => {
@@ -25,6 +34,20 @@ describe('@markforge/theme-engine', () => {
     expect(exportThemeForTheme(theme)).toEqual({
       exportBackground: '#ffffff',
       exportForeground: '#24292f'
+    })
+  })
+
+  it('generates app-facing CSS variables for editor and viewer shells', () => {
+    const sepia = getTheme('sepia')
+
+    expect(themeToAppTokens(sepia)).toMatchObject({
+      page: '#fff9eb',
+      codeBg: '#2a251d'
+    })
+    expect(themeToAppCssVariables(sepia)).toMatchObject({
+      '--app-bg': '#eee2cc',
+      '--accent-strong': '#4f5639',
+      '--grid-line': 'rgba(78, 68, 52, 0.08)'
     })
   })
 })

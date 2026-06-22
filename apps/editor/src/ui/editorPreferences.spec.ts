@@ -48,6 +48,10 @@ describe('editor preferences', () => {
       viewMode: 'split'
     })
     expect(restoreEditorPreferences({ theme: 'sepia', viewMode: 'reader' })).toMatchObject({
+      theme: 'sepia',
+      viewMode: 'split'
+    })
+    expect(restoreEditorPreferences({ theme: 'not-real', viewMode: 'reader' })).toMatchObject({
       theme: 'light',
       viewMode: 'split'
     })

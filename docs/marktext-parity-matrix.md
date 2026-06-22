@@ -72,8 +72,8 @@ This matrix is grounded in the repomixr bundle at `docs/research/repomixr/output
 | Export | Include TOC in exported document | changelog | deferred | `packages/markdown-engine` | Required export option. |
 | Export | Detailed export settings | export settings component/options | deferred | `packages/converters`, `packages/theme-engine` | Page size, orientation, margins, fonts, heading numbering, front matter, headers/footers, TOC, and export theme. |
 | Print | Print options | changelog; file menu export/print | partially supported | `packages/platform`, `packages/converters` | Editor and viewer expose print commands through a converter-backed browser-print handoff; Phase 7B adds adjacent HTML export actions without claiming native PDF/settings support. |
-| Themes | Application themes | README; theme menu; theme CSS assets | deferred | `packages/theme-engine`, `packages/ui` | MarkForge built-ins differ by prompt. |
-| Themes | Code block themes | Prism theme assets | deferred | `packages/theme-engine` | Theme contract covers code. |
+| Themes | Application themes | README; theme menu; theme CSS assets | partially supported | `packages/theme-engine`, `packages/ui` | Phase 8D wires editor/viewer app chrome to `packages/theme-engine` app tokens and exposes Light, Dark, and Sepia Paper controls. High contrast, GitHub-like, modern neutral, system theme following, and broader settings remain open. |
+| Themes | Code block themes | Prism theme assets | partially supported | `packages/theme-engine` | Theme engine maps each built-in theme to a code theme token, and app code blocks consume package app variables. Full syntax-highlighter theme switching remains open. |
 | Themes | Export themes | export theme assets/settings | deferred | `packages/theme-engine`, `packages/converters` | Separate print/export tokens. |
 | Themes | Follow system theme | theme menu/preferences | deferred | `packages/platform`, `packages/theme-engine` | Windows and Linux support. |
 | Themes | Custom CSS/theme override | theme preference components | deferred | `packages/theme-engine` | Validate and scope to avoid unsafe global breakage. |

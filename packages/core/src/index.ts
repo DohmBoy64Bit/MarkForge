@@ -1,6 +1,6 @@
 import { isRecord, type StorageLike } from '@markforge/shared'
 
-export type ThemePreference = 'dark' | 'light'
+export type ThemePreference = 'dark' | 'light' | 'sepia'
 export type ViewModePreference = 'preview' | 'source' | 'split'
 
 export type KeybindingDefinition<TActionId extends string = string> = {
@@ -58,7 +58,7 @@ export function restoreEditorPreferences<TActionId extends string>(
 
   return {
     version: 2,
-    theme: value.theme === 'dark' ? 'dark' : 'light',
+    theme: isThemePreference(value.theme) ? value.theme : 'light',
     viewMode: isViewMode(value.viewMode) ? value.viewMode : 'split',
     keybindings: restoreKeybindings(value.keybindings, defaults.keybindings, definitions)
   }
@@ -181,6 +181,12 @@ function normalizeRecentFiles(value: unknown, maxItems = 8): string[] {
 
 function isViewMode(value: unknown): value is ViewModePreference {
   return value === 'source' || value === 'split' || value === 'preview'
+}
+
+function isThemePreference(value: unknown): value is ThemePreference {
+  return value === 'light' ||
+    value === 'dark' ||
+    value === 'sepia'
 }
 
 function clonePreferences<TActionId extends string>(

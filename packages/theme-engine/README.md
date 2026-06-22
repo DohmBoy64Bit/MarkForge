@@ -9,7 +9,8 @@ Current status: implemented package boundary.
 - Built-in registry for light, dark, high contrast, sepia/paper, GitHub-like, and modern neutral themes.
 - Theme token validation.
 - CSS variable generation.
+- App-facing CSS variable generation for editor/viewer shell tokens.
 - Code highlighting theme mapping.
 - Print/export foreground and background mapping.
 
-The current editor/viewer UI exposes only light/dark controls, so additional built-in themes are package-ready but not yet surfaced as new app UI.
+The current editor/viewer UI exposes and persists Light, Dark, and Sepia Paper app chrome themes. High contrast, GitHub-like, and modern neutral are package-ready but not yet surfaced as app controls.
