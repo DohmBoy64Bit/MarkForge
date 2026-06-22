@@ -27,17 +27,19 @@ Run Tauri Rust checks from each app's `src-tauri` directory when changing deskto
 cargo check
 ```
 
-`pnpm docs:check` is currently a placeholder scaffold check. Replace it with a real documentation validation pass before relying on it as a release gate.
+`pnpm docs:check` runs the repository documentation validation script. It checks required documentation files, targeted stale-status drift markers, package placeholder/current implementation consistency, and local Markdown links across product documentation.
 
 ## Implementation State
 
-Implementation has progressed through Phase 5A:
+Implementation has progressed through Phase 7A:
 
 - Phase 1 Tauri editor proof of concept.
 - Phase 2 shared Markdown engine.
 - Phase 3 standalone viewer foundation.
 - Phase 4 multi-document editor shell.
-- Phase 5A source editing command registry and Markdown formatting rail.
+- Phase 5 source-mode command/editing foundations through Phase 5G.
+- Phase 6B templates/help, guided template variables, local custom templates, and bounded `/template`/`/tpl` source suggestions.
+- Phase 7A converter package capabilities for Markdown-to-HTML export, browser print handoff, HTML-to-Markdown import, CSV-to-Markdown table conversion, Markdown cleanup, and explicit unsupported results for heavier conversion targets.
 
 The architecture remains the target contract, but some app components still own temporary platform/session/editing logic while packages are being extracted.
 

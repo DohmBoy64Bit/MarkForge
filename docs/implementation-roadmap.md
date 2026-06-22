@@ -120,6 +120,11 @@ Exit criteria:
 - Implement converter plugin contracts.
 - Add HTML, DOCX, PDF, clipboard rich text, CSV/table, URL/article, OCR where practical, and Markdown cleanup modules.
 
+Current status:
+
+- Phase 7A expands `packages/converters` beyond the remediation package boundary with tested conversion capabilities for Markdown-to-HTML export, browser-print handoff, HTML-to-Markdown import through Turndown, CSV-to-Markdown table conversion, and Markdown whitespace cleanup.
+- DOCX, native PDF import/export, rich clipboard import, URL/article extraction, and OCR are exposed as explicit unsupported converter boundaries until file parsing, platform MIME access, network/readability policy, OCR runtime, and fixture requirements are defined.
+
 Exit criteria:
 
 - Each converter reports warnings and limitations.

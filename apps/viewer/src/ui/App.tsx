@@ -1,4 +1,6 @@
+import { createBrowserPrintConverter } from '@markforge/converters'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
+import { createPlatformServices, type FileInfo } from '@markforge/platform'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { writeText } from '@tauri-apps/plugin-clipboard-manager'
@@ -19,18 +21,31 @@ import {
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
-type FileInfo = {
-  exists: boolean
-  modifiedMs: number | null
-  len: number | null
-}
-
 type SearchMatch = {
   line: number
   text: string
 }
 
-const supportedExtensions = ['md', 'markdown', 'mdown', 'txt']
+const platform = createPlatformServices({
+  filesystem: {
+    getFileInfo: path => invoke<FileInfo>('get_file_info', { path }),
+    readTextFile: path => invoke<string>('read_text_file', { path })
+  },
+  dialogs: {
+    open
+  },
+  clipboard: {
+    readText: async () => '',
+    writeText
+  },
+  print: {
+    print: () => window.print()
+  }
+})
+const browserPrintConverter = createBrowserPrintConverter(() => {
+  const result = platform.print.print()
+  if (!result.ok) throw new Error(result.error.message)
+})
 
 const sampleDocument = `---
 title: Viewer foundation
@@ -78,10 +93,7 @@ export function App() {
 
   const openDocument = useCallback(async () => {
     try {
-      const selected = await open({
-        multiple: false,
-        filters: [{ name: 'Markdown and text', extensions: supportedExtensions }]
-      })
+      const selected = await selectOpenPathFromPlatform()
 
       if (typeof selected !== 'string') return
 
@@ -106,7 +118,7 @@ export function App() {
 
   const copySource = useCallback(async () => {
     try {
-      await writeText(documentText)
+      await writeClipboardText(documentText)
       setStatus('Source copied')
     } catch (error) {
       setStatus(messageFromError(error))
@@ -116,12 +128,21 @@ export function App() {
   const copyRendered = useCallback(async () => {
     try {
       const text = articleRef.current?.innerText.trim() ?? ''
-      await writeText(text)
+      await writeClipboardText(text)
       setStatus(text ? 'Rendered text copied' : 'Nothing to copy')
     } catch (error) {
       setStatus(messageFromError(error))
     }
   }, [])
+
+  const printDocument = useCallback(async () => {
+    const result = await browserPrintConverter.convert({
+      format: 'browser-print',
+      markdown: documentText
+    })
+
+    setStatus(result.ok ? 'Print dialog opened' : result.error.message)
+  }, [documentText])
 
   useEffect(() => {
     let unlisten: (() => void) | null = null
@@ -132,7 +153,7 @@ export function App() {
       if (id === 'file.reload') void reloadDocument()
       if (id === 'file.copySource') void copySource()
       if (id === 'file.copyRendered') void copyRendered()
-      if (id === 'file.print') window.print()
+      if (id === 'file.print') void printDocument()
     }).then(cleanup => {
       unlisten = cleanup
     }).catch(error => {
@@ -142,14 +163,14 @@ export function App() {
     return () => {
       unlisten?.()
     }
-  }, [copyRendered, copySource, openDocument, reloadDocument])
+  }, [copyRendered, copySource, openDocument, printDocument, reloadDocument])
 
   useEffect(() => {
     if (!filePath || !lastKnownFileInfo?.modifiedMs) return
 
     const interval = window.setInterval(async () => {
       try {
-        const current = await invoke<FileInfo>('get_file_info', { path: filePath })
+        const current = await getFileInfoFromPlatform(filePath)
         if (!current.exists) {
           setExternalChange(true)
           setStatus('File is no longer available')
@@ -173,8 +194,7 @@ export function App() {
   }, [searchQuery])
 
   async function loadDocument(path: string, verb: 'Opened' | 'Reloaded') {
-    const contents = await invoke<string>('read_text_file', { path })
-    const info = await invoke<FileInfo>('get_file_info', { path })
+    const { contents, info } = await readDocumentFromPlatform(path)
 
     setDocumentText(contents)
     setFilePath(path)
@@ -210,7 +230,7 @@ export function App() {
           <button type="button" onClick={() => void copySource()} title="Copy source" aria-label="Copy source">
             <Clipboard size={18} />
           </button>
-          <button type="button" onClick={() => window.print()} title="Print" aria-label="Print">
+          <button type="button" onClick={() => void printDocument()} title="Print" aria-label="Print">
             <Printer size={18} />
           </button>
         </nav>
@@ -425,6 +445,33 @@ function messageFromError(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
   return 'Unexpected viewer error'
+}
+
+async function selectOpenPathFromPlatform(): Promise<string | null> {
+  const result = await platform.dialogs.openMarkdownFile()
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
+async function readDocumentFromPlatform(path: string): Promise<{ contents: string; info: FileInfo }> {
+  const contents = await platform.filesystem.readTextFile(path)
+  if (!contents.ok) throw new Error(contents.error.message)
+
+  const info = await platform.filesystem.getFileInfo(path)
+  if (!info.ok) throw new Error(info.error.message)
+
+  return { contents: contents.value, info: info.value }
+}
+
+async function getFileInfoFromPlatform(path: string): Promise<FileInfo> {
+  const result = await platform.filesystem.getFileInfo(path)
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
+async function writeClipboardText(value: string): Promise<void> {
+  const result = await platform.clipboard.writeText(value)
+  if (!result.ok) throw new Error(result.error.message)
 }
 
 function safeRenderMarkdown(source: string): { rendered: RenderedMarkdown; renderError: string | null } {

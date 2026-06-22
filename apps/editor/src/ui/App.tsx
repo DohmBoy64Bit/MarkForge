@@ -5,7 +5,17 @@ import {
   type EditorCommandIcon,
   type EditorCommandId
 } from '@markforge/editor-engine'
+import { createBrowserPrintConverter } from '@markforge/converters'
+import {
+  readEditorSession,
+  readRecentFiles,
+  rememberRecentFile as rememberRecentFilePath,
+  saveEditorSession,
+  saveRecentFiles,
+  type PersistedEditorSession
+} from '@markforge/core'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
+import { createPlatformServices, type FileInfo } from '@markforge/platform'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
@@ -74,8 +84,7 @@ import {
   normalizeExternalChange,
   reconcileFileInfo,
   shouldPromptForClose,
-  type ExternalChangeState,
-  type FileInfo
+  type ExternalChangeState
 } from './documentLifecycle'
 import {
   actionIdFromKeyboardEvent,
@@ -121,11 +130,6 @@ type EditorDocument = {
   updatedAt: number
 }
 
-type PersistedSession = {
-  activeId: string | null
-  docs: Array<Pick<EditorDocument, 'id' | 'title' | 'path' | 'text' | 'savedText' | 'createdAt' | 'updatedAt'>>
-}
-
 type PendingLifecycleAction =
   | { kind: 'close'; documentId: string }
   | { kind: 'reload'; documentId: string }
@@ -136,9 +140,28 @@ type SourceSelectionState = {
   start: number
 }
 
-const supportedExtensions = ['md', 'markdown', 'mdown', 'txt']
-const sessionKey = 'markforge.editor.session.v1'
-const recentKey = 'markforge.editor.recent.v1'
+const platform = createPlatformServices({
+  filesystem: {
+    getFileInfo: path => invoke<FileInfo>('get_file_info', { path }),
+    readTextFile: path => invoke<string>('read_text_file', { path }),
+    writeTextFile: (path, contents) => invoke<void>('write_text_file', { path, contents })
+  },
+  dialogs: {
+    open,
+    save
+  },
+  clipboard: {
+    readText,
+    writeText
+  },
+  print: {
+    print: () => window.print()
+  }
+})
+const browserPrintConverter = createBrowserPrintConverter(() => {
+  const result = platform.print.print()
+  if (!result.ok) throw new Error(result.error.message)
+})
 const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   bold: Bold,
   italic: Italic,
@@ -333,12 +356,12 @@ export function App() {
   }, [])
 
   const persistRecentFiles = useCallback((paths: string[]) => {
-    setRecentFiles(paths)
-    saveJson(recentKey, paths)
+    const saved = saveRecentFiles(window.localStorage, paths)
+    setRecentFiles(saved)
   }, [])
 
   const rememberRecentFile = useCallback((path: string) => {
-    persistRecentFiles([path, ...recentFiles.filter(recent => recent !== path)].slice(0, 8))
+    persistRecentFiles(rememberRecentFilePath(path, recentFiles))
   }, [persistRecentFiles, recentFiles])
 
   const updateActiveDocument = useCallback((changes: Partial<EditorDocument>) => {
@@ -618,8 +641,7 @@ export function App() {
     if (!document?.path) return false
 
     try {
-      const contents = await invoke<string>('read_text_file', { path: document.path })
-      const info = await invoke<FileInfo>('get_file_info', { path: document.path })
+      const { contents, info } = await readDocumentFromPlatform(document.path)
 
       setDocuments(current =>
         current.map(item =>
@@ -669,7 +691,7 @@ export function App() {
     if (!document?.path) return
 
     try {
-      const info = await invoke<FileInfo>('get_file_info', { path: document.path })
+      const info = await getFileInfoFromPlatform(document.path)
 
       setDocuments(current =>
         current.map(item =>
@@ -691,10 +713,7 @@ export function App() {
 
   const openDocument = useCallback(async (path?: string) => {
     try {
-      const selected = path ?? await open({
-        multiple: false,
-        filters: [{ name: 'Markdown and text', extensions: supportedExtensions }]
-      })
+      const selected = path ?? await selectOpenPathFromPlatform()
 
       if (typeof selected !== 'string') return
 
@@ -716,8 +735,7 @@ export function App() {
         return
       }
 
-      const contents = await invoke<string>('read_text_file', { path: selected })
-      const info = await invoke<FileInfo>('get_file_info', { path: selected })
+      const { contents, info } = await readDocumentFromPlatform(selected)
       const document = createEditorDocument({
         title: titleFromPath(selected),
         path: selected,
@@ -741,18 +759,14 @@ export function App() {
     if (!document) return false
 
     try {
-      const selected = await save({
-        filters: [{ name: 'Markdown', extensions: ['md'] }],
-        defaultPath: document.path ?? document.title
-      })
+      const selected = await selectSavePathFromPlatform(document.path ?? document.title)
 
       if (!selected) {
         setStatus('Save canceled')
         return false
       }
 
-      await invoke('write_text_file', { path: selected, contents: document.text })
-      const info = await invoke<FileInfo>('get_file_info', { path: selected })
+      const info = await writeDocumentToPlatform(selected, document.text)
 
       setDocuments(current =>
         current.map(item =>
@@ -787,8 +801,7 @@ export function App() {
     }
 
     try {
-      await invoke('write_text_file', { path: document.path, contents: document.text })
-      const info = await invoke<FileInfo>('get_file_info', { path: document.path })
+      const info = await writeDocumentToPlatform(document.path, document.text)
 
       setDocuments(current =>
         current.map(item =>
@@ -816,7 +829,7 @@ export function App() {
     if (!activeDocument) return
 
     try {
-      await writeText(activeDocument.text)
+      await writeClipboardText(activeDocument.text)
       setClipboardStatus('Markdown copied')
       setStatus('Markdown copied')
     } catch (error) {
@@ -827,7 +840,7 @@ export function App() {
 
   const checkClipboard = useCallback(async () => {
     try {
-      const value = await readText()
+      const value = await readClipboardText()
       setClipboardStatus(value ? `${value.length} text characters` : 'Clipboard is empty')
       setStatus('Clipboard checked')
     } catch (error) {
@@ -835,6 +848,15 @@ export function App() {
       setStatus(messageFromError(error))
     }
   }, [])
+
+  const printDocument = useCallback(async () => {
+    const result = await browserPrintConverter.convert({
+      format: 'browser-print',
+      markdown: activeDocument?.text ?? ''
+    })
+
+    setStatus(result.ok ? 'Print dialog opened' : result.error.message)
+  }, [activeDocument?.text])
 
   const forceCloseDocument = useCallback((id: string) => {
     setDocuments(current => {
@@ -997,7 +1019,7 @@ export function App() {
       else if (id === 'file.save') void saveDocument()
       else if (id === 'file.saveAs') void saveDocumentAs()
       else if (id === 'edit.copyMarkdown') void copyMarkdown()
-      else if (id === 'view.print') window.print()
+      else if (id === 'view.print') void printDocument()
       else if (id === 'help.phase1') setStatus('Phase 1 help menu received; Phase 4 shell is active')
       else setStatus(`Unsupported menu command: ${id}`)
     }).then(cleanup => {
@@ -1009,7 +1031,7 @@ export function App() {
     return () => {
       unlisten?.()
     }
-  }, [copyMarkdown, createDocument, openDocument, saveDocument, saveDocumentAs])
+  }, [copyMarkdown, createDocument, openDocument, printDocument, saveDocument, saveDocumentAs])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1071,8 +1093,10 @@ export function App() {
 
     const pollDocuments = async () => {
       const results = await Promise.all(trackedDocuments.map(async document => {
+        if (!document.path) return null
+
         try {
-          const info = await invoke<FileInfo>('get_file_info', { path: document.path })
+          const info = await getFileInfoFromPlatform(document.path)
           return {
             documentId: document.id,
             next: reconcileFileInfo(document, info)
@@ -1127,7 +1151,7 @@ export function App() {
   }, [activeDocument?.id, searchOptions, searchQuery])
 
   useEffect(() => {
-    const persisted: PersistedSession = {
+    const persisted: PersistedEditorSession = {
       activeId,
       docs: documents
         .filter(document => !document.path || isDirty(document))
@@ -1142,7 +1166,7 @@ export function App() {
         }))
     }
 
-    saveJson(sessionKey, persisted)
+    saveEditorSession(window.localStorage, persisted)
   }, [activeId, documents])
 
   useEffect(() => {
@@ -1255,7 +1279,7 @@ export function App() {
           >
             <Settings size={18} />
           </button>
-          <button type="button" onClick={() => window.print()} title="Print" aria-label="Print">
+          <button type="button" onClick={() => void printDocument()} title="Print" aria-label="Print">
             <Printer size={18} />
           </button>
         </nav>
@@ -1798,8 +1822,8 @@ function restoreInitialState(): {
   status: string
 } {
   const preferences = readEditorPreferences()
-  const session = readJson<PersistedSession>(sessionKey)
-  const recentFiles = readJson<string[]>(recentKey) ?? []
+  const session = readEditorSession(window.localStorage)
+  const recentFiles = readRecentFiles(window.localStorage)
   const restoredDocuments = session?.docs
     ?.filter(document => typeof document.text === 'string')
     .map(document => createEditorDocument({
@@ -1967,21 +1991,50 @@ function messageFromError(error: unknown): string {
   return 'Unexpected editor error'
 }
 
-function readJson<T>(key: string): T | null {
-  try {
-    const value = window.localStorage.getItem(key)
-    return value ? JSON.parse(value) as T : null
-  } catch {
-    return null
-  }
+async function selectOpenPathFromPlatform(): Promise<string | null> {
+  const result = await platform.dialogs.openMarkdownFile()
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
 }
 
-function saveJson<T>(key: string, value: T): void {
-  try {
-    window.localStorage.setItem(key, JSON.stringify(value))
-  } catch {
-    // Local storage is a convenience layer; the editor should keep running without it.
-  }
+async function selectSavePathFromPlatform(defaultPath: string): Promise<string | null> {
+  const result = await platform.dialogs.saveMarkdownFile(defaultPath)
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
+async function readDocumentFromPlatform(path: string): Promise<{ contents: string; info: FileInfo }> {
+  const contents = await platform.filesystem.readTextFile(path)
+  if (!contents.ok) throw new Error(contents.error.message)
+
+  const info = await platform.filesystem.getFileInfo(path)
+  if (!info.ok) throw new Error(info.error.message)
+
+  return { contents: contents.value, info: info.value }
+}
+
+async function writeDocumentToPlatform(path: string, contents: string): Promise<FileInfo> {
+  const written = await platform.filesystem.writeTextFile(path, contents)
+  if (!written.ok) throw new Error(written.error.message)
+
+  return getFileInfoFromPlatform(path)
+}
+
+async function getFileInfoFromPlatform(path: string): Promise<FileInfo> {
+  const result = await platform.filesystem.getFileInfo(path)
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
+async function writeClipboardText(value: string): Promise<void> {
+  const result = await platform.clipboard.writeText(value)
+  if (!result.ok) throw new Error(result.error.message)
+}
+
+async function readClipboardText(): Promise<string> {
+  const result = await platform.clipboard.readText()
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
 }
 
 function escapeHtml(value: string): string {

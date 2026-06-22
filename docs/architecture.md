@@ -107,14 +107,22 @@ Cross-package integration, fixture, and end-to-end tests. Package-level unit tes
 
 ## Current Implementation Drift / Transitional Debt
 
-The structure above remains the target architecture, but Phase 1-5A intentionally kept some behavior inside app components while validating the product slices:
+The structure and dependency graph above remain the target architecture. The current repository now has real package boundaries for every required `packages/*` directory: `core`, `platform`, `shared`, `converters`, `theme-engine`, `llm`, `ui`, `markdown-engine`, `editor-engine`, and `templates` each have a manifest, public source entrypoint, README, and package-level tests.
 
-- `apps/editor` currently owns temporary session restore, recent files, active-file polling, and command UI wiring that should move toward `packages/core` and `packages/platform`; Phase 5B moved source editing command behavior into `packages/editor-engine`.
-- `apps/viewer` currently owns its file-open lifecycle, metadata polling, search state, and print command wiring while the shared platform facade is still forming.
-- `packages/markdown-engine` is the strongest extracted boundary today; broader package extraction should follow proven app behavior rather than speculative abstractions.
-- `pnpm docs:check` is still a placeholder and should become a real documentation validation gate.
+- `packages/shared` owns typed result/error, cancellation, event, JSON, and storage contracts used by other packages.
+- `packages/core` owns the versioned editor preference schema, session restore schema, recent-file helpers, and localStorage adapter helpers used by the editor shell.
+- `packages/platform` owns typed filesystem, dialog, clipboard, print, and polling file-watch service contracts. Apps still provide thin Tauri adapter wiring at the shell boundary.
+- `packages/theme-engine` owns central theme tokens, validation, built-in themes, CSS variable generation, code theme mapping, and print/export color mapping. The current UI still exposes only light/dark controls.
+- `packages/converters` owns the converter contract, sanitized HTML export, capability checks, browser-print pathway, warnings, and unsupported capability results.
+- `packages/llm` owns local-only provider contracts, prompt templates, a mock provider, cancellation, explicit unsupported local adapter boundaries, and the privacy guard. No user-facing AI workflow is enabled.
+- `packages/ui` owns initial reusable presentational helpers. App-specific dialogs and workflow components remain in `apps/editor` and `apps/viewer` until they are safely reusable.
+- `apps/editor` now delegates preference/session/recent-file schema behavior to `packages/core`, platform read/write/dialog/clipboard/print behavior to `packages/platform`, and print execution to `packages/converters`. It still owns document orchestration, search state, command UI wiring, custom template UI persistence, live preview composition, and direct imports of `@markforge/markdown-engine` and `@markforge/templates`; those are remaining dependency-direction drifts to resolve when editor-engine/template ownership is expanded.
+- `apps/viewer` now delegates file-open/read/info, clipboard, metadata polling, and print behavior through `packages/platform`/`packages/converters`. It still owns viewer search state, rendered view composition, and Tauri adapter wiring.
+- Native file watching, native close interception, shell links, spellcheck, update checks, Linux packaging hardening, and full native PDF/DOCX/OCR/CSV/URL conversion remain unsupported because the current code/docs do not provide enough exact contracts to implement them safely.
+- `pnpm docs:check` validates required docs, local Markdown links, stale markers, and implemented package README/manifest/source/test/public-entrypoint coverage.
+- `pnpm bundle:check` validates current built JavaScript bundles against documented per-app budgets after `pnpm build:editor` and `pnpm build:viewer`.
 
-This drift is tracked debt, not the final intended ownership model.
+Remaining drift is tracked debt, not the final intended ownership model.
 
 ## Public API Rules
 

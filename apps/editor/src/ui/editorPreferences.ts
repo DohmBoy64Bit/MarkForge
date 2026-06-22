@@ -1,22 +1,24 @@
+import {
+  createDefaultPreferences,
+  editorPrefsKey,
+  readEditorPreferences as readCoreEditorPreferences,
+  restoreEditorPreferences as restoreCoreEditorPreferences,
+  saveEditorPreferences as saveCoreEditorPreferences,
+  type EditorPreferences as CoreEditorPreferences,
+  type KeybindingDefinition as CoreKeybindingDefinition,
+  type ThemePreference,
+  type ViewModePreference
+} from '@markforge/core'
 import { commandGroups, editorCommands, type EditorCommandId } from '@markforge/editor-engine'
 
-export type Theme = 'light' | 'dark'
-export type ViewMode = 'source' | 'split' | 'preview'
+export { editorPrefsKey }
+
+export type Theme = ThemePreference
+export type ViewMode = ViewModePreference
 export type KeybindingActionId = 'app.commandPalette' | 'app.quickInsert' | 'app.templatesHelp' | EditorCommandId
 
-export type KeybindingDefinition = {
-  id: KeybindingActionId
-  label: string
-  group: string
-  defaultShortcut: string
-}
-
-export type EditorPreferences = {
-  version: 2
-  theme: Theme
-  viewMode: ViewMode
-  keybindings: Record<KeybindingActionId, string>
-}
+export type KeybindingDefinition = CoreKeybindingDefinition<KeybindingActionId>
+export type EditorPreferences = CoreEditorPreferences<KeybindingActionId>
 
 export type ShortcutConflict = {
   shortcut: string
@@ -25,7 +27,6 @@ export type ShortcutConflict = {
 
 type ShortcutEvent = Pick<KeyboardEvent, 'altKey' | 'code' | 'ctrlKey' | 'key' | 'metaKey' | 'shiftKey'>
 
-export const editorPrefsKey = 'markforge.editor.prefs.v1'
 export const commandPaletteActionId = 'app.commandPalette' as const
 export const quickInsertActionId = 'app.quickInsert' as const
 export const templatesHelpActionId = 'app.templatesHelp' as const
@@ -57,46 +58,23 @@ export const keybindingDefinitions: KeybindingDefinition[] = [
   }))
 ]
 
-const defaultKeybindings = Object.fromEntries(
-  keybindingDefinitions.map(definition => [definition.id, definition.defaultShortcut])
-) as Record<KeybindingActionId, string>
+const defaultKeybindings = createDefaultPreferences(keybindingDefinitions).keybindings
 
-export const defaultEditorPreferences: EditorPreferences = {
-  version: 2,
-  theme: 'light',
-  viewMode: 'split',
-  keybindings: defaultKeybindings
-}
+export const defaultEditorPreferences: EditorPreferences = createDefaultPreferences(keybindingDefinitions)
 
 export function restoreEditorPreferences(value: unknown): EditorPreferences {
-  if (!isRecord(value)) return clonePreferences(defaultEditorPreferences)
-
-  return {
-    version: 2,
-    theme: value.theme === 'dark' ? 'dark' : 'light',
-    viewMode: isViewMode(value.viewMode) ? value.viewMode : 'split',
-    keybindings: restoreKeybindings(value.keybindings)
-  }
+  return restoreCoreEditorPreferences(value, keybindingDefinitions)
 }
 
 export function readEditorPreferences(storage: Storage = window.localStorage): EditorPreferences {
-  try {
-    const value = storage.getItem(editorPrefsKey)
-    return restoreEditorPreferences(value ? JSON.parse(value) : null)
-  } catch {
-    return clonePreferences(defaultEditorPreferences)
-  }
+  return readCoreEditorPreferences(storage, keybindingDefinitions)
 }
 
 export function saveEditorPreferences(
   preferences: EditorPreferences,
   storage: Storage = window.localStorage
 ): void {
-  try {
-    storage.setItem(editorPrefsKey, JSON.stringify(preferences))
-  } catch {
-    // Local storage is a convenience layer; the editor should keep running without it.
-  }
+  saveCoreEditorPreferences(storage, preferences)
 }
 
 export function shortcutForAction(
@@ -193,22 +171,6 @@ export function normalizeShortcut(shortcut: string): string {
   ].filter(Boolean).join('+')
 }
 
-function restoreKeybindings(value: unknown): Record<KeybindingActionId, string> {
-  if (!isRecord(value)) return { ...defaultKeybindings }
-
-  const restored = { ...defaultKeybindings }
-
-  for (const definition of keybindingDefinitions) {
-    const shortcut = value[definition.id]
-
-    if (typeof shortcut === 'string') {
-      restored[definition.id] = shortcut
-    }
-  }
-
-  return restored
-}
-
 function parseShortcut(shortcut: string): { alt: boolean; key: string; primary: boolean; shift: boolean } | null {
   const tokens = shortcut
     .trim()
@@ -255,19 +217,4 @@ function formatKeyToken(key: string): string {
   if (lowerKey === 'delete' || lowerKey === 'del') return 'Delete'
 
   return key
-}
-
-function isViewMode(value: unknown): value is ViewMode {
-  return value === 'source' || value === 'split' || value === 'preview'
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-}
-
-function clonePreferences(preferences: EditorPreferences): EditorPreferences {
-  return {
-    ...preferences,
-    keybindings: { ...preferences.keybindings }
-  }
 }

@@ -10,7 +10,7 @@
   },
   "scripts": {
     "audit:marktext": "python scripts/audit_marktext.py",
-    "docs:check": "node -e \"console.log('MarkForge docs scaffold ready')\"",
+    "docs:check": "node scripts/docs-check.mjs",
     "dev:editor": "pnpm --filter @markforge/editor dev",
     "build:editor": "pnpm --filter @markforge/editor build",
     "dev:viewer": "pnpm --filter @markforge/viewer dev",
@@ -21,7 +21,8 @@
     "tauri:viewer:build": "pnpm --filter @markforge/viewer tauri build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "browser:install": "playwright install chromium"
+    "browser:install": "playwright install chromium",
+    "bundle:check": "node scripts/bundle-check.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.0.0",

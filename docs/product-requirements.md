@@ -65,6 +65,12 @@ The `packages/converters` package must expose a plugin-style conversion architec
 
 Each converter must be independently testable and report confidence, warnings, and unsupported structures.
 
+Phase 7A baseline:
+
+- `packages/converters` exposes tested Markdown-to-HTML export, browser-print handoff, HTML-to-Markdown import, CSV-to-Markdown table conversion, and Markdown cleanup.
+- HTML-to-Markdown reports lossy conversion because styling/layout are not preserved.
+- DOCX, native PDF import/export, rich clipboard import, URL/article extraction, and OCR return explicit unsupported capability results until their parsing/runtime/trust requirements are defined.
+
 ## Local LLM Requirements
 
 - AI assistance is disabled until the user configures a provider.

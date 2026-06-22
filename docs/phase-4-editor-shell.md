@@ -19,11 +19,13 @@ Phase 4 turns the editor from a single-document proof-of-concept into a compact 
 
 The shell uses a workspace-first layout: command rail, tab strip, source/preview workbench, right inspector, and status bar. It keeps the viewer family's cool chrome, warm preview surface, and restrained teal accent while giving the editor denser controls and clearer document state.
 
-## Deferred Items
+## Phase-era Deferred Items
 
-- Prompt-before-close for dirty tabs.
+This section is a historical Phase 4 record. Some items below were superseded by later Phase 5 implementation; use [Implementation roadmap](implementation-roadmap.md) and [Phase 5 advanced editing](phase-5-advanced-editing.md) for current status.
+
+- Prompt-before-close for dirty tabs was superseded by Phase 5E dirty-tab close/reload protection and browser `beforeunload` guarding; native Tauri window-close interception remains open.
 - Phase 5A superseded the initial command registry and source formatting rail deferral.
-- Command palette UI and user-editable keybinding preference model.
+- Command palette UI and the user-editable keybinding preference model were superseded by Phase 5C and Phase 5D.
 - Real filesystem watching beyond active-file metadata polling.
 - Rich WYSIWYG/realtime editing, toggle-aware formatting, and advanced Markdown editing tools.
 - Search highlighting inside rendered preview.

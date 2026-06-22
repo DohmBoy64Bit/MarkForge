@@ -1,0 +1,17 @@
+{
+  "name": "@markforge/converters",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@markforge/markdown-engine": "workspace:*",
+    "@markforge/shared": "workspace:*",
+    "turndown": "^7.2.4"
+  },
+  "devDependencies": {
+    "@types/turndown": "^5.0.6"
+  }
+}
