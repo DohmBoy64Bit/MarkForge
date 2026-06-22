@@ -6,7 +6,7 @@ import {
 } from '@markforge/converters'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
 import { createPlatformServices, type FileInfo } from '@markforge/platform'
-import { builtInThemes, getTheme, themeToAppCssVariables, type ThemeId } from '@markforge/theme-engine'
+import { appVisibleThemes, getTheme, themeToAppCssVariables, type ThemeId } from '@markforge/theme-engine'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { writeText } from '@tauri-apps/plugin-clipboard-manager'
@@ -23,9 +23,11 @@ import {
   Printer,
   RefreshCcw,
   Search,
+  Settings,
   ShieldCheck,
   Sun,
-  TriangleAlert
+  TriangleAlert,
+  type LucideIcon
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 
@@ -57,7 +59,6 @@ const browserPrintConverter = createBrowserPrintConverter(() => {
   if (!result.ok) throw new Error(result.error.message)
 })
 const htmlConverter = createHtmlConverter()
-const appThemeOptions = builtInThemes.filter(theme => theme.id === 'light' || theme.id === 'dark' || theme.id === 'sepia')
 
 const sampleDocument = `---
 title: Viewer foundation
@@ -297,7 +298,7 @@ export function App() {
         </label>
 
         <div className="themeSwitch" aria-label="Theme">
-          {appThemeOptions.map(option => {
+          {appVisibleThemes.map(option => {
             const Icon = iconForTheme(option.id)
 
             return (
@@ -493,8 +494,11 @@ function titleWithoutExtension(title: string): string {
   return title.replace(/\.(md|markdown|mdown|txt)$/i, '') || title
 }
 
-function iconForTheme(theme: ThemeId): typeof Sun {
+function iconForTheme(theme: ThemeId): LucideIcon {
   if (theme === 'dark') return Moon
+  if (theme === 'github') return FileCode
+  if (theme === 'high-contrast') return ShieldCheck
+  if (theme === 'modern-neutral') return Settings
   if (theme === 'sepia') return BookOpenText
   return Sun
 }

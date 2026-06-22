@@ -2,7 +2,7 @@
 
 MarkForge is being built as a professional, local-first Markdown editor and standalone Markdown viewer for Windows and Linux, with Windows as the first production target.
 
-The initial architecture and parity audit are complete, and implementation has progressed through Phase 8D. MarkForge is not product-ready yet and remains intentionally distinct from a 1:1 MarkText clone.
+The initial architecture and parity audit are complete, and implementation has progressed through Phase 8 completion. MarkForge is not product-ready yet and remains intentionally distinct from a 1:1 MarkText clone.
 
 ## Current Status
 
@@ -13,7 +13,7 @@ The initial architecture and parity audit are complete, and implementation has p
 - Phase 5 added source-mode command/editing foundations through Phase 5G, including the command palette, preferences/keybindings, unsaved-work protection, quick insert, and selection formatting overlay.
 - Phase 6B added templates/help, guided template variables, local custom templates, and bounded `/template`/`/tpl` source suggestions.
 - Phase 7F completes the current safe converter UI slice: editor Export HTML, Import Conversion for HTML/CSV into Markdown, Clean Markdown, converter activity history, viewer Export HTML, browser-print handoff preservation, and explicit unsupported results for heavier converters.
-- Phase 8D wires editor/viewer app chrome to `packages/theme-engine` app tokens and exposes Sepia as the first non-light/dark app theme.
+- Phase 8 completes built-in app theme exposure: editor/viewer chrome now uses `packages/theme-engine` app tokens for Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral.
 - Several package boundaries are still transitional; see [Architecture](docs/architecture.md).
 
 ## Evidence

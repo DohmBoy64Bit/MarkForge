@@ -103,11 +103,11 @@ Phase 7F baseline:
 - Themes cover editor, preview, viewer, code blocks, sidebars, menus, and dialogs.
 - User custom themes should later use JSON and CSS variables.
 
-Phase 8D baseline:
+Phase 8 baseline:
 
 - `packages/theme-engine` owns app-facing theme variables for editor and viewer shells.
-- The editor and viewer expose Light, Dark, and Sepia Paper app theme controls.
-- High contrast, GitHub-like, and modern neutral remain package-ready until their full app-surface visual validation is completed.
+- The editor and viewer expose Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral app theme controls.
+- Persisted editor preferences accept the complete built-in app-visible theme set.
 
 ## Platform Requirements
 

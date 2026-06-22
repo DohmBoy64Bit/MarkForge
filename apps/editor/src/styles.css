@@ -99,6 +99,16 @@ button {
   gap: 6px;
 }
 
+.themeSwitch {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.themeSwitch::-webkit-scrollbar {
+  display: none;
+}
+
 .toolbar button,
 .formatRail button,
 .searchOptions button,
@@ -115,6 +125,10 @@ button {
   background: color-mix(in srgb, var(--rail), var(--page) 52%);
   color: var(--text);
   cursor: pointer;
+}
+
+.themeSwitch button {
+  flex: 0 0 auto;
 }
 
 .toolbar button:hover,
@@ -2720,6 +2734,12 @@ textarea {
   background: color-mix(in srgb, var(--panel), var(--rail) 55%);
 }
 
+.themeSegment {
+  width: min(100%, 430px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .preferenceSegment button {
   min-width: 70px;
   height: 30px;
@@ -2730,6 +2750,10 @@ textarea {
   font-size: 12px;
   font-weight: 850;
   text-transform: capitalize;
+}
+
+.themeSegment button {
+  min-width: 0;
 }
 
 .preferenceSegment button.active {
@@ -3134,7 +3158,9 @@ textarea {
   }
 
   .themeSwitch {
+    grid-column: 1 / -1;
     justify-self: end;
+    width: 100%;
   }
 
   .editorWorkspace {
@@ -3461,6 +3487,10 @@ textarea {
   .viewModeSegment button {
     min-width: 0;
     flex: 1 1 0;
+  }
+
+  .themeSegment {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .keybindingRow {

@@ -40,13 +40,13 @@ Example token groups:
 - `dialog.*`
 - `export.*`
 
-## Phase 8D Baseline
+## Phase 8 Baseline
 
 - `packages/theme-engine` owns the built-in registry and app-facing CSS variable generation.
 - Editor and viewer shell roots consume package-generated app variables.
-- Light, Dark, and Sepia Paper are app-visible controls.
-- Persisted app chrome preferences currently accept only the app-visible theme set.
-- High contrast, GitHub-like, and modern neutral remain in the package registry and need app-surface visual validation before they are exposed.
+- Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral are app-visible controls.
+- Persisted app chrome preferences accept the complete built-in app-visible theme set.
+- Editor/viewer compact theme controls consume `appVisibleThemes` from `packages/theme-engine`.
 
 ## Custom Themes
 

@@ -63,6 +63,9 @@ describe('@markforge/core', () => {
 
   it('restores non-light/dark app chrome theme preferences', () => {
     expect(restoreEditorPreferences({ theme: 'sepia' }, definitions).theme).toBe('sepia')
+    expect(restoreEditorPreferences({ theme: 'high-contrast' }, definitions).theme).toBe('high-contrast')
+    expect(restoreEditorPreferences({ theme: 'github' }, definitions).theme).toBe('github')
+    expect(restoreEditorPreferences({ theme: 'modern-neutral' }, definitions).theme).toBe('modern-neutral')
     expect(restoreEditorPreferences({ theme: 'not-real' }, definitions).theme).toBe('light')
   })
 

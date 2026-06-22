@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  appVisibleThemes,
   builtInThemes,
   codeThemeForTheme,
   exportThemeForTheme,
@@ -21,6 +22,10 @@ describe('@markforge/theme-engine', () => {
       'modern-neutral'
     ])
     expect(validateTheme(getTheme('dark')).ok).toBe(true)
+  })
+
+  it('exposes every built-in theme as app-visible after Phase 8 completion', () => {
+    expect(appVisibleThemes.map(theme => theme.id)).toEqual(builtInThemes.map(theme => theme.id))
   })
 
   it('generates CSS variables and code/export mappings', () => {

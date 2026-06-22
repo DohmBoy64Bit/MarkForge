@@ -1,6 +1,6 @@
 import { isRecord, type StorageLike } from '@markforge/shared'
 
-export type ThemePreference = 'dark' | 'light' | 'sepia'
+export type ThemePreference = 'dark' | 'github' | 'high-contrast' | 'light' | 'modern-neutral' | 'sepia'
 export type ViewModePreference = 'preview' | 'source' | 'split'
 
 export type KeybindingDefinition<TActionId extends string = string> = {
@@ -186,6 +186,9 @@ function isViewMode(value: unknown): value is ViewModePreference {
 function isThemePreference(value: unknown): value is ThemePreference {
   return value === 'light' ||
     value === 'dark' ||
+    value === 'high-contrast' ||
+    value === 'github' ||
+    value === 'modern-neutral' ||
     value === 'sepia'
 }
 

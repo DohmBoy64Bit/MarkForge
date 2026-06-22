@@ -11,7 +11,7 @@ Standalone Markdown viewer app/mode for local Markdown and text files.
 - Metadata polling for temporary auto-refresh detection.
 - Export HTML for the currently rendered Markdown/text document through `@markforge/converters` and a constrained `.html`/`.htm` write path.
 - Native menu actions for open, reload, copy source, copy rendered text, Export HTML, print, and quit.
-- Package-backed Light, Dark, and Sepia Paper app theme controls through `@markforge/theme-engine`.
+- Package-backed Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral app theme controls through `@markforge/theme-engine`.
 
 ## Commands
 

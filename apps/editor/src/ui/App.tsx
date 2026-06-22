@@ -28,7 +28,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open, save } from '@tauri-apps/plugin-dialog'
-import { builtInThemes, getTheme, themeToAppCssVariables } from '@markforge/theme-engine'
+import { appVisibleThemes, getTheme, themeToAppCssVariables } from '@markforge/theme-engine'
 import {
   BookOpenText,
   ArrowDownToLine,
@@ -186,7 +186,6 @@ const htmlConverter = createHtmlConverter()
 const htmlToMarkdownConverter = createHtmlToMarkdownConverter()
 const csvToMarkdownTableConverter = createCsvToMarkdownTableConverter()
 const markdownCleanupConverter = createMarkdownCleanupConverter()
-const appThemeOptions = builtInThemes.filter(theme => theme.id === 'light' || theme.id === 'dark' || theme.id === 'sepia')
 const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   bold: Bold,
   italic: Italic,
@@ -1622,7 +1621,7 @@ export function App() {
         </div>
 
         <div className="themeSwitch" aria-label="Theme">
-          {appThemeOptions.map(option => {
+          {appVisibleThemes.map(option => {
             const Icon = iconForTheme(option.id)
 
             return (
@@ -2273,6 +2272,9 @@ function titleWithoutExtension(title: string): string {
 
 function iconForTheme(theme: Theme): LucideIcon {
   if (theme === 'dark') return Moon
+  if (theme === 'github') return FileCode
+  if (theme === 'high-contrast') return ShieldCheck
+  if (theme === 'modern-neutral') return Settings
   if (theme === 'sepia') return BookOpenText
   return Sun
 }

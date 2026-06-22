@@ -1,15 +1,18 @@
 import {
   BookOpenText,
+  FileCode,
   Keyboard,
   Moon,
   RotateCcw,
   Settings,
+  ShieldCheck,
   SlidersHorizontal,
   SplitSquareHorizontal,
   Sun,
-  X
+  X,
+  type LucideIcon
 } from 'lucide-react'
-import { builtInThemes, getTheme } from '@markforge/theme-engine'
+import { appVisibleThemes, getTheme } from '@markforge/theme-engine'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import {
   conflictForAction,
@@ -36,7 +39,6 @@ const tabs: Array<{ id: PreferencesTab; label: string }> = [
   { id: 'general', label: 'General' },
   { id: 'keybindings', label: 'Keybindings' }
 ]
-const appThemeOptions = builtInThemes.filter(theme => theme.id === 'light' || theme.id === 'dark' || theme.id === 'sepia')
 
 export function PreferencesDialog({
   onPreferencesChange,
@@ -156,8 +158,8 @@ export function PreferencesDialog({
                     <h3>Theme</h3>
                     <p>{activeTheme.label} application chrome</p>
                   </div>
-                  <div className="preferenceSegment" aria-label="Theme preference">
-                    {appThemeOptions.map(option => {
+                  <div className="preferenceSegment themeSegment" aria-label="Theme preference">
+                    {appVisibleThemes.map(option => {
                       const Icon = iconForTheme(option.id)
 
                       return (
@@ -271,8 +273,11 @@ export function PreferencesDialog({
   )
 }
 
-function iconForTheme(theme: Theme): typeof Sun {
+function iconForTheme(theme: Theme): LucideIcon {
   if (theme === 'dark') return Moon
+  if (theme === 'github') return FileCode
+  if (theme === 'high-contrast') return ShieldCheck
+  if (theme === 'modern-neutral') return Settings
   if (theme === 'sepia') return BookOpenText
   return Sun
 }

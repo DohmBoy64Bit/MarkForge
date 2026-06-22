@@ -49,8 +49,8 @@ Exit criteria:
 
 Current status:
 
-- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, metadata polling, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and package-backed light/dark/sepia app theme controls.
-- Real filesystem watching, rendered search highlighting, copy code buttons, export workflows, and full theme UI integration remain open.
+- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, metadata polling, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and package-backed built-in app theme controls.
+- Real filesystem watching, rendered search highlighting, copy code buttons, and broader export workflows remain open.
 
 Exit criteria:
 
@@ -63,7 +63,7 @@ Exit criteria:
 
 Current status:
 
-- Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, package-backed light/dark/sepia preferences, native menu event handling, metadata polling for active-file external changes, and a compact document status bar.
+- Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, package-backed built-in app theme preferences, native menu event handling, metadata polling for active-file external changes, and a compact document status bar.
 - Phase 5A added the first typed source-mode command registry, Markdown formatting command rail, core formatting shortcuts, command status feedback, and replace-current/replace-all source search actions.
 - Phase 5C added the first command palette foundation over the shared editor-engine command registry, including Ctrl+Shift+P, grouped search results, keyboard navigation, shortcut display, and execution through the source-mode command path.
 - Phase 5D added a compact Preferences dialog for theme/default view selection and a local preference-backed keybinding foundation for the command palette plus existing editor commands, including editable shortcut strings, reset controls, duplicate conflict display, and deterministic first-registry-item shortcut dispatch.
@@ -147,7 +147,8 @@ Current status:
 - Phase 8B adds app-facing token generation in `packages/theme-engine` for shell CSS variables used by editor and viewer.
 - Phase 8C wires editor and viewer shell roots to `themeToAppCssVariables(...)` instead of local light/dark variable blocks.
 - Phase 8D exposes Sepia Paper as the first non-light/dark app-visible theme in editor/viewer controls and preferences.
-- High contrast, GitHub-like, and modern neutral remain package-ready but not app-visible until their full surface screenshots and preference ergonomics are validated.
+- Phase 8E exposes High Contrast, GitHub, and Modern Neutral through the package-owned app-visible theme list.
+- Phase 8F keeps persistence, editor/viewer controls, preferences, tests, docs, and screenshot evidence aligned around all six built-in app themes.
 
 Exit criteria:
 

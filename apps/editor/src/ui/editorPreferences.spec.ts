@@ -51,6 +51,18 @@ describe('editor preferences', () => {
       theme: 'sepia',
       viewMode: 'split'
     })
+    expect(restoreEditorPreferences({ theme: 'high-contrast', viewMode: 'reader' })).toMatchObject({
+      theme: 'high-contrast',
+      viewMode: 'split'
+    })
+    expect(restoreEditorPreferences({ theme: 'github', viewMode: 'reader' })).toMatchObject({
+      theme: 'github',
+      viewMode: 'split'
+    })
+    expect(restoreEditorPreferences({ theme: 'modern-neutral', viewMode: 'reader' })).toMatchObject({
+      theme: 'modern-neutral',
+      viewMode: 'split'
+    })
     expect(restoreEditorPreferences({ theme: 'not-real', viewMode: 'reader' })).toMatchObject({
       theme: 'light',
       viewMode: 'split'

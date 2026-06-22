@@ -150,6 +150,8 @@ export const builtInThemes: MarkForgeTheme[] = [
   }
 ]
 
+export const appVisibleThemes: MarkForgeTheme[] = builtInThemes
+
 export function getTheme(id: ThemeId): MarkForgeTheme {
   return builtInThemes.find(theme => theme.id === id) ?? builtInThemes[0]
 }
