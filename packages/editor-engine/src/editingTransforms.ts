@@ -16,6 +16,43 @@ export function applyInlineWrap(
   suffix: string,
   fallback: string
 ): TextEdit {
+  const currentSelection = source.slice(selection.start, selection.end)
+
+  if (
+    currentSelection.startsWith(prefix) &&
+    currentSelection.endsWith(suffix) &&
+    currentSelection.length >= prefix.length + suffix.length
+  ) {
+    const unwrapped = currentSelection.slice(prefix.length, currentSelection.length - suffix.length)
+
+    return replaceRange(source, selection.start, selection.end, unwrapped, {
+      start: selection.start,
+      end: selection.start + unwrapped.length
+    })
+  }
+
+  if (
+    currentSelection &&
+    source.slice(selection.start - prefix.length, selection.start) === prefix &&
+    source.slice(selection.end, selection.end + suffix.length) === suffix
+  ) {
+    return replaceRange(source, selection.start - prefix.length, selection.end + suffix.length, currentSelection, {
+      start: selection.start - prefix.length,
+      end: selection.start - prefix.length + currentSelection.length
+    })
+  }
+
+  if (
+    !currentSelection &&
+    source.slice(selection.start - prefix.length, selection.start) === prefix &&
+    source.slice(selection.end, selection.end + suffix.length) === suffix
+  ) {
+    return replaceRange(source, selection.start - prefix.length, selection.end + suffix.length, '', {
+      start: selection.start - prefix.length,
+      end: selection.start - prefix.length
+    })
+  }
+
   const selected = source.slice(selection.start, selection.end) || fallback
   const inserted = `${prefix}${selected}${suffix}`
 
@@ -48,8 +85,15 @@ export function applyLink(source: string, selection: TextSelection): TextEdit {
   })
 }
 
-export function applyHeading(source: string, selection: TextSelection, level: 1 | 2 | 3): TextEdit {
+export function applyHeading(source: string, selection: TextSelection, level: 1 | 2 | 3 | 4 | 5 | 6): TextEdit {
+  const marker = '#'.repeat(level)
+  const range = selectedLineRange(source, selection)
+  const lines = source.slice(range.start, range.end).replace(/\n$/, '').split('\n')
+  const shouldRemove = lines.length > 0 && lines.every(line => new RegExp(`^\\s{0,3}${marker}\\s+`).test(line))
+
   return applyLineTransform(source, selection, line => {
+    if (shouldRemove) return line.replace(new RegExp(`^(\\s{0,3})${marker}\\s+`), '$1')
+
     const content = line.replace(/^\s{0,3}#{1,6}\s+/, '').trimStart()
     return `${'#'.repeat(level)} ${content || 'Heading'}`
   })
@@ -58,9 +102,18 @@ export function applyHeading(source: string, selection: TextSelection, level: 1 
 export function applyLinePrefix(
   source: string,
   selection: TextSelection,
-  prefixFactory: (line: string, index: number) => string
+  prefixFactory: (line: string, index: number) => string,
+  removePattern?: RegExp
 ): TextEdit {
-  return applyLineTransform(source, selection, (line, index) => `${prefixFactory(line, index)}${line}`)
+  const range = selectedLineRange(source, selection)
+  const lines = source.slice(range.start, range.end).replace(/\n$/, '').split('\n')
+  const shouldRemove = Boolean(removePattern) && lines.length > 0 && lines.every(line => removePattern?.test(line))
+
+  return applyLineTransform(source, selection, (line, index) => {
+    if (shouldRemove && removePattern) return line.replace(removePattern, '')
+
+    return `${prefixFactory(line, index)}${line}`
+  })
 }
 
 export function wrapBlock(
@@ -88,6 +141,28 @@ export function insertBlock(source: string, selection: TextSelection, block: str
   return replaceRange(source, selection.start, selection.end, inserted, {
     start: cursor,
     end: cursor
+  })
+}
+
+export function duplicateSelectionOrLines(source: string, selection: TextSelection): TextEdit {
+  if (selection.start !== selection.end) {
+    const selected = source.slice(selection.start, selection.end)
+    const insertAt = selection.end
+
+    return replaceRange(source, insertAt, insertAt, selected, {
+      start: insertAt,
+      end: insertAt + selected.length
+    })
+  }
+
+  const range = selectedLineRange(source, selection)
+  const line = source.slice(range.start, range.end)
+  const inserted = `\n${line}`
+  const insertAt = range.end
+
+  return replaceRange(source, insertAt, insertAt, inserted, {
+    start: insertAt + 1,
+    end: insertAt + 1 + line.length
   })
 }
 

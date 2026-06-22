@@ -87,7 +87,7 @@ button {
 .commandRail {
   min-height: 58px;
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto auto minmax(210px, 320px) auto;
+  grid-template-columns: minmax(180px, 1fr) auto auto minmax(210px, 320px) auto auto;
   align-items: center;
   gap: 12px;
   padding: 10px 14px;
@@ -131,6 +131,7 @@ button {
 }
 
 .toolbar,
+.searchOptions,
 .themeSwitch,
 .viewSwitch {
   display: inline-flex;
@@ -140,6 +141,7 @@ button {
 
 .toolbar button,
 .formatRail button,
+.searchOptions button,
 .themeSwitch button,
 .viewSwitch button,
 .changeNotice button {
@@ -157,6 +159,8 @@ button {
 
 .toolbar button:hover,
 .formatRail button:hover:not(:disabled),
+.searchOptions button:hover,
+.searchOptions button.active,
 .themeSwitch button:hover,
 .themeSwitch button.active,
 .viewSwitch button:hover,
@@ -169,6 +173,7 @@ button {
 
 .toolbar button:focus-visible,
 .formatRail button:focus-visible,
+.searchOptions button:focus-visible,
 .themeSwitch button:focus-visible,
 .viewSwitch button:focus-visible,
 .searchBox:focus-within,
@@ -261,6 +266,37 @@ button {
   font-size: 12px;
   font-weight: 800;
   text-align: center;
+}
+
+.searchBox.error {
+  border-color: color-mix(in srgb, var(--danger), var(--rail-border) 32%);
+}
+
+.searchBox.error span {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.searchOptions {
+  padding: 3px;
+  border: 1px solid var(--rail-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel), var(--rail) 55%);
+}
+
+.searchOptions button {
+  min-width: 30px;
+  width: 30px;
+  height: 28px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.searchOptions button.active {
+  border-color: var(--rail-border);
+  background: var(--page);
+  color: var(--accent-strong);
 }
 
 .tabStrip {
@@ -1756,6 +1792,7 @@ textarea {
   }
 
   .searchBox,
+  .searchOptions,
   .themeSwitch {
     grid-column: auto;
   }
@@ -1800,9 +1837,14 @@ textarea {
   }
 
   .toolbar,
+  .searchOptions,
   .formatRail,
   .tabStrip {
     overflow-x: auto;
+  }
+
+  .searchOptions {
+    justify-self: start;
   }
 
   .formatRail {

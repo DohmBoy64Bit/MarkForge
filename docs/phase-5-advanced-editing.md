@@ -8,7 +8,7 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 - Selection-aware transform helpers in `packages/editor-engine/src/editingTransforms.ts` for inline wraps, links, heading application, line prefixes, block wrappers, and block insertion.
 - MarkForge-native formatting command rail grouped into Inline, Block, Insert, and Replace controls.
 - Inline formatting commands for bold, italic, inline code, and links.
-- Block commands for H1/H2/H3, blockquote, unordered list, ordered list, task list, and code fence.
+- Block commands for H1-H6, blockquote, unordered list, ordered list, task list, and code fence.
 - Insert commands for horizontal rule and a compact starter table.
 - Browser-level shortcuts for Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+Shift+7, and Ctrl+Shift+8, scoped away from search and replace inputs.
 - Replace-current and replace-all actions backed by the existing source search matches.
@@ -18,6 +18,8 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 - Phase 5E unsaved-work protection for dirty tab close/reload flows with Save, Discard, and Cancel decisions.
 - Browser `beforeunload` protection whenever any open editor tab is dirty.
 - Phase 5E external-change reconciliation built on metadata polling across open file-backed tabs, with changed/missing-on-disk notices, Reload from disk, Keep local, and clearer inspector status labels.
+- Phase 5F reversible source formatting for inline wrappers, headings, quote/list/task-list prefixes, plus H4-H6, strikethrough, and duplicate selection/current-line command coverage.
+- Phase 5F source search options for case-sensitive, whole-word, and regex matching, with shared match navigation and replace-current/replace-all behavior.
 
 ## Selection Behavior
 
@@ -27,6 +29,9 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 - Commands update the active document text through the editor app while the source transforms live in `packages/editor-engine`.
 - When no match or no active search exists, replace actions report a status message instead of changing text.
 - Command palette execution closes the overlay, applies the selected editor-engine command, and restores the useful textarea selection through the app's existing focus path.
+- Inline source commands toggle existing Markdown markers when the selected text includes the wrapper or the selected text is already surrounded by the wrapper.
+- Heading commands cover H1-H6 and remove the matching heading marker when the selected line range already uses that level.
+- Blockquote, unordered list, ordered list, and task list commands remove their prefixes when every selected line already has the target marker.
 
 ## Design Direction
 
@@ -45,6 +50,18 @@ Phase 5E adds the first reliability pass around local documents.
 - Keep local clears the current external-change notice by adopting the latest observed metadata as the new baseline; a missing file stays quiet while still missing and alerts again if it reappears.
 
 This is still metadata polling. Native filesystem watching and native Tauri window-close interception remain future shell work.
+
+## Phase 5F Source Editing Polish
+
+Phase 5F makes source-mode editing behave more like a Markdown editor than a one-way inserter.
+
+- Bold, italic, inline code, and strikethrough commands wrap selected text, insert useful fallback text for empty selections, and remove existing markers when toggled on already formatted text.
+- Heading commands now cover H1-H6 and toggle the matching heading level off for selected lines.
+- Blockquote, unordered list, ordered list, and task list commands toggle their line prefixes off when all selected lines already use that marker.
+- Duplicate selection or line is registered as a source editing utility command with a default `Ctrl+D` shortcut.
+- The command registry remains the source of truth for the toolbar, command palette, shortcut inspector, and preference restoration.
+- Source search now has compact case-sensitive, whole-word, and regex option buttons. Invalid regex input reports a status/error state and disables replacement.
+- Replace current and replace all share the same matcher/options as the match list. Regex mode supports capture-group replacement, while literal mode treats replacement text literally.
 
 ## Phase 5B Extraction
 
@@ -77,9 +94,8 @@ Phase 5D adds a compact Preferences dialog and moves existing editor shortcut di
 - Rich WYSIWYG/realtime editing behavior.
 - Full preferences schema beyond the Phase 5D local editor settings foundation.
 - Non-format command remapping and platform-native/global shortcut registration.
-- Toggle-aware formatting that removes existing Markdown markers.
-- Regex, case-sensitive, whole-word, and capture-group replace modes.
 - Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.
+- Selection format overlay, quick insert/block inserter, and richer line transformer menus beyond the duplicate command.
 - Native filesystem watching beyond metadata polling and native Tauri close-event protection.
 
 ## Verification

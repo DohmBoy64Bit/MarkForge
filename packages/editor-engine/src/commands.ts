@@ -3,22 +3,27 @@ import {
   applyInlineWrap,
   applyLinePrefix,
   applyLink,
+  duplicateSelectionOrLines,
   insertBlock,
   wrapBlock,
   type TextEdit,
   type TextSelection
 } from './editingTransforms'
 
-export type EditorCommandGroup = 'inline' | 'block' | 'insert'
+export type EditorCommandGroup = 'inline' | 'block' | 'insert' | 'edit'
 
 export type EditorCommandId =
   | 'format.bold'
   | 'format.italic'
   | 'format.inlineCode'
+  | 'format.strikethrough'
   | 'format.link'
   | 'block.heading1'
   | 'block.heading2'
   | 'block.heading3'
+  | 'block.heading4'
+  | 'block.heading5'
+  | 'block.heading6'
   | 'block.blockquote'
   | 'block.unorderedList'
   | 'block.orderedList'
@@ -26,15 +31,20 @@ export type EditorCommandId =
   | 'block.codeFence'
   | 'insert.horizontalRule'
   | 'insert.table'
+  | 'edit.duplicate'
 
 export type EditorCommandIcon =
   | 'bold'
   | 'italic'
   | 'inlineCode'
+  | 'strikethrough'
   | 'link'
   | 'heading1'
   | 'heading2'
   | 'heading3'
+  | 'heading4'
+  | 'heading5'
+  | 'heading6'
   | 'blockquote'
   | 'unorderedList'
   | 'orderedList'
@@ -42,6 +52,7 @@ export type EditorCommandIcon =
   | 'codeFence'
   | 'horizontalRule'
   | 'table'
+  | 'duplicate'
 
 export type EditorCommand = {
   id: EditorCommandId
@@ -77,6 +88,13 @@ export const editorCommands: EditorCommand[] = [
     execute: (source, selection) => applyInlineWrap(source, selection, '`', '`', 'code')
   },
   {
+    id: 'format.strikethrough',
+    label: 'Strikethrough',
+    icon: 'strikethrough',
+    group: 'inline',
+    execute: (source, selection) => applyInlineWrap(source, selection, '~~', '~~', 'deleted text')
+  },
+  {
     id: 'format.link',
     label: 'Link',
     icon: 'link',
@@ -106,11 +124,32 @@ export const editorCommands: EditorCommand[] = [
     execute: (source, selection) => applyHeading(source, selection, 3)
   },
   {
+    id: 'block.heading4',
+    label: 'Heading 4',
+    icon: 'heading4',
+    group: 'block',
+    execute: (source, selection) => applyHeading(source, selection, 4)
+  },
+  {
+    id: 'block.heading5',
+    label: 'Heading 5',
+    icon: 'heading5',
+    group: 'block',
+    execute: (source, selection) => applyHeading(source, selection, 5)
+  },
+  {
+    id: 'block.heading6',
+    label: 'Heading 6',
+    icon: 'heading6',
+    group: 'block',
+    execute: (source, selection) => applyHeading(source, selection, 6)
+  },
+  {
     id: 'block.blockquote',
     label: 'Blockquote',
     icon: 'blockquote',
     group: 'block',
-    execute: (source, selection) => applyLinePrefix(source, selection, () => '> ')
+    execute: (source, selection) => applyLinePrefix(source, selection, () => '> ', /^\s{0,3}>\s?/)
   },
   {
     id: 'block.unorderedList',
@@ -118,7 +157,7 @@ export const editorCommands: EditorCommand[] = [
     icon: 'unorderedList',
     group: 'block',
     shortcut: 'Ctrl+Shift+8',
-    execute: (source, selection) => applyLinePrefix(source, selection, () => '- ')
+    execute: (source, selection) => applyLinePrefix(source, selection, () => '- ', /^\s{0,3}[-*+]\s+/)
   },
   {
     id: 'block.orderedList',
@@ -126,14 +165,14 @@ export const editorCommands: EditorCommand[] = [
     icon: 'orderedList',
     group: 'block',
     shortcut: 'Ctrl+Shift+7',
-    execute: (source, selection) => applyLinePrefix(source, selection, (_line, index) => `${index + 1}. `)
+    execute: (source, selection) => applyLinePrefix(source, selection, (_line, index) => `${index + 1}. `, /^\s{0,3}\d+[.)]\s+/)
   },
   {
     id: 'block.taskList',
     label: 'Task list',
     icon: 'taskList',
     group: 'block',
-    execute: (source, selection) => applyLinePrefix(source, selection, () => '- [ ] ')
+    execute: (source, selection) => applyLinePrefix(source, selection, () => '- [ ] ', /^\s{0,3}[-*+] \[[ xX]\]\s+/)
   },
   {
     id: 'block.codeFence',
@@ -155,13 +194,22 @@ export const editorCommands: EditorCommand[] = [
     icon: 'table',
     group: 'insert',
     execute: (source, selection) => insertBlock(source, selection, '| Name | Value |\n| --- | --- |\n| Item | Detail |')
+  },
+  {
+    id: 'edit.duplicate',
+    label: 'Duplicate selection or line',
+    icon: 'duplicate',
+    group: 'edit',
+    shortcut: 'Ctrl+D',
+    execute: duplicateSelectionOrLines
   }
 ]
 
 export const commandGroups: Array<{ id: EditorCommandGroup; label: string }> = [
   { id: 'inline', label: 'Inline' },
   { id: 'block', label: 'Block' },
-  { id: 'insert', label: 'Insert' }
+  { id: 'insert', label: 'Insert' },
+  { id: 'edit', label: 'Edit' }
 ]
 
 export const commandById = Object.fromEntries(

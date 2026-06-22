@@ -1,6 +1,6 @@
 # MarkForge Editor
 
-Phase 5E Tauri editor shell for the Windows-first local Markdown workspace.
+Phase 5F Tauri editor shell for the Windows-first local Markdown workspace.
 
 ## Commands
 
@@ -17,10 +17,10 @@ pnpm --filter @markforge/editor tauri build
 - New, open, save, save as, copy Markdown, clipboard check, and print actions.
 - Source, split, and preview view modes.
 - Sanitized preview rendering through `@markforge/markdown-engine`.
-- Source search with match counts, match navigation, replace current, and replace all.
+- Source search with match counts, match navigation, case-sensitive/whole-word/regex options, replace current, and replace all.
 - Typed Markdown command registry for source-mode editing commands.
-- Formatting command rail for bold, italic, inline code, link, H1/H2/H3, blockquote, unordered list, ordered list, task list, code fence, horizontal rule, and table scaffold.
-- Preference-backed keyboard shortcuts for Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+Shift+7, Ctrl+Shift+8, and the command palette when focus is in the editor or command surface.
+- Formatting command rail for reversible bold, italic, inline code, strikethrough, link, H1-H6, blockquote, unordered list, ordered list, task list, code fence, horizontal rule, table scaffold, and duplicate selection/current-line.
+- Preference-backed keyboard shortcuts for Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+D, Ctrl+Shift+7, Ctrl+Shift+8, and the command palette when focus is in the editor or command surface.
 - Command palette opened by the toolbar or the configured shortcut, with searchable command metadata, grouped results, keyboard navigation, shortcut badges, empty state, and execution through the shared editor-engine commands.
 - Preferences dialog for local theme, default view mode, editable source command keybindings, per-command reset, reset all, and duplicate shortcut conflict display.
 - Prompted close/reload protection for dirty tabs with Save, Discard, and Cancel decisions.
@@ -38,5 +38,5 @@ pnpm --filter @markforge/editor tauri build
 - Native Tauri window-close interception before process exit.
 - Rich WYSIWYG/realtime editing.
 - Table editing beyond starter scaffold insertion.
-- Regex/case-sensitive replace options.
+- Quick insert, selection format overlay, and richer line transform menus.
 - Full preference schema beyond the Phase 5D local editor settings foundation.

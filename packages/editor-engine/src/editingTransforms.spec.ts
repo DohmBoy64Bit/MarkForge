@@ -4,6 +4,7 @@ import {
   applyInlineWrap,
   applyLinePrefix,
   applyLink,
+  duplicateSelectionOrLines,
   insertBlock,
   wrapBlock
 } from './editingTransforms'
@@ -29,6 +30,26 @@ describe('editingTransforms', () => {
     })
   })
 
+  it('toggles inline Markdown markers when the selected text includes the wrapper', () => {
+    const edit = applyInlineWrap('Make **bold** now', { start: 5, end: 13 }, '**', '**', 'bold text')
+
+    expect(edit).toEqual({
+      text: 'Make bold now',
+      selectionStart: 5,
+      selectionEnd: 9
+    })
+  })
+
+  it('toggles inline Markdown markers around the current selection', () => {
+    const edit = applyInlineWrap('Make **bold** now', { start: 7, end: 11 }, '**', '**', 'bold text')
+
+    expect(edit).toEqual({
+      text: 'Make bold now',
+      selectionStart: 5,
+      selectionEnd: 9
+    })
+  })
+
   it('formats links around selected text', () => {
     const edit = applyLink('Read docs', { start: 5, end: 9 })
 
@@ -42,6 +63,22 @@ describe('editingTransforms', () => {
     expect(edit.text).toBe('Intro\n## Old heading\nTail')
     expect(edit.selectionStart).toBe(6)
     expect(edit.selectionEnd).toBe(20)
+  })
+
+  it('supports H4-H6 headings and removes the same heading marker when toggled', () => {
+    const h6 = applyHeading('Intro\nDeep heading\nTail', { start: 7, end: 11 }, 6)
+
+    expect(h6.text).toBe('Intro\n###### Deep heading\nTail')
+
+    const toggled = applyHeading(h6.text, { start: 7, end: 12 }, 6)
+
+    expect(toggled.text).toBe('Intro\nDeep heading\nTail')
+  })
+
+  it('toggles line prefixes off when every selected line already has the marker', () => {
+    const edit = applyLinePrefix('- a\n- b\nc', { start: 0, end: 6 }, () => '- ', /^\s{0,3}[-*+]\s+/)
+
+    expect(edit.text).toBe('a\nb\nc')
   })
 
   it('prefixes each selected line with generated list markers', () => {
@@ -64,5 +101,21 @@ describe('editingTransforms', () => {
     expect(edit.text).toBe('before \n\n---\n\nafter')
     expect(edit.selectionStart).toBe(14)
     expect(edit.selectionEnd).toBe(14)
+  })
+
+  it('duplicates the selected text after the current selection', () => {
+    const edit = duplicateSelectionOrLines('alpha beta', { start: 6, end: 10 })
+
+    expect(edit.text).toBe('alpha betabeta')
+    expect(edit.selectionStart).toBe(10)
+    expect(edit.selectionEnd).toBe(14)
+  })
+
+  it('duplicates the current line when the selection is empty', () => {
+    const edit = duplicateSelectionOrLines('alpha\nbeta', { start: 1, end: 1 })
+
+    expect(edit.text).toBe('alpha\nalpha\nbeta')
+    expect(edit.selectionStart).toBe(6)
+    expect(edit.selectionEnd).toBe(11)
   })
 })

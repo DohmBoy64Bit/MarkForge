@@ -33,6 +33,8 @@ describe('editor preferences', () => {
     })
     expect(preferences.keybindings[commandPaletteActionId]).toBe('Ctrl+Shift+P')
     expect(preferences.keybindings['format.bold']).toBe('Ctrl+B')
+    expect(preferences.keybindings['format.strikethrough']).toBe('')
+    expect(preferences.keybindings['edit.duplicate']).toBe('Ctrl+D')
   })
 
   it('falls back safely for invalid stored preference data', () => {

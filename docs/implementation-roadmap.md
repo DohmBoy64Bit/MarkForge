@@ -68,6 +68,7 @@ Current status:
 - Phase 5C added the first command palette foundation over the shared editor-engine command registry, including Ctrl+Shift+P, grouped search results, keyboard navigation, shortcut display, and execution through the source-mode command path.
 - Phase 5D added a compact Preferences dialog for theme/default view selection and a local preference-backed keybinding foundation for the command palette plus existing editor commands, including editable shortcut strings, reset controls, duplicate conflict display, and deterministic first-registry-item shortcut dispatch.
 - Phase 5E added dirty-tab close/reload protection, browser `beforeunload` guarding, all-open-file metadata polling, changed/missing-on-disk reconciliation notices, Keep local snoozing, and clearer inspector file status labels.
+- Phase 5F added reversible source formatting, H1-H6 command coverage, strikethrough, duplicate selection/current-line, and compact source search options for case-sensitive, whole-word, and regex matching/replacement.
 - Full preferences schema, non-format command remapping, native filesystem watching, native Tauri close interception, rendered-preview search highlighting, and rich/WYSIWYG editing remain open.
 
 Exit criteria:
@@ -86,8 +87,8 @@ Current status:
 - Phase 5C added a compact MarkForge-native command palette in the editor app, backed by the editor-engine command metadata and existing transform execution path.
 - Phase 5D added the editor Preferences dialog and keybinding foundation, with preference-backed shortcut labels and keyboard dispatch across the toolbar, command palette, inspector, and source textarea.
 - Phase 5E added unsaved-work protection and external-change reconciliation around the existing metadata polling foundation.
-- Find/replace foundation is implemented for literal source matches through replace current and replace all.
-- WYSIWYG/realtime editing, format overlay, advanced table tools, image workflows, autocomplete, linting, formatter integration, non-format command remapping, full settings schema, native filesystem watching, and focus/typewriter modes remain open.
+- Phase 5F added toggle-aware Markdown transforms, H4-H6, strikethrough, duplicate selection/current-line, and shared search/replace matching for literal, case-sensitive, whole-word, and regex modes.
+- WYSIWYG/realtime editing, quick insert, format overlay, advanced table tools, image workflows, autocomplete, linting, formatter integration, non-format command remapping, full settings schema, native filesystem watching, and focus/typewriter modes remain open.
 
 Exit criteria:
 

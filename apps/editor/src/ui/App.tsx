@@ -12,10 +12,12 @@ import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import {
   Bold,
+  CaseSensitive,
   ClipboardCheck,
   ClipboardCopy,
   Code2,
   Command,
+  CopyPlus,
   FileDown,
   FileInput,
   FilePenLine,
@@ -24,6 +26,9 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Heading4,
+  Heading5,
+  Heading6,
   Italic,
   Keyboard,
   Link,
@@ -36,15 +41,18 @@ import {
   Printer,
   Quote,
   Replace,
+  Regex,
   Save,
   Search,
   Settings,
   ShieldCheck,
   SplitSquareHorizontal,
+  Strikethrough,
   Sun,
   Table2,
   TextCursorInput,
   TriangleAlert,
+  WholeWord,
   X,
   type LucideIcon
 } from 'lucide-react'
@@ -76,6 +84,15 @@ import {
   type ViewMode
 } from './editorPreferences'
 import type { PaletteCommand } from './paletteCommandHelpers'
+import {
+  defaultSearchOptions,
+  findSourceMatches,
+  highlightSourceSnippet,
+  replaceAllSourceMatches,
+  replaceCurrentSourceMatch,
+  type SourceSearchMatch,
+  type SourceSearchOptions
+} from './sourceSearch'
 
 type EditorDocument = {
   id: string
@@ -87,14 +104,6 @@ type EditorDocument = {
   externalChange: ExternalChangeState
   createdAt: number
   updatedAt: number
-}
-
-type SearchMatch = {
-  line: number
-  column: number
-  text: string
-  start: number
-  end: number
 }
 
 type PersistedSession = {
@@ -113,17 +122,22 @@ const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   bold: Bold,
   italic: Italic,
   inlineCode: Code2,
+  strikethrough: Strikethrough,
   link: Link,
   heading1: Heading1,
   heading2: Heading2,
   heading3: Heading3,
+  heading4: Heading4,
+  heading5: Heading5,
+  heading6: Heading6,
   blockquote: Quote,
   unorderedList: List,
   orderedList: ListOrdered,
   taskList: ListChecks,
   codeFence: TextCursorInput,
   horizontalRule: Minus,
-  table: Table2
+  table: Table2,
+  duplicate: CopyPlus
 }
 
 const starter = `---
@@ -172,6 +186,7 @@ export function App() {
   const [preferences, setPreferences] = useState<EditorPreferences>(restored.preferences)
   const [searchQuery, setSearchQuery] = useState('')
   const [replaceText, setReplaceText] = useState('')
+  const [searchOptions, setSearchOptions] = useState<SourceSearchOptions>(defaultSearchOptions)
   const [selectedMatch, setSelectedMatch] = useState(0)
   const [status, setStatus] = useState(restored.status)
   const [lastCommand, setLastCommand] = useState('No formatting command yet')
@@ -197,10 +212,12 @@ export function App() {
   const renderState = useMemo(() => safeRenderMarkdown(activeDocument?.text ?? ''), [activeDocument?.text])
   const { rendered, renderError } = renderState
   const frontMatterRows = useMemo(() => frontMatterEntries(rendered.frontMatter?.data), [rendered.frontMatter])
-  const searchMatches = useMemo(
-    () => findMatches(activeDocument?.text ?? '', searchQuery),
-    [activeDocument?.text, searchQuery]
+  const searchResult = useMemo(
+    () => findSourceMatches(activeDocument?.text ?? '', searchQuery, searchOptions),
+    [activeDocument?.text, searchOptions, searchQuery]
   )
+  const searchMatches = searchResult.matches
+  const hasSearchError = Boolean(searchResult.error)
   const stats = useMemo(() => documentStats(activeDocument?.text ?? ''), [activeDocument?.text])
   const commandsWithShortcuts = useMemo(
     () => editorCommands.map(command => ({
@@ -234,6 +251,12 @@ export function App() {
     setPreferences(current => ({
       ...current,
       viewMode: typeof viewMode === 'function' ? viewMode(current.viewMode) : viewMode
+    }))
+  }, [])
+  const toggleSearchOption = useCallback((option: keyof SourceSearchOptions) => {
+    setSearchOptions(current => ({
+      ...current,
+      [option]: !current[option]
     }))
   }, [])
 
@@ -654,7 +677,7 @@ export function App() {
     if (reloaded) closeUnsavedDialog(false)
   }, [closeUnsavedDialog, forceCloseDocument, pendingLifecycleAction, reloadDocumentFromDisk])
 
-  const jumpToMatch = useCallback((match: SearchMatch, index: number) => {
+  const jumpToMatch = useCallback((match: SourceSearchMatch, index: number) => {
     setSelectedMatch(index)
     setViewMode(current => current === 'preview' ? 'split' : current)
     window.setTimeout(() => {
@@ -681,14 +704,20 @@ export function App() {
       return
     }
 
-    const nextText = `${document.text.slice(0, match.start)}${replaceText}${document.text.slice(match.end)}`
-    const cursor = match.start + replaceText.length
+    const result = replaceCurrentSourceMatch(document.text, searchQuery, replaceText, searchOptions, match)
 
-    updateActiveDocument({ text: nextText })
+    if (result.error) {
+      setStatus(`Search regex error: ${result.error}`)
+      return
+    }
+
+    const cursor = match.start + result.replacementLength
+
+    updateActiveDocument({ text: result.text })
     setLastCommand('Replace current applied')
     setStatus('Replaced current match')
     setEditorSelection(match.start, cursor)
-  }, [activeDocument, replaceText, searchMatches, searchQuery, selectedMatch, setEditorSelection, updateActiveDocument])
+  }, [activeDocument, replaceText, searchMatches, searchOptions, searchQuery, selectedMatch, setEditorSelection, updateActiveDocument])
 
   const replaceAllMatches = useCallback(() => {
     const document = activeDocument
@@ -703,16 +732,19 @@ export function App() {
       return
     }
 
-    const query = searchQuery.trim()
-    const escaped = escapeRegExp(query)
-    const nextText = document.text.replace(new RegExp(escaped, 'gi'), replaceText)
+    const result = replaceAllSourceMatches(document.text, searchQuery, replaceText, searchOptions)
 
-    updateActiveDocument({ text: nextText })
+    if (result.error) {
+      setStatus(`Search regex error: ${result.error}`)
+      return
+    }
+
+    updateActiveDocument({ text: result.text })
     setSelectedMatch(0)
-    setLastCommand(`Replace all applied to ${searchMatches.length} matches`)
-    setStatus(`Replaced ${searchMatches.length} matches`)
+    setLastCommand(`Replace all applied to ${result.count} matches`)
+    setStatus(`Replaced ${result.count} matches`)
     setEditorSelection(0, 0)
-  }, [activeDocument, replaceText, searchMatches.length, searchQuery, setEditorSelection, updateActiveDocument])
+  }, [activeDocument, replaceText, searchMatches.length, searchOptions, searchQuery, setEditorSelection, updateActiveDocument])
 
   useEffect(() => {
     let unlisten: (() => void) | null = null
@@ -822,7 +854,7 @@ export function App() {
 
   useEffect(() => {
     setSelectedMatch(0)
-  }, [activeDocument?.id, searchQuery])
+  }, [activeDocument?.id, searchOptions, searchQuery])
 
   useEffect(() => {
     const persisted: PersistedSession = {
@@ -932,7 +964,7 @@ export function App() {
           ))}
         </div>
 
-        <label className="searchBox">
+        <label className={`searchBox ${hasSearchError ? 'error' : ''}`}>
           <Search size={16} aria-hidden="true" />
           <input
             value={searchQuery}
@@ -940,8 +972,45 @@ export function App() {
             placeholder="Search source"
             aria-label="Search source"
           />
-          {searchQuery && <span>{searchMatches.length}</span>}
+          {searchQuery && (
+            <span title={searchResult.error ?? `${searchMatches.length} matches`}>
+              {hasSearchError ? '!' : searchMatches.length}
+            </span>
+          )}
         </label>
+
+        <div className="searchOptions" aria-label="Search options">
+          <button
+            type="button"
+            className={searchOptions.caseSensitive ? 'active' : ''}
+            onClick={() => toggleSearchOption('caseSensitive')}
+            title="Case-sensitive search"
+            aria-pressed={searchOptions.caseSensitive}
+            aria-label="Case-sensitive search"
+          >
+            <CaseSensitive size={15} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={searchOptions.wholeWord ? 'active' : ''}
+            onClick={() => toggleSearchOption('wholeWord')}
+            title="Whole-word search"
+            aria-pressed={searchOptions.wholeWord}
+            aria-label="Whole-word search"
+          >
+            <WholeWord size={15} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={searchOptions.regex ? 'active' : ''}
+            onClick={() => toggleSearchOption('regex')}
+            title="Regex search"
+            aria-pressed={searchOptions.regex}
+            aria-label="Regex search"
+          >
+            <Regex size={15} aria-hidden="true" />
+          </button>
+        </div>
 
         <div className="themeSwitch" aria-label="Theme">
           <button
@@ -1005,13 +1074,9 @@ export function App() {
               {group.commands.map(command => {
                 const Icon = commandIconByName[command.icon]
                 const title = command.shortcut ? `${command.label} (${displayShortcut(command.shortcut)})` : command.label
-                const headingLabel = command.id === 'block.heading1'
-                  ? 'H1'
-                  : command.id === 'block.heading2'
-                    ? 'H2'
-                    : command.id === 'block.heading3'
-                      ? 'H3'
-                      : null
+                const headingLabel = command.id.startsWith('block.heading')
+                  ? `H${command.id.slice(-1)}`
+                  : null
 
                 return (
                   <button
@@ -1045,7 +1110,7 @@ export function App() {
           <div className="replaceActions">
             <button
               type="button"
-              disabled={!activeDocument || searchMatches.length === 0}
+              disabled={!activeDocument || hasSearchError || searchMatches.length === 0}
               onClick={replaceCurrentMatch}
               title="Replace selected search match"
             >
@@ -1053,7 +1118,7 @@ export function App() {
             </button>
             <button
               type="button"
-              disabled={!activeDocument || searchMatches.length === 0}
+              disabled={!activeDocument || hasSearchError || searchMatches.length === 0}
               onClick={replaceAllMatches}
               title="Replace all search matches"
             >
@@ -1173,13 +1238,15 @@ export function App() {
               <h2>Search</h2>
             </div>
             {searchQuery ? (
-              searchMatches.length > 0 ? (
+              hasSearchError ? (
+                <p className="emptyLine">Invalid regex</p>
+              ) : searchMatches.length > 0 ? (
                 <ol className="matches">
                   {searchMatches.map((match, index) => (
                     <li key={`${match.line}-${match.column}-${match.text}`} className={index === selectedMatch ? 'selected' : ''}>
                       <button type="button" onClick={() => jumpToMatch(match, index)}>
                         <span>Line {match.line}</span>
-                        <mark>{highlightSnippet(match.text, searchQuery)}</mark>
+                        <mark>{highlightSourceSnippet(match.text, searchQuery, searchOptions)}</mark>
                       </button>
                     </li>
                   ))}
@@ -1190,6 +1257,7 @@ export function App() {
             ) : (
               <p className="emptyLine">Search is idle</p>
             )}
+            {searchResult.error && <p className="selectionHint">Regex error: {searchResult.error}</p>}
             {selectedSearchMatch && <p className="selectionHint">Selected line {selectedSearchMatch.line}</p>}
           </section>
 
@@ -1406,64 +1474,10 @@ function safeRenderMarkdown(source: string): { rendered: RenderedMarkdown; rende
   }
 }
 
-function findMatches(source: string, query: string): SearchMatch[] {
-  const normalizedQuery = query.trim().toLowerCase()
-
-  if (!normalizedQuery) return []
-
-  const matches: SearchMatch[] = []
-  let offset = 0
-  let lineNumber = 1
-
-  while (offset <= source.length) {
-    const newline = source.indexOf('\n', offset)
-    const rawLineEnd = newline === -1 ? source.length : newline
-    const lineEnd = rawLineEnd > offset && source[rawLineEnd - 1] === '\r' ? rawLineEnd - 1 : rawLineEnd
-    const line = source.slice(offset, lineEnd)
-    let searchFrom = 0
-    const lowerLine = line.toLowerCase()
-
-    while (searchFrom <= lowerLine.length) {
-      const column = lowerLine.indexOf(normalizedQuery, searchFrom)
-      if (column === -1) break
-
-      matches.push({
-        line: lineNumber,
-        column: column + 1,
-        text: line.trim() || '(blank line)',
-        start: offset + column,
-        end: offset + column + normalizedQuery.length
-      })
-      searchFrom = column + normalizedQuery.length
-    }
-
-    if (newline === -1) break
-
-    offset = newline + 1
-    lineNumber += 1
-  }
-
-  return matches
-}
-
 function frontMatterEntries(data: FrontMatterData | null | undefined): [string, string][] {
   if (!data || Array.isArray(data) || typeof data !== 'object') return []
 
   return Object.entries(data).map(([key, value]) => [key, String(value)])
-}
-
-function highlightSnippet(text: string, query: string): string {
-  const trimmed = text || '(blank line)'
-  const index = trimmed.toLowerCase().indexOf(query.trim().toLowerCase())
-
-  if (index === -1) return trimmed
-
-  const start = Math.max(0, index - 24)
-  const end = Math.min(trimmed.length, index + query.length + 42)
-  const prefix = start > 0 ? '...' : ''
-  const suffix = end < trimmed.length ? '...' : ''
-
-  return `${prefix}${trimmed.slice(start, end)}${suffix}`
 }
 
 function shouldHandleEditorShortcut(event: KeyboardEvent, textarea: HTMLTextAreaElement | null): boolean {
@@ -1537,8 +1551,4 @@ function escapeHtml(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
