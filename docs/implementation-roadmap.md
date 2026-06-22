@@ -124,6 +124,10 @@ Current status:
 
 - Phase 7A expands `packages/converters` beyond the remediation package boundary with tested conversion capabilities for Markdown-to-HTML export, browser-print handoff, HTML-to-Markdown import through Turndown, CSV-to-Markdown table conversion, and Markdown whitespace cleanup.
 - Phase 7B exposes the safe converter subset in the apps: editor toolbar/menu actions for Export HTML and Clean Markdown, plus viewer Export HTML backed by a constrained HTML save/write path.
+- Phase 7C adds editor Import Conversion for supported HTML and CSV input, inserting converted Markdown into the active document by selection, cursor, or append mode.
+- Phase 7D adds converter activity history for supported editor conversion actions.
+- Phase 7E polishes the converter import workflow with responsive segmented controls, disabled/converting states, and stable dialog layout.
+- Phase 7F updates converter documentation, validation, and screenshot evidence.
 - DOCX, native PDF import/export, rich clipboard import, URL/article extraction, and OCR are exposed as explicit unsupported converter boundaries until file parsing, platform MIME access, network/readability policy, OCR runtime, and fixture requirements are defined.
 
 Exit criteria:

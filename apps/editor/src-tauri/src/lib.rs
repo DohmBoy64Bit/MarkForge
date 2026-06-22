@@ -82,6 +82,8 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
         .build(app)?;
     let export_html = MenuItemBuilder::with_id("file.exportHtml", "Export HTML...")
         .build(app)?;
+    let import_converted = MenuItemBuilder::with_id("file.importConverted", "Import Conversion...")
+        .build(app)?;
     let copy_markdown = MenuItemBuilder::with_id("edit.copyMarkdown", "Copy Markdown")
         .accelerator("Ctrl+Shift+C")
         .build(app)?;
@@ -98,6 +100,7 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
         .item(&save_file)
         .item(&save_file_as)
         .item(&export_html)
+        .item(&import_converted)
         .separator()
         .quit()
         .build()?;

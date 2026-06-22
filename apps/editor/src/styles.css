@@ -197,6 +197,10 @@ button {
   .customTemplateComposer textarea:focus-visible,
   .templatePreviewFooter button:focus-visible,
   .templateSuggestionMenu button:focus-visible,
+  .converterHeader button:focus-visible,
+  .converterModeGroup button:focus-visible,
+  .converterSource textarea:focus-visible,
+  .converterFooter button:focus-visible,
   .paletteInputRow button:focus-visible,
   .paletteResults button:focus-visible,
   .preferencesHeader button:focus-visible,
@@ -1043,7 +1047,8 @@ textarea {
 .toc,
 .matches,
 .warnings,
-.recentFiles {
+.recentFiles,
+.converterActivity {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1056,8 +1061,74 @@ textarea {
 .toc li + li,
 .matches li + li,
 .warnings li + li,
-.recentFiles li + li {
+.recentFiles li + li,
+.converterActivity li + li {
   margin-top: 7px;
+}
+
+.converterActivity li {
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid var(--panel-border);
+  border-left-width: 3px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--panel), var(--page) 46%);
+}
+
+.converterActivity li[data-status="success"] {
+  border-left-color: var(--accent);
+}
+
+.converterActivity li[data-status="warning"] {
+  border-left-color: var(--warning);
+  background: color-mix(in srgb, var(--warning-soft), var(--panel) 72%);
+}
+
+.converterActivity li[data-status="error"] {
+  border-left-color: var(--danger);
+  background: color-mix(in srgb, var(--danger-soft), var(--panel) 72%);
+}
+
+.converterActivity div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.converterActivity strong,
+.converterActivity time,
+.converterActivity p {
+  min-width: 0;
+  margin: 0;
+}
+
+.converterActivity strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.converterActivity time {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.converterActivity p {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .toc a {
@@ -1164,6 +1235,225 @@ textarea {
   color: var(--text);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.converterBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(17, 24, 31, 0.34), rgba(17, 24, 31, 0.18)),
+    color-mix(in srgb, var(--app-bg), transparent 30%);
+}
+
+.converterDialog {
+  width: min(760px, 100%);
+  max-height: min(640px, calc(100vh - 32px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--rail-border) 62%);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rail), var(--page) 38%), var(--panel));
+  box-shadow:
+    0 28px 78px rgba(14, 24, 32, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.72) inset;
+}
+
+.dark .converterDialog {
+  box-shadow:
+    0 30px 86px rgba(0, 0, 0, 0.56),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.converterHeader {
+  min-width: 0;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rail-border);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft), transparent 34%), transparent 58%),
+    var(--rail);
+}
+
+.converterHeader > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.converterHeader svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.converterHeader h2,
+.converterHeader p {
+  margin: 0;
+}
+
+.converterHeader h2 {
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.converterHeader p {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 11px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.converterHeader button,
+.converterModeGroup button,
+.converterFooter button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--rail), var(--page) 52%);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.converterHeader button {
+  width: 32px;
+  height: 32px;
+  color: var(--muted);
+}
+
+.converterHeader button:hover,
+.converterModeGroup button:hover,
+.converterModeGroup button.active,
+.converterFooter button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 30%);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.converterBody {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.converterControls {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.72fr) minmax(260px, 1fr);
+  gap: 8px;
+}
+
+.converterModeGroup {
+  min-width: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--rail-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel), var(--rail) 50%);
+}
+
+.converterModeGroup button {
+  min-width: 0;
+  height: 34px;
+  gap: 7px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.converterModeGroup button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.converterSource {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+}
+
+.converterSource span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.converterSource textarea {
+  min-width: 0;
+  min-height: 260px;
+  resize: none;
+  border: 1px solid var(--rail-border);
+  border-radius: 7px;
+  padding: 12px;
+  outline: 0;
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.converterFooter {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--rail-border);
+  background: color-mix(in srgb, var(--panel), var(--rail) 42%);
+}
+
+.converterFooter span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.converterFooter button {
+  min-height: 32px;
+  gap: 7px;
+  margin-left: auto;
+  padding: 0 11px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.converterFooter button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
 }
 
 .statusBar {
@@ -2964,6 +3254,10 @@ textarea {
     padding: 12px;
   }
 
+  .converterBackdrop {
+    padding: 12px;
+  }
+
   .commandPalette {
     max-height: calc(100vh - 24px);
   }
@@ -2974,6 +3268,18 @@ textarea {
 
   .templatesHelpDialog {
     max-height: calc(100vh - 24px);
+  }
+
+  .converterDialog {
+    max-height: calc(100vh - 24px);
+  }
+
+  .converterControls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .converterSource textarea {
+    min-height: 220px;
   }
 
   .paletteInputRow {
@@ -3036,12 +3342,43 @@ textarea {
     padding: 8px;
   }
 
+  .converterBackdrop {
+    align-items: stretch;
+    padding: 8px;
+  }
+
   .preferencesDialog {
     max-height: calc(100vh - 16px);
   }
 
   .templatesHelpDialog {
     max-height: calc(100vh - 16px);
+  }
+
+  .converterDialog {
+    max-height: calc(100vh - 16px);
+  }
+
+  .converterHeader p {
+    max-width: 42vw;
+  }
+
+  .converterModeGroup {
+    grid-auto-flow: row;
+    grid-auto-rows: 32px;
+  }
+
+  .converterSource textarea {
+    min-height: 180px;
+  }
+
+  .converterFooter {
+    flex-wrap: wrap;
+  }
+
+  .converterFooter button {
+    width: 100%;
+    margin-left: 0;
   }
 
   .templatesHelpTabs button {

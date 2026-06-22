@@ -8,7 +8,9 @@ import {
 import {
   conversionWarningStatus,
   createBrowserPrintConverter,
+  createCsvToMarkdownTableConverter,
   createHtmlConverter,
+  createHtmlToMarkdownConverter,
   createMarkdownCleanupConverter,
   defaultHtmlExportPath
 } from '@markforge/converters'
@@ -28,6 +30,7 @@ import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import {
   BookOpenText,
+  ArrowDownToLine,
   Bold,
   CaseSensitive,
   ClipboardCheck,
@@ -79,10 +82,18 @@ import {
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { templateCatalog, type MarkdownTemplate, type TemplateVariables } from '@markforge/templates'
 import { CommandPalette } from './CommandPalette'
+import { ConverterDialog, type ConverterImportRequest } from './ConverterDialog'
 import { PreferencesDialog } from './PreferencesDialog'
 import { QuickInsert } from './QuickInsert'
 import { TemplatesHelpDialog } from './TemplatesHelpDialog'
 import { UnsavedChangesDialog } from './UnsavedChangesDialog'
+import {
+  formatConverterActivityTime,
+  prependConverterActivity,
+  type ConverterActivityEntry,
+  type ConverterActivityStatus
+} from './converterActivity'
+import { applyConvertedMarkdown, labelForConverterInsertMode } from './converterWorkflow'
 import { loadCustomTemplates } from './customTemplates'
 import {
   closeStatusLabel,
@@ -171,6 +182,8 @@ const browserPrintConverter = createBrowserPrintConverter(() => {
   if (!result.ok) throw new Error(result.error.message)
 })
 const htmlConverter = createHtmlConverter()
+const htmlToMarkdownConverter = createHtmlToMarkdownConverter()
+const csvToMarkdownTableConverter = createCsvToMarkdownTableConverter()
 const markdownCleanupConverter = createMarkdownCleanupConverter()
 const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   bold: Bold,
@@ -259,6 +272,9 @@ export function App() {
   const [isQuickInsertOpen, setIsQuickInsertOpen] = useState(false)
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
   const [isTemplatesHelpOpen, setIsTemplatesHelpOpen] = useState(false)
+  const [isConverterDialogOpen, setIsConverterDialogOpen] = useState(false)
+  const [isConvertingImport, setIsConvertingImport] = useState(false)
+  const [converterActivity, setConverterActivity] = useState<ConverterActivityEntry[]>([])
   const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingLifecycleAction | null>(null)
   const [commandPaletteQuery, setCommandPaletteQuery] = useState('')
   const [commandPaletteActiveIndex, setCommandPaletteActiveIndex] = useState(0)
@@ -272,6 +288,7 @@ export function App() {
   const quickInsertReturnFocusRef = useRef<HTMLElement | null>(null)
   const preferencesReturnFocusRef = useRef<HTMLElement | null>(null)
   const templatesHelpReturnFocusRef = useRef<HTMLElement | null>(null)
+  const converterDialogReturnFocusRef = useRef<HTMLElement | null>(null)
   const unsavedDialogReturnFocusRef = useRef<HTMLElement | null>(null)
 
   const theme = preferences.theme
@@ -373,6 +390,14 @@ export function App() {
   const rememberRecentFile = useCallback((path: string) => {
     persistRecentFiles(rememberRecentFilePath(path, recentFiles))
   }, [persistRecentFiles, recentFiles])
+
+  const recordConverterActivity = useCallback((
+    label: string,
+    detail: string,
+    activityStatus: ConverterActivityStatus
+  ) => {
+    setConverterActivity(current => prependConverterActivity(current, { label, detail, status: activityStatus }))
+  }, [])
 
   const updateActiveDocument = useCallback((changes: Partial<EditorDocument>) => {
     setDocuments(current =>
@@ -541,6 +566,34 @@ export function App() {
     }
   }, [])
 
+  const openConverterDialog = useCallback(() => {
+    if (!activeDocument) {
+      setStatus('No active document for import conversion')
+      return
+    }
+
+    converterDialogReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    setIsCommandPaletteOpen(false)
+    setIsQuickInsertOpen(false)
+    setIsPreferencesOpen(false)
+    setIsTemplatesHelpOpen(false)
+    setIsConverterDialogOpen(true)
+    setStatus('Import conversion opened')
+  }, [activeDocument])
+
+  const closeConverterDialog = useCallback((restoreFocus = true) => {
+    setIsConverterDialogOpen(false)
+
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => {
+        converterDialogReturnFocusRef.current?.focus()
+        converterDialogReturnFocusRef.current = null
+      })
+    }
+  }, [])
+
   const insertTemplate = useCallback((template: MarkdownTemplate, body: string) => {
     const document = activeDocument
     const textarea = textAreaRef.current
@@ -588,7 +641,8 @@ export function App() {
       !isCommandPaletteOpen &&
       !isQuickInsertOpen &&
       !isPreferencesOpen &&
-      !isTemplatesHelpOpen
+      !isTemplatesHelpOpen &&
+      !isConverterDialogOpen
 
     if (!canUseSuggestions) return
 
@@ -618,6 +672,7 @@ export function App() {
     dismissedTemplateSuggestionKey,
     insertTemplateSuggestion,
     isCommandPaletteOpen,
+    isConverterDialogOpen,
     isPreferencesOpen,
     isQuickInsertOpen,
     isTemplatesHelpOpen,
@@ -851,6 +906,7 @@ export function App() {
   const exportHtml = useCallback(async () => {
     if (!activeDocument) {
       setStatus('No active document to export')
+      recordConverterActivity('HTML export', 'No active document', 'error')
       return
     }
 
@@ -863,11 +919,13 @@ export function App() {
 
       if (!result.ok) {
         setStatus(result.error.message)
+        recordConverterActivity('HTML export', result.error.message, 'error')
         return
       }
 
       if (!result.value.html) {
         setStatus('HTML export produced no output')
+        recordConverterActivity('HTML export', 'No HTML output', 'warning')
         return
       }
 
@@ -875,19 +933,29 @@ export function App() {
 
       if (!selected) {
         setStatus('HTML export canceled')
+        recordConverterActivity('HTML export', 'Save dialog canceled', 'warning')
         return
       }
 
       await writeDocumentToPlatform(selected, result.value.html)
-      setStatus(conversionWarningStatus(`Exported HTML to ${selected}`, result.value.warnings))
+      const message = conversionWarningStatus(`Exported HTML to ${selected}`, result.value.warnings)
+      setStatus(message)
+      recordConverterActivity(
+        'HTML export',
+        selected,
+        result.value.warnings.length > 0 ? 'warning' : 'success'
+      )
     } catch (error) {
-      setStatus(messageFromError(error))
+      const message = messageFromError(error)
+      setStatus(message)
+      recordConverterActivity('HTML export', message, 'error')
     }
-  }, [activeDocument])
+  }, [activeDocument, recordConverterActivity])
 
   const cleanMarkdown = useCallback(async () => {
     if (!activeDocument) {
       setStatus('No active document to clean')
+      recordConverterActivity('Markdown cleanup', 'No active document', 'error')
       return
     }
 
@@ -899,6 +967,7 @@ export function App() {
 
       if (!result.ok) {
         setStatus(result.error.message)
+        recordConverterActivity('Markdown cleanup', result.error.message, 'error')
         return
       }
 
@@ -910,10 +979,90 @@ export function App() {
       const message = conversionWarningStatus(action, result.value.warnings)
       setLastCommand(message)
       setStatus(message)
+      recordConverterActivity(
+        'Markdown cleanup',
+        message,
+        result.value.warnings.length > 0 ? 'warning' : 'success'
+      )
     } catch (error) {
-      setStatus(messageFromError(error))
+      const message = messageFromError(error)
+      setStatus(message)
+      recordConverterActivity('Markdown cleanup', message, 'error')
     }
-  }, [activeDocument, updateActiveDocument])
+  }, [activeDocument, recordConverterActivity, updateActiveDocument])
+
+  const importConvertedMarkdown = useCallback(async (request: ConverterImportRequest) => {
+    if (!activeDocument) {
+      setStatus('No active document for import conversion')
+      recordConverterActivity('Import conversion', 'No active document', 'error')
+      return
+    }
+
+    setIsConvertingImport(true)
+
+    try {
+      const converter = request.mode === 'html-to-markdown'
+        ? htmlToMarkdownConverter
+        : csvToMarkdownTableConverter
+      const result = await converter.convert(
+        request.mode === 'html-to-markdown'
+          ? { format: request.mode, html: request.input }
+          : { format: request.mode, csv: request.input }
+      )
+      const label = request.mode === 'html-to-markdown' ? 'HTML import' : 'CSV import'
+
+      if (!result.ok) {
+        setStatus(result.error.message)
+        recordConverterActivity(label, result.error.message, 'error')
+        return
+      }
+
+      const markdown = result.value.markdown ?? ''
+      if (!markdown.trim()) {
+        setStatus(`${label} produced no Markdown`)
+        recordConverterActivity(label, 'No Markdown output', 'warning')
+        return
+      }
+
+      const textarea = textAreaRef.current
+      const edit = applyConvertedMarkdown(
+        activeDocument.text,
+        markdown,
+        {
+          start: textarea?.selectionStart ?? sourceSelection.start,
+          end: textarea?.selectionEnd ?? sourceSelection.end
+        },
+        request.insertMode
+      )
+      const action = `${label} inserted`
+      const message = conversionWarningStatus(action, result.value.warnings)
+
+      updateActiveDocument({ text: edit.text })
+      setEditorSelection(edit.selectionStart, edit.selectionEnd, textarea?.scrollTop)
+      setLastCommand(message)
+      setStatus(message)
+      recordConverterActivity(
+        label,
+        `${labelForConverterInsertMode(request.insertMode)} ${markdown.length} Markdown characters`,
+        result.value.warnings.length > 0 ? 'warning' : 'success'
+      )
+      closeConverterDialog(false)
+    } catch (error) {
+      const message = messageFromError(error)
+      setStatus(message)
+      recordConverterActivity('Import conversion', message, 'error')
+    } finally {
+      setIsConvertingImport(false)
+    }
+  }, [
+    activeDocument,
+    closeConverterDialog,
+    recordConverterActivity,
+    setEditorSelection,
+    sourceSelection.end,
+    sourceSelection.start,
+    updateActiveDocument
+  ])
 
   const checkClipboard = useCallback(async () => {
     try {
@@ -932,8 +1081,20 @@ export function App() {
       markdown: activeDocument?.text ?? ''
     })
 
-    setStatus(result.ok ? 'Print dialog opened' : result.error.message)
-  }, [activeDocument?.text])
+    if (result.ok) {
+      const message = conversionWarningStatus('Print dialog opened', result.value.warnings)
+      setStatus(message)
+      recordConverterActivity(
+        'Browser print',
+        message,
+        result.value.warnings.length > 0 ? 'warning' : 'success'
+      )
+      return
+    }
+
+    setStatus(result.error.message)
+    recordConverterActivity('Browser print', result.error.message, 'error')
+  }, [activeDocument?.text, recordConverterActivity])
 
   const forceCloseDocument = useCallback((id: string) => {
     setDocuments(current => {
@@ -1096,6 +1257,7 @@ export function App() {
       else if (id === 'file.save') void saveDocument()
       else if (id === 'file.saveAs') void saveDocumentAs()
       else if (id === 'file.exportHtml') void exportHtml()
+      else if (id === 'file.importConverted') openConverterDialog()
       else if (id === 'edit.copyMarkdown') void copyMarkdown()
       else if (id === 'edit.cleanMarkdown') void cleanMarkdown()
       else if (id === 'view.print') void printDocument()
@@ -1110,7 +1272,7 @@ export function App() {
     return () => {
       unlisten?.()
     }
-  }, [cleanMarkdown, copyMarkdown, createDocument, exportHtml, openDocument, printDocument, saveDocument, saveDocumentAs])
+  }, [cleanMarkdown, copyMarkdown, createDocument, exportHtml, openConverterDialog, openDocument, printDocument, saveDocument, saveDocumentAs])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1279,7 +1441,8 @@ export function App() {
     !isCommandPaletteOpen &&
     !isQuickInsertOpen &&
     !isPreferencesOpen &&
-    !isTemplatesHelpOpen
+    !isTemplatesHelpOpen &&
+    !isConverterDialogOpen
   )
   const showSelectionOverlay = Boolean(
     activeDocument &&
@@ -1290,6 +1453,7 @@ export function App() {
     !isQuickInsertOpen &&
     !isPreferencesOpen &&
     !isTemplatesHelpOpen &&
+    !isConverterDialogOpen &&
     !showTemplateSuggestions &&
     !pendingLifecycleAction
   )
@@ -1326,6 +1490,15 @@ export function App() {
             aria-label="Export HTML"
           >
             <FileCode size={18} />
+          </button>
+          <button
+            type="button"
+            disabled={!activeDocument}
+            onClick={openConverterDialog}
+            title="Import conversion"
+            aria-label="Import conversion"
+          >
+            <ArrowDownToLine size={18} />
           </button>
           <button
             type="button"
@@ -1725,6 +1898,30 @@ export function App() {
 
           <section>
             <div className="panelTitle">
+              <ArrowDownToLine size={16} />
+              <h2>Converters</h2>
+            </div>
+            {converterActivity.length > 0 ? (
+              <ol className="converterActivity">
+                {converterActivity.map(entry => (
+                  <li key={entry.id} data-status={entry.status}>
+                    <div>
+                      <strong>{entry.label}</strong>
+                      <time dateTime={new Date(entry.timestamp).toISOString()}>
+                        {formatConverterActivityTime(entry.timestamp)}
+                      </time>
+                    </div>
+                    <p>{entry.detail}</p>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="emptyLine">None yet</p>
+            )}
+          </section>
+
+          <section>
+            <div className="panelTitle">
               <Search size={16} />
               <h2>Search</h2>
             </div>
@@ -1894,6 +2091,15 @@ export function App() {
           onRequestClose={closeTemplatesHelp}
           shortcut={templatesHelpShortcut}
           variables={templateVariables}
+        />
+      )}
+
+      {isConverterDialogOpen && (
+        <ConverterDialog
+          activeSelectionLength={Math.max(0, sourceSelection.end - sourceSelection.start)}
+          isConverting={isConvertingImport}
+          onConvert={request => void importConvertedMarkdown(request)}
+          onRequestClose={closeConverterDialog}
         />
       )}
 

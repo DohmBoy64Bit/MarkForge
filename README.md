@@ -2,7 +2,7 @@
 
 MarkForge is being built as a professional, local-first Markdown editor and standalone Markdown viewer for Windows and Linux, with Windows as the first production target.
 
-The initial architecture and parity audit are complete, and implementation has progressed through Phase 7B. MarkForge is not product-ready yet and remains intentionally distinct from a 1:1 MarkText clone.
+The initial architecture and parity audit are complete, and implementation has progressed through Phase 7F. MarkForge is not product-ready yet and remains intentionally distinct from a 1:1 MarkText clone.
 
 ## Current Status
 
@@ -12,7 +12,7 @@ The initial architecture and parity audit are complete, and implementation has p
 - Phase 4 added the multi-document editor shell.
 - Phase 5 added source-mode command/editing foundations through Phase 5G, including the command palette, preferences/keybindings, unsaved-work protection, quick insert, and selection formatting overlay.
 - Phase 6B added templates/help, guided template variables, local custom templates, and bounded `/template`/`/tpl` source suggestions.
-- Phase 7B adds compact app UI for the safe converter subset: editor Export HTML and Clean Markdown actions, viewer Export HTML, browser-print handoff preservation, and explicit unsupported results for heavier converters.
+- Phase 7F completes the current safe converter UI slice: editor Export HTML, Import Conversion for HTML/CSV into Markdown, Clean Markdown, converter activity history, viewer Export HTML, browser-print handoff preservation, and explicit unsupported results for heavier converters.
 - Several package boundaries are still transitional; see [Architecture](docs/architecture.md).
 
 ## Evidence
