@@ -31,7 +31,7 @@ cargo check
 
 ## Implementation State
 
-Implementation has progressed through Phase 8 completion:
+Implementation has progressed through Phase 9 local LLM integration:
 
 - Phase 1 Tauri editor proof of concept.
 - Phase 2 shared Markdown engine.
@@ -41,6 +41,7 @@ Implementation has progressed through Phase 8 completion:
 - Phase 6B templates/help, guided template variables, local custom templates, and bounded `/template`/`/tpl` source suggestions.
 - Phase 7F converter app integration for editor Export HTML, Import Conversion for HTML/CSV input, Clean Markdown, converter activity history, viewer Export HTML, browser print handoff preservation, and explicit unsupported results for heavier conversion targets.
 - Phase 8 theme integration for package-backed editor/viewer app tokens and Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral app-visible controls.
+- Phase 9 local LLM integration for package-owned local provider contracts/adapters/privacy guards and a disabled-by-default editor Local AI dialog.
 
 The architecture remains the target contract, but some app components still own temporary platform/session/editing logic while packages are being extracted.
 

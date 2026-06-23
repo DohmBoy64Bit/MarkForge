@@ -160,6 +160,13 @@ Exit criteria:
 - Add first local provider after benchmark/hardware verification.
 - Add AI actions and explicit UI indicators.
 
+Current status:
+
+- Phase 9 is implemented for local-only provider foundations and the first editor UI surface.
+- `packages/llm` owns prompt templates, local action execution, explicit user-invocation privacy checks, loopback endpoint validation, Ollama HTTP generation, and OpenAI-compatible local endpoints for LM Studio/llama.cpp-style servers.
+- The editor exposes a compact Local AI dialog with disabled-by-default provider enablement, provider/endpoint/model configuration, action and source selection, prompt preview, result output, running/error/disabled states, and explicit insert controls.
+- Cloud AI providers remain out of scope and no cloud endpoint path is accepted by the current local provider validators.
+
 Exit criteria:
 
 - AI disabled by default.

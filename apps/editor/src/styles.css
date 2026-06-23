@@ -174,6 +174,14 @@ button {
   .converterModeGroup button:focus-visible,
   .converterSource textarea:focus-visible,
   .converterFooter button:focus-visible,
+  .localAiHeader button:focus-visible,
+  .localAiStatusRow:focus-visible,
+  .localAiEnable:focus-within,
+  .localAiField input:focus-visible,
+  .localAiField select:focus-visible,
+  .localAiModeGroup button:focus-visible,
+  .localAiPrompt textarea:focus-visible,
+  .localAiFooter button:focus-visible,
   .paletteInputRow button:focus-visible,
   .paletteResults button:focus-visible,
   .preferencesHeader button:focus-visible,
@@ -191,7 +199,8 @@ button {
 }
 
 .toolbar button:disabled,
-.formatRail button:disabled {
+.formatRail button:disabled,
+.localAiModeGroup button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
 }
@@ -1427,6 +1436,380 @@ textarea {
 .converterFooter button:disabled {
   cursor: not-allowed;
   opacity: 0.54;
+}
+
+.localAiBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(17, 24, 31, 0.34), rgba(17, 24, 31, 0.18)),
+    color-mix(in srgb, var(--app-bg), transparent 30%);
+}
+
+.localAiDialog {
+  width: min(900px, 100%);
+  max-height: min(720px, calc(100vh - 32px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent), var(--rail-border) 62%);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--rail), var(--page) 38%), var(--panel));
+  box-shadow:
+    0 28px 78px rgba(14, 24, 32, 0.34),
+    0 1px 0 rgba(255, 255, 255, 0.72) inset;
+}
+
+.dark .localAiDialog {
+  box-shadow:
+    0 30px 86px rgba(0, 0, 0, 0.56),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.localAiHeader {
+  min-width: 0;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rail-border);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--accent-soft), transparent 34%), transparent 58%),
+    var(--rail);
+}
+
+.localAiHeader > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.localAiHeader svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.localAiHeader h2,
+.localAiHeader p {
+  margin: 0;
+}
+
+.localAiHeader h2 {
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.localAiHeader p {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.localAiHeader button,
+.localAiModeGroup button,
+.localAiFooter button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--rail), var(--page) 52%);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.localAiHeader button {
+  width: 32px;
+  height: 32px;
+  color: var(--muted);
+}
+
+.localAiHeader button:hover,
+.localAiModeGroup button:hover:not(:disabled),
+.localAiModeGroup button.active,
+.localAiFooter button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 30%);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.localAiBody {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  gap: 10px;
+  overflow: hidden;
+  padding: 10px;
+}
+
+.localAiStatusRow {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--rail-border);
+  border-left: 3px solid var(--muted);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--panel), var(--rail) 46%);
+}
+
+.localAiStatusRow[data-status="active"] {
+  border-left-color: var(--accent);
+}
+
+.localAiStatusRow[data-status="running"] {
+  border-left-color: var(--warning);
+  background: color-mix(in srgb, var(--warning-soft), var(--panel) 72%);
+}
+
+.localAiStatusRow svg {
+  color: var(--accent);
+}
+
+.localAiStatusRow strong,
+.localAiStatusRow span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.localAiStatusRow strong {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.localAiStatusRow span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.localAiProviderGrid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(150px, 0.8fr) minmax(220px, 1.25fr) minmax(160px, 1fr);
+  gap: 8px;
+}
+
+.localAiEnable,
+.localAiField {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+  padding: 8px;
+  border: 1px solid var(--rail-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--panel), var(--rail) 44%);
+}
+
+.localAiEnable {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  cursor: pointer;
+}
+
+.localAiEnable input {
+  accent-color: var(--accent);
+}
+
+.localAiEnable span,
+.localAiField span,
+.localAiPrompt > span {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.localAiField input,
+.localAiField select {
+  min-width: 0;
+  width: 100%;
+  height: 30px;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  padding: 0 8px;
+  outline: 0;
+  background: var(--page);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.localAiControls {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(200px, 0.7fr);
+  gap: 8px;
+}
+
+.localAiModeGroup {
+  min-width: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--rail-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel), var(--rail) 50%);
+}
+
+.localAiModeGroup button {
+  min-width: 0;
+  height: 34px;
+  gap: 7px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.localAiModeGroup button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.localAiPrivacy {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.localAiPrivacy svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.localAiWorkGrid {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.localAiPrompt {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 6px;
+}
+
+.localAiPrompt textarea {
+  min-width: 0;
+  min-height: 220px;
+  resize: none;
+  border: 1px solid var(--rail-border);
+  border-radius: 7px;
+  padding: 12px;
+  outline: 0;
+  background: var(--code-bg);
+  color: var(--code-text);
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.localAiPrompt textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+  color: var(--danger-soft);
+}
+
+.localAiResult textarea {
+  background: var(--page);
+  color: var(--text);
+}
+
+.localAiFooter {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--rail-border);
+  background: color-mix(in srgb, var(--panel), var(--rail) 42%);
+}
+
+.localAiFooter > span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.localAiFooter button {
+  min-height: 32px;
+  gap: 7px;
+  padding: 0 11px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.localAiFooter button[type="submit"] {
+  margin-left: auto;
+}
+
+.localAiFooter button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+.localAiInsertGroup {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.localAiFooterIcon {
+  flex: 0 0 auto;
+  color: var(--warning);
+}
+
+.localAiBadge {
+  padding: 2px 7px;
+  border: 1px solid var(--rail-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel), var(--rail) 52%);
+}
+
+.localAiBadge.open {
+  border-color: color-mix(in srgb, var(--accent), var(--rail-border) 44%);
+  color: var(--accent-strong);
+}
+
+.localAiBadge.running {
+  border-color: var(--warning);
+  background: color-mix(in srgb, var(--warning-soft), var(--panel) 68%);
+  color: var(--warning);
 }
 
 .statusBar {
@@ -3243,6 +3626,10 @@ textarea {
     padding: 12px;
   }
 
+  .localAiBackdrop {
+    padding: 12px;
+  }
+
   .commandPalette {
     max-height: calc(100vh - 24px);
   }
@@ -3257,6 +3644,20 @@ textarea {
 
   .converterDialog {
     max-height: calc(100vh - 24px);
+  }
+
+  .localAiDialog {
+    max-height: calc(100vh - 24px);
+  }
+
+  .localAiProviderGrid,
+  .localAiControls,
+  .localAiWorkGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .localAiPrompt textarea {
+    min-height: 180px;
   }
 
   .converterControls {
@@ -3332,6 +3733,11 @@ textarea {
     padding: 8px;
   }
 
+  .localAiBackdrop {
+    align-items: stretch;
+    padding: 8px;
+  }
+
   .preferencesDialog {
     max-height: calc(100vh - 16px);
   }
@@ -3344,7 +3750,15 @@ textarea {
     max-height: calc(100vh - 16px);
   }
 
+  .localAiDialog {
+    max-height: calc(100vh - 16px);
+  }
+
   .converterHeader p {
+    max-width: 42vw;
+  }
+
+  .localAiHeader p {
     max-width: 42vw;
   }
 
@@ -3353,12 +3767,46 @@ textarea {
     grid-auto-rows: 32px;
   }
 
+  .localAiModeGroup {
+    grid-auto-flow: row;
+    grid-auto-rows: 32px;
+  }
+
+  .localAiBody {
+    grid-template-rows: none;
+    align-content: start;
+    overflow: auto;
+  }
+
   .converterSource textarea {
     min-height: 180px;
   }
 
+  .localAiPrompt textarea {
+    min-height: 112px;
+  }
+
+  .localAiResult textarea {
+    min-height: 88px;
+  }
+
   .converterFooter {
     flex-wrap: wrap;
+  }
+
+  .localAiFooter {
+    flex-wrap: wrap;
+  }
+
+  .localAiInsertGroup {
+    width: 100%;
+    order: 3;
+    margin-left: 0;
+  }
+
+  .localAiInsertGroup button,
+  .localAiFooter button[type="submit"] {
+    flex: 1 1 0;
   }
 
   .converterFooter button {
@@ -3530,6 +3978,7 @@ textarea {
   .preferencesBackdrop,
   .paletteBackdrop,
   .templatesHelpBackdrop,
+  .localAiBackdrop,
   .templateSuggestionMenu,
   .changeNotice,
   .renderError {

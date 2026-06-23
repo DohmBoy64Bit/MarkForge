@@ -32,6 +32,9 @@ importers:
       '@markforge/editor-engine':
         specifier: workspace:*
         version: link:../../packages/editor-engine
+      '@markforge/llm':
+        specifier: workspace:*
+        version: link:../../packages/llm
       '@markforge/markdown-engine':
         specifier: workspace:*
         version: link:../../packages/markdown-engine

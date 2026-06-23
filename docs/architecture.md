@@ -30,6 +30,9 @@ apps/editor ─┬─> packages/ui
              ├─> packages/editor-engine
              ├─> packages/core
              ├─> packages/platform
+             ├─> packages/converters
+             ├─> packages/theme-engine
+             ├─> packages/llm
              └─> packages/shared
 
 apps/viewer ─┬─> packages/ui
@@ -49,7 +52,7 @@ packages/converters ─┬─> packages/markdown-engine
 packages/llm ───> packages/shared
 ```
 
-UI may call application services through typed interfaces, but UI components must not directly parse Markdown, read files, call LLM providers, or run converters.
+UI may call application services through typed package interfaces, but UI components must not directly parse Markdown, read files, call provider SDKs, or implement converter/LLM runtime logic.
 
 ## Package Responsibilities
 
@@ -114,9 +117,9 @@ The structure and dependency graph above remain the target architecture. The cur
 - `packages/platform` owns typed filesystem, dialog, clipboard, print, and polling file-watch service contracts. Apps still provide thin Tauri adapter wiring at the shell boundary.
 - `packages/theme-engine` owns central theme tokens, validation, built-in themes, app-visible theme listing, app-facing CSS variable generation, code theme mapping, and print/export color mapping. Editor and viewer now consume package-generated app theme variables and expose Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral controls.
 - `packages/converters` owns the converter contract, sanitized HTML export, HTML-to-Markdown import, CSV-to-Markdown table conversion, Markdown cleanup, capability checks, browser-print pathway, warnings, and unsupported capability results.
-- `packages/llm` owns local-only provider contracts, prompt templates, a mock provider, cancellation, explicit unsupported local adapter boundaries, and the privacy guard. No user-facing AI workflow is enabled.
+- `packages/llm` owns local-only provider contracts, prompt templates, local action execution, mock provider tests, cancellation, loopback endpoint validation, Ollama and OpenAI-compatible local adapters, explicit unsupported local adapter boundaries, and the privacy guard. The editor now exposes a disabled-by-default Local AI workflow through this package.
 - `packages/ui` owns initial reusable presentational helpers. App-specific dialogs and workflow components remain in `apps/editor` and `apps/viewer` until they are safely reusable.
-- `apps/editor` now delegates preference/session/recent-file schema behavior to `packages/core`, platform read/write/dialog/clipboard/print behavior to `packages/platform`, supported conversion execution to `packages/converters`, and app theme variables to `packages/theme-engine`. It still owns document orchestration, search state, converter workflow UI/activity history, command UI wiring, custom template UI persistence, live preview composition, and direct imports of `@markforge/markdown-engine` and `@markforge/templates`; those are remaining dependency-direction drifts to resolve when editor-engine/template ownership is expanded.
+- `apps/editor` now delegates preference/session/recent-file schema behavior to `packages/core`, platform read/write/dialog/clipboard/print behavior to `packages/platform`, supported conversion execution to `packages/converters`, app theme variables to `packages/theme-engine`, and Local AI provider execution to `packages/llm`. It still owns document orchestration, search state, converter workflow UI/activity history, Local AI dialog state, command UI wiring, custom template UI persistence, live preview composition, and direct imports of `@markforge/markdown-engine` and `@markforge/templates`; those are remaining dependency-direction drifts to resolve when editor-engine/template ownership is expanded.
 - `apps/viewer` now delegates file-open/read/info, clipboard, metadata polling, and print behavior through `packages/platform`/`packages/converters`. It still owns viewer search state, rendered view composition, and Tauri adapter wiring.
 - Native file watching, native close interception, shell links, spellcheck, update checks, Linux packaging hardening, and full native PDF/DOCX/OCR/CSV/URL conversion remain unsupported because the current code/docs do not provide enough exact contracts to implement them safely.
 - `pnpm docs:check` validates required docs, local Markdown links, stale markers, and implemented package README/manifest/source/test/public-entrypoint coverage.

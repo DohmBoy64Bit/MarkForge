@@ -13,6 +13,7 @@
     "@markforge/converters": "workspace:*",
     "@markforge/core": "workspace:*",
     "@markforge/editor-engine": "workspace:*",
+    "@markforge/llm": "workspace:*",
     "@markforge/markdown-engine": "workspace:*",
     "@markforge/platform": "workspace:*",
     "@markforge/shared": "workspace:*",

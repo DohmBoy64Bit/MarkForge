@@ -26,6 +26,8 @@ In the editor, open **Templates and Help** from the toolbar or the default `Ctrl
 
 In source mode, start a line with `/template` or `/tpl` to open the first template suggestion menu. Type after the trigger to filter, use Arrow keys to navigate, Enter to insert, or Escape to close. This is intentionally limited to template insertion; general Markdown autocomplete remains future scope.
 
+The editor toolbar now includes **Local AI**. The dialog starts disabled, requires an explicit local provider enable toggle, accepts only loopback provider endpoints, shows prompt/result state, and inserts returned text only after the user chooses an insert action.
+
 ## Privacy Promise
 
-MarkForge is local-first. Local AI assistance will be disabled until configured by the user. User documents will not be sent to cloud APIs unless a future cloud provider is explicitly added and configured by the user.
+MarkForge is local-first. Local AI assistance is disabled until configured by the user for a local loopback provider and does not send document text until the user presses Run. User documents will not be sent to cloud APIs unless a future cloud provider is explicitly added and configured by the user.

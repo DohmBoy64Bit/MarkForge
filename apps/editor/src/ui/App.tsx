@@ -23,6 +23,7 @@ import {
   type PersistedEditorSession
 } from '@markforge/core'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
+import { runLlmAction } from '@markforge/llm'
 import { createPlatformServices, type FileInfo } from '@markforge/platform'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
@@ -33,6 +34,7 @@ import {
   BookOpenText,
   ArrowDownToLine,
   Bold,
+  BrainCircuit,
   CaseSensitive,
   ClipboardCheck,
   ClipboardCopy,
@@ -84,6 +86,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSPr
 import { templateCatalog, type MarkdownTemplate, type TemplateVariables } from '@markforge/templates'
 import { CommandPalette } from './CommandPalette'
 import { ConverterDialog, type ConverterImportRequest } from './ConverterDialog'
+import { LocalAiDialog, type LocalAiRunRequest, type LocalAiRunResult } from './LocalAiDialog'
 import { PreferencesDialog } from './PreferencesDialog'
 import { QuickInsert } from './QuickInsert'
 import { TemplatesHelpDialog } from './TemplatesHelpDialog'
@@ -120,6 +123,11 @@ import {
   type Theme,
   type ViewMode
 } from './editorPreferences'
+import {
+  applyLocalAiResult,
+  createEditorLocalAiProvider,
+  type LocalAiInsertMode
+} from './localAiWorkflow'
 import type { PaletteCommand } from './paletteCommandHelpers'
 import { toQuickInsertCommands } from './quickInsertHelpers'
 import {
@@ -275,6 +283,8 @@ export function App() {
   const [isTemplatesHelpOpen, setIsTemplatesHelpOpen] = useState(false)
   const [isConverterDialogOpen, setIsConverterDialogOpen] = useState(false)
   const [isConvertingImport, setIsConvertingImport] = useState(false)
+  const [isLocalAiOpen, setIsLocalAiOpen] = useState(false)
+  const [isLocalAiRunning, setIsLocalAiRunning] = useState(false)
   const [converterActivity, setConverterActivity] = useState<ConverterActivityEntry[]>([])
   const [pendingLifecycleAction, setPendingLifecycleAction] = useState<PendingLifecycleAction | null>(null)
   const [commandPaletteQuery, setCommandPaletteQuery] = useState('')
@@ -290,6 +300,7 @@ export function App() {
   const preferencesReturnFocusRef = useRef<HTMLElement | null>(null)
   const templatesHelpReturnFocusRef = useRef<HTMLElement | null>(null)
   const converterDialogReturnFocusRef = useRef<HTMLElement | null>(null)
+  const localAiReturnFocusRef = useRef<HTMLElement | null>(null)
   const unsavedDialogReturnFocusRef = useRef<HTMLElement | null>(null)
 
   const theme = preferences.theme
@@ -313,6 +324,13 @@ export function App() {
   const searchMatches = searchResult.matches
   const hasSearchError = Boolean(searchResult.error)
   const stats = useMemo(() => documentStats(activeDocument?.text ?? ''), [activeDocument?.text])
+  const selectedSourceText = useMemo(() => {
+    if (!activeDocument) return ''
+
+    const start = Math.max(0, Math.min(sourceSelection.start, activeDocument.text.length))
+    const end = Math.max(start, Math.min(sourceSelection.end, activeDocument.text.length))
+    return activeDocument.text.slice(start, end)
+  }, [activeDocument, sourceSelection.end, sourceSelection.start])
   const commandsWithShortcuts = useMemo(
     () => editorCommands.map(command => ({
       ...command,
@@ -473,6 +491,7 @@ export function App() {
     setCommandPaletteActiveIndex(0)
     setIsQuickInsertOpen(false)
     setIsTemplatesHelpOpen(false)
+    setIsLocalAiOpen(false)
     setIsCommandPaletteOpen(true)
     setStatus('Command palette opened')
   }, [])
@@ -503,6 +522,7 @@ export function App() {
     setQuickInsertActiveIndex(0)
     setIsCommandPaletteOpen(false)
     setIsTemplatesHelpOpen(false)
+    setIsLocalAiOpen(false)
     setIsQuickInsertOpen(true)
     setStatus('Quick insert opened')
   }, [activeDocument])
@@ -527,6 +547,7 @@ export function App() {
     setIsCommandPaletteOpen(false)
     setIsQuickInsertOpen(false)
     setIsTemplatesHelpOpen(false)
+    setIsLocalAiOpen(false)
     setIsPreferencesOpen(true)
     setStatus('Preferences opened')
   }, [])
@@ -554,6 +575,7 @@ export function App() {
     setIsCommandPaletteOpen(false)
     setIsQuickInsertOpen(false)
     setIsPreferencesOpen(false)
+    setIsLocalAiOpen(false)
     setIsTemplatesHelpOpen(true)
     setStatus('Templates and help opened')
   }, [activeDocument])
@@ -582,6 +604,7 @@ export function App() {
     setIsQuickInsertOpen(false)
     setIsPreferencesOpen(false)
     setIsTemplatesHelpOpen(false)
+    setIsLocalAiOpen(false)
     setIsConverterDialogOpen(true)
     setStatus('Import conversion opened')
   }, [activeDocument])
@@ -593,6 +616,35 @@ export function App() {
       window.requestAnimationFrame(() => {
         converterDialogReturnFocusRef.current?.focus()
         converterDialogReturnFocusRef.current = null
+      })
+    }
+  }, [])
+
+  const openLocalAi = useCallback(() => {
+    if (!activeDocument) {
+      setStatus('No active document for Local AI')
+      return
+    }
+
+    localAiReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+    setIsCommandPaletteOpen(false)
+    setIsQuickInsertOpen(false)
+    setIsPreferencesOpen(false)
+    setIsTemplatesHelpOpen(false)
+    setIsConverterDialogOpen(false)
+    setIsLocalAiOpen(true)
+    setStatus('Local AI opened')
+  }, [activeDocument])
+
+  const closeLocalAi = useCallback((restoreFocus = true) => {
+    setIsLocalAiOpen(false)
+
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => {
+        localAiReturnFocusRef.current?.focus()
+        localAiReturnFocusRef.current = null
       })
     }
   }, [])
@@ -645,7 +697,8 @@ export function App() {
       !isQuickInsertOpen &&
       !isPreferencesOpen &&
       !isTemplatesHelpOpen &&
-      !isConverterDialogOpen
+      !isConverterDialogOpen &&
+      !isLocalAiOpen
 
     if (!canUseSuggestions) return
 
@@ -676,6 +729,7 @@ export function App() {
     insertTemplateSuggestion,
     isCommandPaletteOpen,
     isConverterDialogOpen,
+    isLocalAiOpen,
     isPreferencesOpen,
     isQuickInsertOpen,
     isTemplatesHelpOpen,
@@ -1067,6 +1121,73 @@ export function App() {
     updateActiveDocument
   ])
 
+  const runLocalAi = useCallback(async (request: LocalAiRunRequest): Promise<LocalAiRunResult> => {
+    const document = activeDocument
+
+    if (!document) {
+      return { ok: false, error: { message: 'No active document for Local AI.' } }
+    }
+
+    const provider = createEditorLocalAiProvider(request.providerKind, request.endpoint, request.model)
+    if (!provider.ok) {
+      return { ok: false, error: { message: provider.error.message } }
+    }
+
+    setIsLocalAiRunning(true)
+
+    try {
+      const result = await runLlmAction(provider.value, {
+        actionId: request.actionId,
+        document: document.text,
+        invokedByUser: true,
+        selection: request.useSelection ? selectedSourceText : ''
+      })
+
+      if (!result.ok) {
+        return { ok: false, error: { message: result.error.message } }
+      }
+
+      setLastCommand('Local AI action completed')
+      setStatus(`Local AI completed with ${request.providerKind}`)
+      return { ok: true, value: { provider: provider.value.kind, text: result.value.text } }
+    } catch (error) {
+      return { ok: false, error: { message: messageFromError(error) } }
+    } finally {
+      setIsLocalAiRunning(false)
+    }
+  }, [activeDocument, selectedSourceText])
+
+  const insertLocalAiResult = useCallback((text: string, mode: LocalAiInsertMode) => {
+    const document = activeDocument
+    const textarea = textAreaRef.current
+
+    if (!document) {
+      setStatus('No active document for Local AI result')
+      return
+    }
+
+    const edit = applyLocalAiResult(
+      document.text,
+      text,
+      {
+        start: textarea?.selectionStart ?? sourceSelection.start,
+        end: textarea?.selectionEnd ?? sourceSelection.end
+      },
+      mode
+    )
+
+    updateActiveDocument({ text: edit.text })
+    setEditorSelection(edit.selectionStart, edit.selectionEnd, textarea?.scrollTop)
+    setLastCommand('Local AI result inserted')
+    setStatus('Local AI result inserted')
+  }, [
+    activeDocument,
+    setEditorSelection,
+    sourceSelection.end,
+    sourceSelection.start,
+    updateActiveDocument
+  ])
+
   const checkClipboard = useCallback(async () => {
     try {
       const value = await readClipboardText()
@@ -1445,7 +1566,8 @@ export function App() {
     !isQuickInsertOpen &&
     !isPreferencesOpen &&
     !isTemplatesHelpOpen &&
-    !isConverterDialogOpen
+    !isConverterDialogOpen &&
+    !isLocalAiOpen
   )
   const showSelectionOverlay = Boolean(
     activeDocument &&
@@ -1457,6 +1579,7 @@ export function App() {
     !isPreferencesOpen &&
     !isTemplatesHelpOpen &&
     !isConverterDialogOpen &&
+    !isLocalAiOpen &&
     !showTemplateSuggestions &&
     !pendingLifecycleAction
   )
@@ -1511,6 +1634,15 @@ export function App() {
             aria-label="Clean Markdown"
           >
             <Wand2 size={18} />
+          </button>
+          <button
+            type="button"
+            disabled={!activeDocument}
+            onClick={openLocalAi}
+            title="Local AI"
+            aria-label="Local AI"
+          >
+            <BrainCircuit size={18} />
           </button>
           <button type="button" onClick={() => void copyMarkdown()} title="Copy Markdown" aria-label="Copy Markdown">
             <ClipboardCopy size={18} />
@@ -2045,6 +2177,9 @@ export function App() {
         <span>{stats.words} words</span>
         <span>{stats.characters} chars</span>
         <span>{rendered.warnings.length} warnings</span>
+        <span className={`localAiBadge ${isLocalAiRunning ? 'running' : isLocalAiOpen ? 'open' : ''}`}>
+          AI {isLocalAiRunning ? 'running' : isLocalAiOpen ? 'open' : 'off'}
+        </span>
         <strong>{status}</strong>
       </footer>
 
@@ -2101,6 +2236,18 @@ export function App() {
           isConverting={isConvertingImport}
           onConvert={request => void importConvertedMarkdown(request)}
           onRequestClose={closeConverterDialog}
+        />
+      )}
+
+      {isLocalAiOpen && (
+        <LocalAiDialog
+          documentText={activeDocument?.text ?? ''}
+          isRunning={isLocalAiRunning}
+          onInsertResult={insertLocalAiResult}
+          onRequestClose={closeLocalAi}
+          onRun={runLocalAi}
+          selectionLength={selectedSourceText.length}
+          selectionText={selectedSourceText}
         />
       )}
 

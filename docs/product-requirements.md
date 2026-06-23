@@ -82,6 +82,19 @@ Phase 7F baseline:
 - Features: generate Markdown draft, summarize document, improve clarity, fix formatting, create outline, convert rough notes to structured Markdown, generate tables, suggest headings, and explain Markdown syntax.
 - UI must clearly show when local AI is active.
 
+Phase 9 baseline:
+
+- `packages/llm` owns provider contracts, prompt templates, explicit user-invocation guards, loopback endpoint validation, Ollama generation, and OpenAI-compatible local chat adapters for LM Studio/llama.cpp-style servers.
+- The editor exposes a disabled-by-default Local AI dialog with provider/endpoint/model fields, action and source selection, prompt preview, result output, running/error states, and explicit insert controls.
+- Current implemented actions are summarize, improve clarity, create outline, and explain Markdown syntax.
+- Cloud AI providers remain out of scope.
+
+Phase 9 baseline:
+
+- `packages/llm` provides local-only provider contracts, local action templates, Ollama generation, OpenAI-compatible local adapters for LM Studio/llama.cpp-style servers, loopback endpoint validation, and an explicit user-invocation privacy guard.
+- The editor provides a disabled-by-default Local AI dialog with provider/endpoint/model configuration, summarize/improve/outline/explain actions, selection/document source choice, prompt preview, result output, running/error states, and explicit result insertion.
+- Streaming output, provider/model discovery, persisted provider settings, and the remaining planned actions are later requirements.
+
 ## Standalone Viewer Requirements
 
 - Separate viewer mode/app component.
