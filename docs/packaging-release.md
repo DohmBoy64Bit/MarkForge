@@ -63,6 +63,10 @@ After building installers on Windows:
 - Confirm viewer file open, reload, search, theme switching, Export HTML, and print handoff.
 - Uninstall both apps and confirm no obvious user-document files are removed.
 
+Latest smoke evidence:
+
+- [Windows installer smoke - 2026-06-22](audits/windows-installer-smoke-2026-06-22.md)
+
 ## Linux Smoke Plan
 
 Linux packaging is started as a documented smoke plan, not a completed release channel.
