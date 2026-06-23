@@ -87,7 +87,7 @@ Updated package READMEs for `core`, `platform`, `ui`, `shared`, `converters`, `t
 
 ## Remaining Unsupported Capabilities
 
-- Native file watching and native close interception: current evidence supports metadata polling and browser `beforeunload`, not a safe Tauri close-request implementation.
+- Native file watching and native close interception: Phase 11 implements open-file native watch events and editor dirty-document Tauri close-request interception; browser `beforeunload` and polling remain fallback behavior.
 - Full native PDF/DOCX/OCR/CSV/URL conversion: current app supports browser print and sanitized HTML conversion only.
 - Ollama, LM Studio, and llama.cpp runtime adapters: provider boundaries are implemented, but endpoint protocols and UI invocation flows are not defined enough to call them.
 - CodeMirror 6 and WYSIWYG/realtime editing: current editor surface is textarea/source-command based.

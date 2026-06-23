@@ -98,3 +98,27 @@ Remaining intentionally deferred:
 - Full native PDF/DOCX/OCR/URL conversion.
 - Filesystem/workspace template loading.
 - Linux artifact smoke, blocked by current host prerequisites.
+
+## Phase 11: Native Platform Hardening
+
+Status: complete for open-file native watch events, native editor close-request protection, fallback preservation, and current Linux prerequisite audit.
+
+Evidence:
+
+- [Phase 11 native platform hardening - 2026-06-23](audits/phase-11-native-platform-hardening-2026-06-23.md)
+
+Implemented:
+
+- Added Rust `notify`-backed watcher commands in editor and viewer Tauri shells.
+- Editor and viewer emit `markforge://file-watch` payloads with the existing `FileInfo` shape.
+- `packages/platform` prefers native watcher adapters and keeps polling as a fallback.
+- Editor native window close requests now route through `packages/platform` and the existing dirty-document Save/Discard/Cancel dialog.
+- Browser `beforeunload` remains as a fallback guard.
+
+Remaining intentionally deferred:
+
+- Workspace/folder watching.
+- Shell recent documents.
+- Spellcheck.
+- Auto-update publishing and signing.
+- Linux artifact smoke, still blocked by host prerequisites.

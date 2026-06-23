@@ -24,9 +24,10 @@ import {
 } from '@markforge/core'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
 import { runLlmAction } from '@markforge/llm'
-import { createPlatformServices, type FileInfo } from '@markforge/platform'
+import { createNativeFileWatcher, createPlatformServices, type FileInfo, type NativeFileWatchPayload } from '@markforge/platform'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { appVisibleThemes, getTheme, themeToAppCssVariables } from '@markforge/theme-engine'
@@ -160,6 +161,7 @@ type EditorDocument = {
 
 type PendingLifecycleAction =
   | { kind: 'close'; documentId: string }
+  | { kind: 'appClose'; documentId: string }
   | { kind: 'reload'; documentId: string }
 
 type SourceSelectionState = {
@@ -174,6 +176,12 @@ const platform = createPlatformServices({
     readTextFile: path => invoke<string>('read_text_file', { path }),
     writeTextFile: (path, contents) => invoke<void>('write_text_file', { path, contents })
   },
+  fileWatcher: createNativeFileWatcher({
+    listen: async (eventName, handler) => listen<NativeFileWatchPayload>(eventName, event => handler(event.payload)),
+    onError: error => console.warn(error),
+    start: path => invoke<void>('watch_text_file', { path }),
+    stop: path => invoke<void>('unwatch_text_file', { path })
+  }),
   dialogs: {
     open,
     save
@@ -184,6 +192,10 @@ const platform = createPlatformServices({
   },
   print: {
     print: () => window.print()
+  },
+  window: {
+    destroy: () => getCurrentWindow().destroy(),
+    onCloseRequested: handler => getCurrentWindow().onCloseRequested(handler)
   }
 })
 const browserPrintConverter = createBrowserPrintConverter(() => {
@@ -302,6 +314,7 @@ export function App() {
   const converterDialogReturnFocusRef = useRef<HTMLElement | null>(null)
   const localAiReturnFocusRef = useRef<HTMLElement | null>(null)
   const unsavedDialogReturnFocusRef = useRef<HTMLElement | null>(null)
+  const appCloseResolvedDocumentIdsRef = useRef<Set<string>>(new Set())
   const startupFileLoadedRef = useRef(false)
 
   const theme = preferences.theme
@@ -1283,15 +1296,43 @@ export function App() {
   }, [])
 
   const cancelPendingLifecycleAction = useCallback(() => {
+    if (pendingLifecycleAction?.kind === 'appClose') {
+      appCloseResolvedDocumentIdsRef.current.clear()
+    }
+
     closeUnsavedDialog()
     setStatus('Action canceled')
-  }, [closeUnsavedDialog])
+  }, [closeUnsavedDialog, pendingLifecycleAction])
+
+  const continueAppCloseRequest = useCallback((resolvedDocumentId: string) => {
+    appCloseResolvedDocumentIdsRef.current.add(resolvedDocumentId)
+
+    const nextDirtyDocument = documents.find(document =>
+      !appCloseResolvedDocumentIdsRef.current.has(document.id) && isDirty(document)
+    )
+
+    if (nextDirtyDocument) {
+      setActiveId(nextDirtyDocument.id)
+      setPendingLifecycleAction({ kind: 'appClose', documentId: nextDirtyDocument.id })
+      setStatus('Resolve unsaved tabs before closing MarkForge')
+      return
+    }
+
+    appCloseResolvedDocumentIdsRef.current.clear()
+    closeUnsavedDialog(false)
+    void destroyNativeWindow().catch(error => setStatus(messageFromError(error)))
+  }, [closeUnsavedDialog, documents])
 
   const savePendingLifecycleAction = useCallback(async () => {
     if (!pendingLifecycleAction) return
 
     const saved = await saveDocument(pendingLifecycleAction.documentId)
     if (!saved) return
+
+    if (pendingLifecycleAction.kind === 'appClose') {
+      continueAppCloseRequest(pendingLifecycleAction.documentId)
+      return
+    }
 
     if (pendingLifecycleAction.kind === 'close') {
       closeUnsavedDialog(false)
@@ -1301,10 +1342,15 @@ export function App() {
 
     closeUnsavedDialog(false)
     setStatus('Local edits saved')
-  }, [closeUnsavedDialog, forceCloseDocument, pendingLifecycleAction, saveDocument])
+  }, [closeUnsavedDialog, continueAppCloseRequest, forceCloseDocument, pendingLifecycleAction, saveDocument])
 
   const discardPendingLifecycleAction = useCallback(async () => {
     if (!pendingLifecycleAction) return
+
+    if (pendingLifecycleAction.kind === 'appClose') {
+      continueAppCloseRequest(pendingLifecycleAction.documentId)
+      return
+    }
 
     if (pendingLifecycleAction.kind === 'close') {
       closeUnsavedDialog(false)
@@ -1314,7 +1360,7 @@ export function App() {
 
     const reloaded = await reloadDocumentFromDisk(pendingLifecycleAction.documentId)
     if (reloaded) closeUnsavedDialog(false)
-  }, [closeUnsavedDialog, forceCloseDocument, pendingLifecycleAction, reloadDocumentFromDisk])
+  }, [closeUnsavedDialog, continueAppCloseRequest, forceCloseDocument, pendingLifecycleAction, reloadDocumentFromDisk])
 
   const jumpToMatch = useCallback((match: SourceSearchMatch, index: number) => {
     setSelectedMatch(index)
@@ -1539,6 +1585,35 @@ export function App() {
   useEffect(() => {
     saveEditorPreferences(preferences)
   }, [preferences])
+
+  useEffect(() => {
+    const result = platform.lifecycle.protectClose({
+      onClosePrevented() {
+        if (pendingLifecycleAction) return
+
+        const firstDirtyDocument = documents.find(document => isDirty(document))
+        if (!firstDirtyDocument) return
+
+        appCloseResolvedDocumentIdsRef.current.clear()
+        unsavedDialogReturnFocusRef.current = document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null
+        setActiveId(firstDirtyDocument.id)
+        setPendingLifecycleAction({ kind: 'appClose', documentId: firstDirtyDocument.id })
+        setStatus('Resolve unsaved tabs before closing MarkForge')
+      },
+      shouldPreventClose() {
+        return documents.some(document => isDirty(document))
+      }
+    })
+
+    if (!result.ok) {
+      setStatus(result.error.message)
+      return
+    }
+
+    return () => result.value.dispose()
+  }, [documents, pendingLifecycleAction])
 
   useEffect(() => {
     const hasDirtyDocuments = documents.some(document => isDirty(document))
@@ -2257,7 +2332,7 @@ export function App() {
         <UnsavedChangesDialog
           documentPath={pendingLifecycleDocument.path}
           documentTitle={pendingLifecycleDocument.title}
-          mode={pendingLifecycleAction.kind}
+          mode={pendingLifecycleAction.kind === 'reload' ? 'reload' : 'close'}
           onCancel={cancelPendingLifecycleAction}
           onDiscard={() => void discardPendingLifecycleAction()}
           onSave={() => void savePendingLifecycleAction()}
@@ -2496,6 +2571,11 @@ async function getFileInfoFromPlatform(path: string): Promise<FileInfo> {
 
 async function writeClipboardText(value: string): Promise<void> {
   const result = await platform.clipboard.writeText(value)
+  if (!result.ok) throw new Error(result.error.message)
+}
+
+async function destroyNativeWindow(): Promise<void> {
+  const result = await platform.lifecycle.destroy()
   if (!result.ok) throw new Error(result.error.message)
 }
 

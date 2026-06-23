@@ -53,7 +53,7 @@ Phase 5E adds the first reliability pass around local documents.
 - Missing files are distinguished from modified files in the tab, preview notice, and File Status inspector.
 - Keep local clears the current external-change notice by adopting the latest observed metadata as the new baseline; a missing file stays quiet while still missing and alerts again if it reappears.
 
-This is still metadata polling. Native filesystem watching and native Tauri window-close interception remain future shell work.
+Phase 11 routes this workflow through native Tauri file-watch and close-request events. The package polling watcher and browser `beforeunload` guard remain fallback behavior.
 
 ## Phase 5F Source Editing Polish
 
@@ -112,7 +112,7 @@ Phase 5D adds a compact Preferences dialog and moves existing editor shortcut di
 - Non-format command remapping and platform-native/global shortcut registration.
 - Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.
 - Richer line transformer menus beyond the duplicate command.
-- Native filesystem watching beyond metadata polling and native Tauri close-event protection.
+- Workspace/folder watching beyond open-file native watch events.
 
 ## Verification
 

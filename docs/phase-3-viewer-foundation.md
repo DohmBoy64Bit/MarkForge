@@ -30,7 +30,7 @@ Run `cargo check` from `apps/viewer/src-tauri`.
 
 ## Still Deferred
 
-- Real filesystem watcher instead of metadata polling.
+- Superseded by Phase 11 for opened files: native file watching is implemented through the platform package, with polling fallback support.
 - Full search navigation and rendered-range highlighting.
 - Copy code buttons for individual fenced blocks.
 - Export/PDF workflows beyond browser print.

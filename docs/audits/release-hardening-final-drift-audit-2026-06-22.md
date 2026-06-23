@@ -46,8 +46,8 @@ Observed test result:
 | --- | --- | --- |
 | Vite chunk-size warning / TD-05 | Fixed for current build output. | Split chunks, 500 KiB bundle check, warning-free editor/viewer builds. |
 | App-owned file-change timers / TD-01 | Reduced. Polling remains, but ownership moved into `packages/platform`. | App source calls `platform.watchFile`; direct `window.setInterval` remains only inside the platform fallback. |
-| Native file watching | Deferred. | Platform still uses polling fallback; no native Tauri/Rust watcher contract implemented. |
-| Native close interception | Deferred. | Browser `beforeunload` remains the current guard. |
+| Native file watching | Completed by Phase 11 for opened files. | Rust `notify` watchers emit `markforge://file-watch`; `packages/platform` keeps polling fallback. |
+| Native close interception | Completed by Phase 11 for editor dirty documents. | Tauri `onCloseRequested` routes through the existing Save/Discard/Cancel flow; browser `beforeunload` remains a fallback. |
 | CodeMirror/WYSIWYG editor surface | Deferred. | Editor still uses the source textarea and package-backed source transforms. |
 | Diagram rendering and conformance corpus | Deferred. | Markdown engine still emits explicit deferred diagram warnings. |
 | Full native conversion/export stack | Deferred. | Current implementation supports browser print and sanitized HTML export/import/cleanup paths, not native PDF/DOCX/OCR/URL conversions. |

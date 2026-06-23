@@ -10,6 +10,7 @@ Current status: implemented package boundary.
 - Markdown open/save dialog service contracts.
 - Clipboard read/write service contracts.
 - Browser print facade.
-- Polling file-watch abstraction for current metadata-based change detection. Editor and viewer call this package API instead of owning app-local timers.
+- Native file-watch adapter contract with polling fallback support.
+- Native close-request protection contract for dirty editor windows.
 
-Apps provide thin Tauri adapter wiring at the shell boundary. Native file watching, native close interception, shell links, spellcheck, update checks, and platform packaging integration remain unsupported until their exact Tauri/Rust contracts are implemented and tested.
+Apps provide thin Tauri adapter wiring at the shell boundary. Shell links, spellcheck, update checks, workspace/folder watching, and platform packaging integration remain unsupported until their exact Tauri/Rust contracts are implemented and tested.

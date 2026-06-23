@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createPlatformServices } from './index'
+import { createNativeFileWatcher, createPlatformServices } from './index'
 
 describe('@markforge/platform', () => {
   it('wraps filesystem, dialog, clipboard, and print adapters in typed results', async () => {
@@ -129,5 +129,93 @@ describe('@markforge/platform', () => {
 
     expect(getFileInfo).toHaveBeenCalledTimes(3)
     vi.useRealTimers()
+  })
+
+  it('prefers a native file watcher adapter when one is available', () => {
+    const watchFile = vi.fn(() => ({
+      ok: true as const,
+      value: { dispose: vi.fn() }
+    }))
+    const services = createPlatformServices({
+      fileWatcher: { watchFile },
+      filesystem: {
+        getFileInfo: async () => ({ exists: true, modifiedMs: 1, len: 1 }),
+        readTextFile: async () => 'native'
+      }
+    })
+
+    const result = services.watchFile(
+      { path: 'note.md', previousInfo: null },
+      () => undefined
+    )
+
+    expect(result.ok).toBe(true)
+    expect(watchFile).toHaveBeenCalledOnce()
+  })
+
+  it('adapts native file watch events and stops native watching on dispose', async () => {
+    let handler: ((payload: { current: { exists: boolean; len: number | null; modifiedMs: number | null }; path: string; type: 'changed' | 'missing' }) => void) | null = null
+    const unlisten = vi.fn()
+    const start = vi.fn(async () => undefined)
+    const stop = vi.fn(async () => undefined)
+    const watcher = createNativeFileWatcher({
+      listen: async (_eventName, nextHandler) => {
+        handler = nextHandler
+        return unlisten
+      },
+      start,
+      stop
+    })
+    const events: string[] = []
+
+    const result = watcher.watchFile(
+      { path: 'note.md', previousInfo: null },
+      event => events.push(event.type)
+    )
+
+    expect(result.ok).toBe(true)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    handler?.({ path: 'other.md', type: 'changed', current: { exists: true, modifiedMs: 1, len: 1 } })
+    handler?.({ path: 'note.md', type: 'changed', current: { exists: true, modifiedMs: 2, len: 2 } })
+
+    expect(start).toHaveBeenCalledWith('note.md')
+    expect(events).toEqual(['changed'])
+
+    if (result.ok) result.value.dispose()
+    expect(unlisten).toHaveBeenCalledOnce()
+    expect(stop).toHaveBeenCalledWith('note.md')
+  })
+
+  it('protects native window close requests when the caller reports dirty state', async () => {
+    let closeHandler: ((event: { preventDefault(): void }) => void | Promise<void>) | null = null
+    const unlisten = vi.fn()
+    const services = createPlatformServices({
+      window: {
+        destroy: async () => undefined,
+        onCloseRequested: async handler => {
+          closeHandler = handler
+          return unlisten
+        }
+      }
+    })
+    const prevented = vi.fn()
+    const event = { preventDefault: vi.fn() }
+
+    const result = services.lifecycle.protectClose({
+      onClosePrevented: prevented,
+      shouldPreventClose: () => true
+    })
+
+    expect(result.ok).toBe(true)
+    await Promise.resolve()
+    closeHandler?.(event)
+
+    expect(event.preventDefault).toHaveBeenCalledOnce()
+    expect(prevented).toHaveBeenCalledOnce()
+
+    if (result.ok) result.value.dispose()
+    expect(unlisten).toHaveBeenCalledOnce()
   })
 })

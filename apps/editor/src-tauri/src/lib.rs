@@ -1,7 +1,9 @@
 use serde::Serialize;
 use std::{
+    collections::HashMap,
     fs,
     path::Path,
+    sync::Mutex,
     time::{SystemTime, UNIX_EPOCH},
 };
 use tauri::{
@@ -9,7 +11,7 @@ use tauri::{
     Emitter,
 };
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct FileInfo {
     exists: bool,
@@ -17,7 +19,22 @@ struct FileInfo {
     len: Option<u64>,
 }
 
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct FileWatchPayload {
+    path: String,
+    current: FileInfo,
+    #[serde(rename = "type")]
+    event_type: String,
+}
+
+#[derive(Default)]
+struct FileWatchState {
+    watchers: Mutex<HashMap<String, notify::RecommendedWatcher>>,
+}
+
 const SUPPORTED_STARTUP_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "txt"];
+const FILE_WATCH_EVENT: &str = "markforge://file-watch";
 
 #[tauri::command]
 fn read_text_file(path: String) -> Result<String, String> {
@@ -31,7 +48,67 @@ fn write_text_file(path: String, contents: String) -> Result<(), String> {
 
 #[tauri::command]
 fn get_file_info(path: String) -> Result<FileInfo, String> {
-    match fs::metadata(&path) {
+    file_info_for_path(&path)
+}
+
+#[tauri::command]
+fn watch_text_file(
+    app: tauri::AppHandle,
+    state: tauri::State<FileWatchState>,
+    path: String,
+) -> Result<(), String> {
+    ensure_supported_text_path(&path)?;
+
+    let watch_path = Path::new(&path).to_path_buf();
+    let key = watch_path.to_string_lossy().to_string();
+    let mut watchers = state
+        .watchers
+        .lock()
+        .map_err(|_| "Failed to lock file watcher state.".to_string())?;
+
+    if watchers.contains_key(&key) {
+        return Ok(());
+    }
+
+    let emitted_path = key.clone();
+    let app_handle = app.clone();
+    let mut watcher = notify::recommended_watcher(move |result: notify::Result<notify::Event>| {
+        if result.is_err() {
+            return;
+        }
+
+        if let Ok(current) = file_info_for_path(&emitted_path) {
+            let payload = FileWatchPayload {
+                event_type: if current.exists { "changed" } else { "missing" }.to_string(),
+                current,
+                path: emitted_path.clone(),
+            };
+            let _ = app_handle.emit(FILE_WATCH_EVENT, payload);
+        }
+    })
+    .map_err(|error| format!("Failed to create file watcher for {path}: {error}"))?;
+
+    notify::Watcher::watch(&mut watcher, &watch_path, notify::RecursiveMode::NonRecursive)
+        .map_err(|error| format!("Failed to watch {path}: {error}"))?;
+
+    watchers.insert(key, watcher);
+    Ok(())
+}
+
+#[tauri::command]
+fn unwatch_text_file(state: tauri::State<FileWatchState>, path: String) -> Result<(), String> {
+    let key = Path::new(&path).to_string_lossy().to_string();
+    let mut watchers = state
+        .watchers
+        .lock()
+        .map_err(|_| "Failed to lock file watcher state.".to_string())?;
+
+    watchers.remove(&key);
+    Ok(())
+}
+
+fn file_info_for_path(path: &str) -> Result<FileInfo, String> {
+    match fs::metadata(path) {
         Ok(metadata) => Ok(FileInfo {
             exists: true,
             modified_ms: metadata.modified().ok().and_then(system_time_to_ms),
@@ -54,6 +131,10 @@ fn startup_file_path() -> Option<String> {
 }
 
 fn is_supported_startup_path(path: &str) -> bool {
+    ensure_supported_text_path(path).is_ok()
+}
+
+fn ensure_supported_text_path(path: &str) -> Result<(), String> {
     Path::new(path)
         .extension()
         .and_then(|value| value.to_str())
@@ -61,7 +142,9 @@ fn is_supported_startup_path(path: &str) -> bool {
             SUPPORTED_STARTUP_EXTENSIONS
                 .contains(&extension.to_ascii_lowercase().as_str())
         })
-        .unwrap_or(false)
+        .filter(|supported| *supported)
+        .map(|_| ())
+        .ok_or_else(|| "Editor supports .md, .markdown, .mdown, and .txt files.".to_string())
 }
 
 fn system_time_to_ms(value: SystemTime) -> Option<u128> {
@@ -75,10 +158,13 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .manage(FileWatchState::default())
         .invoke_handler(tauri::generate_handler![
             read_text_file,
             write_text_file,
             get_file_info,
+            watch_text_file,
+            unwatch_text_file,
             startup_file_path
         ])
         .setup(|app| {

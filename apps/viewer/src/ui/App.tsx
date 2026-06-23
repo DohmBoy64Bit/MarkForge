@@ -5,7 +5,7 @@ import {
   defaultHtmlExportPath
 } from '@markforge/converters'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
-import { createPlatformServices, type FileInfo } from '@markforge/platform'
+import { createNativeFileWatcher, createPlatformServices, type FileInfo, type NativeFileWatchPayload } from '@markforge/platform'
 import { appVisibleThemes, getTheme, themeToAppCssVariables, type ThemeId } from '@markforge/theme-engine'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
@@ -42,6 +42,12 @@ const platform = createPlatformServices({
     readTextFile: path => invoke<string>('read_text_file', { path }),
     writeTextFile: (path, contents) => invoke<void>('write_text_file', { path, contents })
   },
+  fileWatcher: createNativeFileWatcher({
+    listen: async (eventName, handler) => listen<NativeFileWatchPayload>(eventName, event => handler(event.payload)),
+    onError: error => console.warn(error),
+    start: path => invoke<void>('watch_text_file', { path }),
+    stop: path => invoke<void>('unwatch_text_file', { path })
+  }),
   dialogs: {
     open,
     save

@@ -35,8 +35,15 @@ export type PlatformAdapters = {
     readTextFile(path: string): Promise<string>
     writeTextFile?(path: string, contents: string): Promise<void>
   }
+  fileWatcher?: {
+    watchFile(options: FileWatcherOptions, onEvent: (event: FileWatchEvent) => void): Result<Disposable>
+  }
   print?: {
     print(): void
+  }
+  window?: {
+    destroy(): Promise<void>
+    onCloseRequested(handler: (event: WindowCloseRequestedEvent) => void | Promise<void>): Promise<() => void>
   }
 }
 
@@ -56,6 +63,7 @@ export type PlatformServices = {
   clipboard: ClipboardService
   dialogs: DialogService
   filesystem: FilesystemService
+  lifecycle: WindowLifecycleService
   print: PrintService
   watchFile(options: FileWatcherOptions, onEvent: (event: FileWatchEvent) => void): Result<Disposable>
 }
@@ -79,6 +87,30 @@ export type FilesystemService = {
 
 export type PrintService = {
   print(): Result<void>
+}
+
+export type WindowCloseRequestedEvent = {
+  preventDefault(): void
+}
+
+export type WindowLifecycleService = {
+  destroy(): Promise<Result<void>>
+  protectClose(options: CloseProtectionOptions): Result<Disposable>
+}
+
+export type CloseProtectionOptions = {
+  onClosePrevented(): void
+  shouldPreventClose(): boolean
+}
+
+export type NativeFileWatchPayload = FileWatchEvent
+
+export type NativeFileWatcherAdapters = {
+  eventName?: string
+  listen(eventName: string, handler: (payload: NativeFileWatchPayload) => void): Promise<() => void>
+  onError?(error: unknown): void
+  start(path: string): Promise<void>
+  stop(path: string): Promise<void>
 }
 
 export const markdownFileFilters: FileDialogFilter[] = [
@@ -198,7 +230,53 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
         return ok(undefined)
       }
     },
+    lifecycle: {
+      async destroy() {
+        if (!adapters.window) return err('not-supported', 'Window lifecycle adapter is not available.')
+
+        try {
+          await adapters.window.destroy()
+          return ok(undefined)
+        } catch (error) {
+          return { ok: false, error: toError(error, 'Window destroy failed.') }
+        }
+      },
+      protectClose(options) {
+        if (!adapters.window) return err('not-supported', 'Window lifecycle adapter is not available.')
+
+        let disposed = false
+        let unlisten: (() => void) | null = null
+
+        adapters.window.onCloseRequested(event => {
+          if (!options.shouldPreventClose()) return
+
+          event.preventDefault()
+          options.onClosePrevented()
+        }).then(cleanup => {
+          if (disposed) {
+            cleanup()
+            return
+          }
+
+          unlisten = cleanup
+        }).catch(error => {
+          // Close protection should never break app startup; callers still retain beforeunload fallback guards.
+          console.warn(toError(error, 'Window close protection failed.').message)
+        })
+
+        return ok({
+          dispose() {
+            disposed = true
+            unlisten?.()
+          }
+        })
+      }
+    },
     watchFile(options, onEvent) {
+      if (adapters.fileWatcher) {
+        return adapters.fileWatcher.watchFile(options, onEvent)
+      }
+
       if (!adapters.filesystem) return err('not-supported', 'Filesystem adapter is not available.')
       if (typeof window === 'undefined') return err('not-supported', 'Polling file watching requires a browser window.')
 
@@ -231,6 +309,39 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
       return ok({
         dispose() {
           window.clearInterval(interval)
+        }
+      })
+    }
+  }
+}
+
+export function createNativeFileWatcher(adapters: NativeFileWatcherAdapters): PlatformAdapters['fileWatcher'] {
+  return {
+    watchFile(options, onEvent) {
+      const eventName = adapters.eventName ?? 'markforge://file-watch'
+      let disposed = false
+      let unlisten: (() => void) | null = null
+
+      adapters.listen(eventName, payload => {
+        if (disposed || payload.path !== options.path) return
+        onEvent(payload)
+      }).then(cleanup => {
+        if (disposed) {
+          cleanup()
+          return
+        }
+
+        unlisten = cleanup
+        return adapters.start(options.path)
+      }).catch(error => {
+        adapters.onError?.(error)
+      })
+
+      return ok({
+        dispose() {
+          disposed = true
+          unlisten?.()
+          void adapters.stop(options.path).catch(error => adapters.onError?.(error))
         }
       })
     }

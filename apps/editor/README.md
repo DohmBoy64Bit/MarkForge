@@ -32,8 +32,8 @@ pnpm --filter @markforge/editor tauri build
 - Selection formatting overlay for non-empty source selections with bold, italic, inline code, strikethrough, and link buttons.
 - Preferences dialog for package-backed Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral themes, default view mode, editable source command keybindings, per-command reset, reset all, and duplicate shortcut conflict display.
 - Prompted close/reload protection for dirty tabs with Save, Discard, and Cancel decisions.
-- Browser `beforeunload` protection when any open document has unsaved edits.
-- Package-backed polling file watching across open file-backed tabs, with changed-on-disk and missing-on-disk reconciliation notices.
+- Native Tauri close-request protection plus browser `beforeunload` fallback when any open document has unsaved edits.
+- Native file watching across open file-backed tabs, with package polling fallback support and changed-on-disk/missing-on-disk reconciliation notices.
 - Reload from disk and Keep local actions for external changes, including dirty-document confirmation before replacing local edits.
 - Inspector panels for file state, command status, converter activity history, search, outline, recent files, front matter, warnings, clipboard state, and external-change state.
 - LocalStorage-backed restore for unsaved/dirty tabs, recent file paths, theme, view mode, editor keybindings, and editor-local custom templates.
@@ -44,8 +44,6 @@ pnpm --filter @markforge/editor tauri build
 
 ## Deferred
 
-- Native file watching beyond metadata polling.
-- Native Tauri window-close interception before process exit.
 - Rich WYSIWYG/realtime editing.
 - Table editing beyond starter scaffold insertion.
 - Richer line transform menus.
@@ -54,4 +52,4 @@ pnpm --filter @markforge/editor tauri build
 - Full preference schema beyond the Phase 5D local editor settings foundation.
 - DOCX, native PDF, OCR, URL/article, and rich clipboard converter UI beyond explicit unsupported package boundaries.
 - Streaming Local AI output, provider model discovery, persisted Local AI settings, and additional prompt actions.
-- Code signing, auto-update publishing, shell recent documents, and Linux installer artifacts.
+- Workspace/folder watching, code signing, auto-update publishing, shell recent documents, and Linux installer artifacts.

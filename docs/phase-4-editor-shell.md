@@ -23,7 +23,7 @@ The shell uses a workspace-first layout: command rail, tab strip, source/preview
 
 This section is a historical Phase 4 record. Some items below were superseded by later Phase 5 implementation; use [Implementation roadmap](implementation-roadmap.md) and [Phase 5 advanced editing](phase-5-advanced-editing.md) for current status.
 
-- Prompt-before-close for dirty tabs was superseded by Phase 5E dirty-tab close/reload protection and browser `beforeunload` guarding; native Tauri window-close interception remains open.
+- Prompt-before-close for dirty tabs was superseded by Phase 5E dirty-tab close/reload protection and browser `beforeunload` guarding; Phase 11 adds native Tauri close-request interception through the same Save/Discard/Cancel flow.
 - Phase 5A superseded the initial command registry and source formatting rail deferral.
 - Command palette UI and the user-editable keybinding preference model were superseded by Phase 5C and Phase 5D.
 - Real filesystem watching beyond active-file metadata polling.

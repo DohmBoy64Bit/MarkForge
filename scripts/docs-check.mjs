@@ -17,6 +17,7 @@ const requiredFiles = [
   'docs/phase-6-templates-help.md',
   'docs/phase-7-converters.md',
   'docs/phase-10-packaging-documentation.md',
+  'docs/phase-11-native-platform-hardening.md',
   'docs/packaging-release.md',
   'docs/release-hardening.md',
   'docs/update-signing-strategy.md',

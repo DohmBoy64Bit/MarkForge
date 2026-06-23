@@ -8,7 +8,7 @@ Phase 10-complete standalone Markdown viewer app/mode for local Markdown and tex
 - Local file open and reload for `.md`, `.markdown`, `.mdown`, and `.txt`.
 - Sanitized rendering through `@markforge/markdown-engine`.
 - Inspector sidebar for file status, front matter, table of contents, search matches, and render warnings.
-- Package-backed polling file watching for temporary auto-refresh detection.
+- Native file watching for auto-refresh detection, with package polling fallback support.
 - Export HTML for the currently rendered Markdown/text document through `@markforge/converters` and a constrained `.html`/`.htm` write path.
 - Native menu actions for open, reload, copy source, copy rendered text, Export HTML, print, and quit.
 - Package-backed Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral app theme controls through `@markforge/theme-engine`.

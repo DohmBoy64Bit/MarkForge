@@ -49,8 +49,8 @@ Exit criteria:
 
 Current status:
 
-- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, package-backed polling file watching, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and package-backed built-in app theme controls.
-- Real filesystem watching, rendered search highlighting, copy code buttons, and broader export workflows remain open.
+- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, native file watching with package polling fallback, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and package-backed built-in app theme controls.
+- Rendered search highlighting, copy code buttons, workspace/folder watching, and broader export workflows remain open.
 
 Exit criteria:
 
@@ -63,7 +63,7 @@ Exit criteria:
 
 Current status:
 
-- Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, package-backed built-in app theme preferences, native menu event handling, package-backed polling file watching for external changes, and a compact document status bar.
+- Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, package-backed built-in app theme preferences, native menu event handling, native file watching with package polling fallback for external changes, and a compact document status bar.
 - Phase 5A added the first typed source-mode command registry, Markdown formatting command rail, core formatting shortcuts, command status feedback, and replace-current/replace-all source search actions.
 - Phase 5C added the first command palette foundation over the shared editor-engine command registry, including Ctrl+Shift+P, grouped search results, keyboard navigation, shortcut display, and execution through the source-mode command path.
 - Phase 5D added a compact Preferences dialog for theme/default view selection and a local preference-backed keybinding foundation for the command palette plus existing editor commands, including editable shortcut strings, reset controls, duplicate conflict display, and deterministic first-registry-item shortcut dispatch.
@@ -72,7 +72,7 @@ Current status:
 - Phase 5G added quick insert and a source selection formatting overlay, both backed by the existing editor-engine command registry and app command execution path.
 - Phase 6A added a compact templates/help dialog, a preference-backed Templates and Help shortcut, and template insertion through the existing source document update path.
 - Phase 6B added template variable metadata/editing, local custom templates in editor `localStorage`, and a bounded `/template`/`/tpl` source suggestion surface.
-- Full preferences schema, non-format command remapping, native filesystem watching, native Tauri close interception, rendered-preview search highlighting, filesystem/workspace template loading, and rich/WYSIWYG editing remain open.
+- Full preferences schema, non-format command remapping, rendered-preview search highlighting, filesystem/workspace template loading, workspace/folder watching, and rich/WYSIWYG editing remain open.
 
 Exit criteria:
 
@@ -89,10 +89,10 @@ Current status:
 - Phase 5B moved the source command registry and text transforms into `packages/editor-engine` while keeping React-specific toolbar rendering in `apps/editor`.
 - Phase 5C added a compact MarkForge-native command palette in the editor app, backed by the editor-engine command metadata and existing transform execution path.
 - Phase 5D added the editor Preferences dialog and keybinding foundation, with preference-backed shortcut labels and keyboard dispatch across the toolbar, command palette, inspector, and source textarea.
-- Phase 5E added unsaved-work protection and external-change reconciliation around the existing metadata polling foundation.
+- Phase 5E added unsaved-work protection and external-change reconciliation around the existing metadata polling foundation; Phase 11 routes the same workflow through native Tauri close-request/file-watch events with polling fallback support.
 - Phase 5F added toggle-aware Markdown transforms, H4-H6, strikethrough, duplicate selection/current-line, and shared search/replace matching for literal, case-sensitive, whole-word, and regex modes.
 - Phase 5G added a compact quick insert surface for block/insert commands and a floating selection overlay for common inline formatting in source mode.
-- WYSIWYG/realtime editing, advanced table tools, image workflows, autocomplete, linting, formatter integration, non-format command remapping, full settings schema, native filesystem watching, and focus/typewriter modes remain open.
+- WYSIWYG/realtime editing, advanced table tools, image workflows, autocomplete, linting, formatter integration, non-format command remapping, full settings schema, workspace/folder watching, and focus/typewriter modes remain open.
 
 Exit criteria:
 
@@ -185,10 +185,30 @@ Current status:
 - Windows NSIS build commands, expected artifact paths, manual installer smoke checks, and release prerequisites are documented in `docs/packaging-release.md`.
 - `pnpm packaging:check` validates package/Tauri/Cargo version alignment, Windows NSIS targets, per-user installer mode, window baselines, CSP baseline, icons, capabilities, and root release scripts.
 - Linux packaging is started as a documented smoke plan with AppImage-first evaluation, followed by deb/rpm only after Tauri prerequisite and launch smoke checks.
-- Auto-updater publishing, code signing, file associations, shell recent-doc integration, and Linux artifacts remain later release-hardening work.
+- Auto-updater publishing, code signing, shell recent-doc integration, and Linux artifacts remain later release-hardening work. Windows file associations and startup-file loading are implemented for editor and viewer.
 
 Exit criteria:
 
 - Initial working Windows build is reproducible.
 - Automated tests pass.
 - Linux smoke plan is documented and started.
+
+## Phase 11: Native Platform Hardening
+
+- Move file-change detection from renderer polling to native Tauri filesystem events.
+- Route native window close requests through the existing unsaved-document protection flow.
+- Keep polling and browser unload behavior as fallback guards.
+- Preserve package ownership in `packages/platform`.
+
+Current status:
+
+- Editor and viewer Tauri shells use the Rust `notify` crate to watch opened Markdown/text files and emit `markforge://file-watch` events.
+- `packages/platform` prefers native file-watch adapters and keeps the polling implementation as a fallback.
+- The editor registers Tauri `onCloseRequested` protection through `packages/platform` and walks every dirty document through the existing Save/Discard/Cancel dialog before force-destroying the window.
+- Linux artifact smoke remains blocked by missing native Linux prerequisites on the current WSL host.
+
+Exit criteria:
+
+- Native watcher and close-protection tests pass.
+- Editor/viewer builds and Rust checks pass.
+- Linux smoke status is documented honestly.
