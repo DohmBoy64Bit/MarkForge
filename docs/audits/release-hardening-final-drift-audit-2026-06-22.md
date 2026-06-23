@@ -49,9 +49,9 @@ Observed test result:
 | Native file watching | Completed by Phase 11 for opened files. | Rust `notify` watchers emit `markforge://file-watch`; `packages/platform` keeps polling fallback. |
 | Native close interception | Completed by Phase 11 for editor dirty documents. | Tauri `onCloseRequested` routes through the existing Save/Discard/Cancel flow; browser `beforeunload` remains a fallback. |
 | CodeMirror/WYSIWYG editor surface | CodeMirror source surface completed by Phase 12A; WYSIWYG remains deferred. | Editor uses a CodeMirror-backed source surface with package-backed source transforms. |
-| Diagram rendering and conformance corpus | Deferred. | Markdown engine still emits explicit deferred diagram warnings. |
-| Full native conversion/export stack | Deferred. | Current implementation supports browser print and sanitized HTML export/import/cleanup paths, not native PDF/DOCX/OCR/URL conversions. |
-| Filesystem/workspace templates | Deferred. | Current templates are built-in plus local custom templates. |
+| Diagram rendering and conformance corpus | Partially supported after post-Phase-12A remediation. | Safe Mermaid graph/flowchart rendering exists; broader diagram runtimes and conformance fixtures remain open. |
+| Full native conversion/export stack | Partially supported after post-Phase-12A remediation. | Current implementation supports browser print, sanitized HTML export/import/cleanup paths, rich clipboard HTML, URL/article import, and CSV table import; native PDF/DOCX/OCR remain unsupported. |
+| Filesystem/workspace templates | Partially supported after post-Phase-12A remediation. | Built-in, local custom, and workspace templates under `.markforge/templates/*.md` are implemented; syncable libraries remain open. |
 | Linux artifact smoke | Blocked by host prerequisites. | See [Linux smoke - 2026-06-22](linux-smoke-2026-06-22.md). |
 
 ## Final Assessment

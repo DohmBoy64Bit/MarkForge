@@ -33,14 +33,11 @@ import {
 } from '@markforge/editor-engine'
 import {
   conversionWarningStatus,
-  createBrowserPrintConverter,
-  createCsvToMarkdownTableConverter,
-  createHtmlConverter,
-  createHtmlToMarkdownConverter,
-  createMarkdownCleanupConverter,
-  createRichClipboardToMarkdownConverter,
-  createUrlToMarkdownConverter,
-  defaultHtmlExportPath
+  converterCanHandle,
+  createDefaultConverters,
+  defaultHtmlExportPath,
+  type ConversionFormat,
+  type MarkdownConverter
 } from '@markforge/converters'
 import {
   readEditorSession,
@@ -68,6 +65,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { appVisibleThemes, getTheme, themeToAppCssVariables } from '@markforge/theme-engine'
+import { IconButton } from '@markforge/ui'
 import {
   BookOpenText,
   ArrowDownToLine,
@@ -239,16 +237,25 @@ const platform = createPlatformServices({
   },
   window: createWindowLifecycleAdapter()
 })
-const browserPrintConverter = createBrowserPrintConverter(() => {
-  const result = platform.print.print()
-  if (!result.ok) throw new Error(result.error.message)
+const appConverters = createDefaultConverters({
+  print: () => {
+    const result = platform.print.print()
+    if (!result.ok) throw new Error(result.error.message)
+  }
 })
-const htmlConverter = createHtmlConverter()
-const htmlToMarkdownConverter = createHtmlToMarkdownConverter()
-const csvToMarkdownTableConverter = createCsvToMarkdownTableConverter()
-const markdownCleanupConverter = createMarkdownCleanupConverter()
-const richClipboardToMarkdownConverter = createRichClipboardToMarkdownConverter()
-const urlToMarkdownConverter = createUrlToMarkdownConverter()
+const htmlConverter = requiredAppConverter(appConverters, 'html')
+const browserPrintConverter = requiredAppConverter(appConverters, 'browser-print')
+const htmlToMarkdownConverter = requiredAppConverter(appConverters, 'html-to-markdown')
+const csvToMarkdownTableConverter = requiredAppConverter(appConverters, 'csv-to-markdown-table')
+const markdownCleanupConverter = requiredAppConverter(appConverters, 'markdown-cleanup')
+const richClipboardToMarkdownConverter = requiredAppConverter(appConverters, 'rich-clipboard-to-markdown')
+const urlToMarkdownConverter = requiredAppConverter(appConverters, 'url-to-markdown')
+
+function requiredAppConverter(converters: MarkdownConverter[], format: ConversionFormat): MarkdownConverter {
+  const converter = converters.find(candidate => converterCanHandle(candidate, format))
+  if (!converter) throw new Error(`Missing MarkForge converter for ${format}.`)
+  return converter
+}
 
 function createWindowLifecycleAdapter(): PlatformAdapters['window'] {
   if (!hasTauriWindowMetadata()) return undefined
@@ -1641,7 +1648,10 @@ export function App() {
       else if (id === 'edit.copyMarkdown') void copyMarkdown()
       else if (id === 'edit.cleanMarkdown') void cleanMarkdown()
       else if (id === 'view.print') void printDocument()
-      else if (id === 'help.phase1') setStatus('Phase 1 help menu received; Phase 4 shell is active')
+      else if (id === 'help.about') {
+        openTemplatesHelp()
+        setStatus('MarkForge help opened')
+      }
       else setStatus(`Unsupported menu command: ${id}`)
     }).then(cleanup => {
       unlisten = cleanup
@@ -1652,7 +1662,7 @@ export function App() {
     return () => {
       unlisten?.()
     }
-  }, [cleanMarkdown, copyMarkdown, createDocument, exportHtml, openConverterDialog, openDocument, printDocument, saveDocument, saveDocumentAs])
+  }, [cleanMarkdown, copyMarkdown, createDocument, exportHtml, openConverterDialog, openDocument, openTemplatesHelp, printDocument, saveDocument, saveDocumentAs])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1914,97 +1924,89 @@ export function App() {
         </div>
 
         <nav className="toolbar" aria-label="File actions">
-          <button type="button" onClick={() => createDocument()} title="New document" aria-label="New document">
+          <IconButton onClick={() => createDocument()} title="New document" ariaLabel="New document">
             <FilePlus2 size={18} />
-          </button>
-          <button type="button" onClick={() => void openDocument()} title="Open file" aria-label="Open file">
+          </IconButton>
+          <IconButton onClick={() => void openDocument()} title="Open file" ariaLabel="Open file">
             <FileInput size={18} />
-          </button>
-          <button type="button" onClick={() => void saveDocument()} title="Save" aria-label="Save">
+          </IconButton>
+          <IconButton onClick={() => void saveDocument()} title="Save" ariaLabel="Save">
             <Save size={18} />
-          </button>
-          <button type="button" onClick={() => void saveDocumentAs()} title="Save as" aria-label="Save as">
+          </IconButton>
+          <IconButton onClick={() => void saveDocumentAs()} title="Save as" ariaLabel="Save as">
             <FileDown size={18} />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
             disabled={!activeDocument}
             onClick={() => void exportHtml()}
             title="Export HTML"
-            aria-label="Export HTML"
+            ariaLabel="Export HTML"
           >
             <FileCode size={18} />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
             disabled={!activeDocument}
             onClick={openConverterDialog}
             title="Import conversion"
-            aria-label="Import conversion"
+            ariaLabel="Import conversion"
           >
             <ArrowDownToLine size={18} />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
             disabled={!activeDocument}
             onClick={() => void cleanMarkdown()}
             title="Clean Markdown"
-            aria-label="Clean Markdown"
+            ariaLabel="Clean Markdown"
           >
             <Wand2 size={18} />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
             disabled={!activeDocument}
             onClick={openLocalAi}
             title="Local AI"
-            aria-label="Local AI"
+            ariaLabel="Local AI"
           >
             <BrainCircuit size={18} />
-          </button>
-          <button type="button" onClick={() => void copyMarkdown()} title="Copy Markdown" aria-label="Copy Markdown">
+          </IconButton>
+          <IconButton onClick={() => void copyMarkdown()} title="Copy Markdown" ariaLabel="Copy Markdown">
             <ClipboardCopy size={18} />
-          </button>
-          <button type="button" onClick={() => void checkClipboard()} title="Check clipboard" aria-label="Check clipboard">
+          </IconButton>
+          <IconButton onClick={() => void checkClipboard()} title="Check clipboard" ariaLabel="Check clipboard">
             <ClipboardCheck size={18} />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
             onClick={openCommandPalette}
             title={`Command palette (${displayShortcut(commandPaletteShortcut)})`}
-            aria-label="Command palette"
+            ariaLabel="Command palette"
           >
             <Command size={18} />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
             disabled={!activeDocument}
             onClick={openQuickInsert}
             title={`Quick insert (${displayShortcut(quickInsertShortcut)})`}
-            aria-label="Quick insert"
+            ariaLabel="Quick insert"
           >
             <TextCursorInput size={18} />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
             disabled={!activeDocument}
             onClick={openTemplatesHelp}
             title={`Templates and help (${displayShortcut(templatesHelpShortcut)})`}
-            aria-label="Templates and help"
+            ariaLabel="Templates and help"
           >
             <BookOpenText size={18} />
-          </button>
-          <button
-            type="button"
+          </IconButton>
+          <IconButton
             onClick={openPreferences}
             title="Preferences"
-            aria-label="Preferences"
+            ariaLabel="Preferences"
           >
             <Settings size={18} />
-          </button>
-          <button type="button" onClick={() => void printDocument()} title="Print" aria-label="Print">
+          </IconButton>
+          <IconButton onClick={() => void printDocument()} title="Print" ariaLabel="Print">
             <Printer size={18} />
-          </button>
+          </IconButton>
         </nav>
 
         <div className="viewSwitch" aria-label="View mode">

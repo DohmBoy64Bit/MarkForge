@@ -4,6 +4,7 @@ import {
   converterCanHandle,
   createBrowserPrintConverter,
   createCsvToMarkdownTableConverter,
+  createDefaultConverters,
   createHtmlConverter,
   createHtmlToMarkdownConverter,
   createMarkdownCleanupConverter,
@@ -140,7 +141,7 @@ describe('@markforge/converters', () => {
   })
 
   it('exposes only external-runtime converter capabilities as unsupported without claiming support', async () => {
-    const converters = createPhase7AConverters()
+    const converters = createDefaultConverters()
     const browserPrintConverter = converters.find(converter => converter.metadata.id === 'browser-print')
     const pdfConverter = converters.find(converter => converter.metadata.id === 'pdf-to-markdown')
     const richClipboardConverter = converters.find(converter => converter.metadata.id === 'rich-clipboard-markdown')
@@ -162,7 +163,7 @@ describe('@markforge/converters', () => {
 
   it('supports browser print in the convenience set only when a print adapter is provided', async () => {
     const print = vi.fn()
-    const converters = createPhase7AConverters({ print })
+    const converters = createDefaultConverters({ print })
     const browserPrintConverter = converters.find(converter => converter.metadata.id === 'browser-print')
 
     expect(browserPrintConverter && converterCanHandle(browserPrintConverter, 'browser-print')).toBe(true)
@@ -171,6 +172,12 @@ describe('@markforge/converters', () => {
       value: { format: 'browser-print' }
     })
     expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the Phase 7 factory as a compatibility alias', () => {
+    expect(createPhase7AConverters().map(converter => converter.metadata.id)).toEqual(
+      createDefaultConverters().map(converter => converter.metadata.id)
+    )
   })
 
   it('builds compact UI defaults for HTML export paths and warning statuses', () => {

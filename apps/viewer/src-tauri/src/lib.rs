@@ -108,7 +108,12 @@ fn list_workspace_files(root: String) -> Result<Vec<WorkspaceFileEntry>, String>
 }
 
 #[tauri::command]
-fn search_workspace(root: String, query: String, case_sensitive: Option<bool>, limit: Option<usize>) -> Result<Vec<WorkspaceSearchMatch>, String> {
+fn search_workspace(
+    root: String,
+    query: String,
+    case_sensitive: Option<bool>,
+    limit: Option<usize>,
+) -> Result<Vec<WorkspaceSearchMatch>, String> {
     let trimmed_query = query.trim();
     if trimmed_query.is_empty() {
         return Ok(Vec::new());
@@ -198,8 +203,12 @@ fn watch_text_file(
     })
     .map_err(|error| format!("Failed to create file watcher for {path}: {error}"))?;
 
-    notify::Watcher::watch(&mut watcher, &watch_path, notify::RecursiveMode::NonRecursive)
-        .map_err(|error| format!("Failed to watch {path}: {error}"))?;
+    notify::Watcher::watch(
+        &mut watcher,
+        &watch_path,
+        notify::RecursiveMode::NonRecursive,
+    )
+    .map_err(|error| format!("Failed to watch {path}: {error}"))?;
 
     watchers.insert(key, watcher);
     Ok(())
@@ -307,9 +316,17 @@ fn ensure_workspace_root(root: &str) -> Result<PathBuf, String> {
     Ok(root_path.to_path_buf())
 }
 
-fn collect_workspace_files(root: &Path, current: &Path, entries: &mut Vec<WorkspaceFileEntry>) -> Result<(), String> {
-    let read_dir = fs::read_dir(current)
-        .map_err(|error| format!("Failed to read workspace directory {}: {error}", current.display()))?;
+fn collect_workspace_files(
+    root: &Path,
+    current: &Path,
+    entries: &mut Vec<WorkspaceFileEntry>,
+) -> Result<(), String> {
+    let read_dir = fs::read_dir(current).map_err(|error| {
+        format!(
+            "Failed to read workspace directory {}: {error}",
+            current.display()
+        )
+    })?;
 
     for item in read_dir {
         let item = item.map_err(|error| format!("Failed to read workspace entry: {error}"))?;
@@ -439,9 +456,9 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
     let copy_source = MenuItemBuilder::with_id("file.copySource", "Copy Source")
         .accelerator("Ctrl+Shift+C")
         .build(app)?;
-    let copy_rendered = MenuItemBuilder::with_id("file.copyRendered", "Copy Rendered Text").build(app)?;
-    let export_html = MenuItemBuilder::with_id("file.exportHtml", "Export HTML...")
-        .build(app)?;
+    let copy_rendered =
+        MenuItemBuilder::with_id("file.copyRendered", "Copy Rendered Text").build(app)?;
+    let export_html = MenuItemBuilder::with_id("file.exportHtml", "Export HTML...").build(app)?;
     let print = MenuItemBuilder::with_id("file.print", "Print")
         .accelerator("Ctrl+P")
         .build(app)?;
@@ -465,7 +482,7 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
         .build()?;
 
     let help = SubmenuBuilder::new(app, "Help")
-        .text("help.phase3", "Phase 3 Viewer Foundation")
+        .text("help.about", "About MarkForge Viewer")
         .build()?;
 
     let menu = MenuBuilder::new(app)

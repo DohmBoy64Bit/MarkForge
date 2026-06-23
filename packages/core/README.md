@@ -1,6 +1,6 @@
 # packages/core
 
-Application state, commands, preferences, session restore, recent files, and workspace domain services.
+Application persistence schemas and helpers for preferences, session restore, recent files, and safe JSON storage.
 
 Current status: implemented package boundary.
 

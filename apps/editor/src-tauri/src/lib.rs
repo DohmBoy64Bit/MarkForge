@@ -114,7 +114,14 @@ $shortcut.TargetPath = $target
 $shortcut.Save()
 "#;
         let status = Command::new("powershell")
-            .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script, &path])
+            .args([
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-Command",
+                script,
+                &path,
+            ])
             .status()
             .map_err(|error| format!("Failed to update shell recent documents: {error}"))?;
 
@@ -141,7 +148,12 @@ fn list_workspace_files(root: String) -> Result<Vec<WorkspaceFileEntry>, String>
 }
 
 #[tauri::command]
-fn search_workspace(root: String, query: String, case_sensitive: Option<bool>, limit: Option<usize>) -> Result<Vec<WorkspaceSearchMatch>, String> {
+fn search_workspace(
+    root: String,
+    query: String,
+    case_sensitive: Option<bool>,
+    limit: Option<usize>,
+) -> Result<Vec<WorkspaceSearchMatch>, String> {
     let trimmed_query = query.trim();
     if trimmed_query.is_empty() {
         return Ok(Vec::new());
@@ -231,8 +243,12 @@ fn watch_text_file(
     })
     .map_err(|error| format!("Failed to create file watcher for {path}: {error}"))?;
 
-    notify::Watcher::watch(&mut watcher, &watch_path, notify::RecursiveMode::NonRecursive)
-        .map_err(|error| format!("Failed to watch {path}: {error}"))?;
+    notify::Watcher::watch(
+        &mut watcher,
+        &watch_path,
+        notify::RecursiveMode::NonRecursive,
+    )
+    .map_err(|error| format!("Failed to watch {path}: {error}"))?;
 
     watchers.insert(key, watcher);
     Ok(())
@@ -281,11 +297,7 @@ fn watch_workspace(
             }
 
             let path_string = path.to_string_lossy().to_string();
-            let event_type = if path.exists() {
-                "changed"
-            } else {
-                "missing"
-            };
+            let event_type = if path.exists() { "changed" } else { "missing" };
             let root_path = Path::new(&emitted_root);
             let payload = WorkspaceWatchPayload {
                 path: path_string,
@@ -345,9 +357,17 @@ fn ensure_workspace_root(root: &str) -> Result<PathBuf, String> {
     Ok(root_path.to_path_buf())
 }
 
-fn collect_workspace_files(root: &Path, current: &Path, entries: &mut Vec<WorkspaceFileEntry>) -> Result<(), String> {
-    let read_dir = fs::read_dir(current)
-        .map_err(|error| format!("Failed to read workspace directory {}: {error}", current.display()))?;
+fn collect_workspace_files(
+    root: &Path,
+    current: &Path,
+    entries: &mut Vec<WorkspaceFileEntry>,
+) -> Result<(), String> {
+    let read_dir = fs::read_dir(current).map_err(|error| {
+        format!(
+            "Failed to read workspace directory {}: {error}",
+            current.display()
+        )
+    })?;
 
     for item in read_dir {
         let item = item.map_err(|error| format!("Failed to read workspace entry: {error}"))?;
@@ -413,8 +433,7 @@ fn ensure_supported_text_path(path: &str) -> Result<(), String> {
         .extension()
         .and_then(|value| value.to_str())
         .map(|extension| {
-            SUPPORTED_STARTUP_EXTENSIONS
-                .contains(&extension.to_ascii_lowercase().as_str())
+            SUPPORTED_STARTUP_EXTENSIONS.contains(&extension.to_ascii_lowercase().as_str())
         })
         .filter(|supported| *supported)
         .map(|_| ())
@@ -467,15 +486,14 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
     let save_file_as = MenuItemBuilder::with_id("file.saveAs", "Save As...")
         .accelerator("Ctrl+Shift+S")
         .build(app)?;
-    let export_html = MenuItemBuilder::with_id("file.exportHtml", "Export HTML...")
-        .build(app)?;
-    let import_converted = MenuItemBuilder::with_id("file.importConverted", "Import Conversion...")
-        .build(app)?;
+    let export_html = MenuItemBuilder::with_id("file.exportHtml", "Export HTML...").build(app)?;
+    let import_converted =
+        MenuItemBuilder::with_id("file.importConverted", "Import Conversion...").build(app)?;
     let copy_markdown = MenuItemBuilder::with_id("edit.copyMarkdown", "Copy Markdown")
         .accelerator("Ctrl+Shift+C")
         .build(app)?;
-    let clean_markdown = MenuItemBuilder::with_id("edit.cleanMarkdown", "Clean Markdown")
-        .build(app)?;
+    let clean_markdown =
+        MenuItemBuilder::with_id("edit.cleanMarkdown", "Clean Markdown").build(app)?;
     let print = MenuItemBuilder::with_id("view.print", "Print")
         .accelerator("Ctrl+P")
         .build(app)?;
@@ -511,7 +529,7 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
         .build()?;
 
     let help = SubmenuBuilder::new(app, "Help")
-        .text("help.phase1", "Phase 1 Proof of Concept")
+        .text("help.about", "About MarkForge")
         .build()?;
 
     let menu = MenuBuilder::new(app)
@@ -521,8 +539,8 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
     app.set_menu(menu)?;
     app.on_menu_event(|app, event| {
         let id = event.id().as_ref().to_string();
-        if id == "help.phase1" {
-            let _ = app.emit("markforge://menu", "help.phase1");
+        if id == "help.about" {
+            let _ = app.emit("markforge://menu", "help.about");
             return;
         }
 

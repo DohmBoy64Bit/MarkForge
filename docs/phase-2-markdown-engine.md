@@ -2,7 +2,7 @@
 
 Date: 2026-06-21
 
-Phase 2 turns `packages/markdown-engine` from a proof-of-concept renderer into an explicit contract that the editor and future viewer can depend on.
+Phase 2 turned `packages/markdown-engine` from a proof-of-concept renderer into an explicit contract that the editor and viewer now depend on. This page is historical; the current status below includes later remediation where relevant.
 
 ## Implemented
 
@@ -14,7 +14,7 @@ Phase 2 turns `packages/markdown-engine` from a proof-of-concept renderer into a
 - Common Markdown rendering with GFM-style tables, task lists, and footnotes.
 - Code highlighting through `highlight.js` with a curated language registry.
 - KaTeX math rendering through the markdown-it KaTeX plugin.
-- Explicit warnings for unknown code languages and deferred diagram fences such as Mermaid, PlantUML, Vega, and Vega-Lite.
+- Explicit warnings for unknown code languages and unsupported diagram fences. Later remediation added safe built-in rendering for simple Mermaid graph/flowchart fences; broader Mermaid syntax, PlantUML, Vega, and Vega-Lite still render as source with warnings.
 - Sanitization keeps raw HTML behind render options and strips unsafe script/link behavior.
 
 ## Verification
@@ -34,6 +34,5 @@ The renderer bundles are split into app, React, icon, and markdown/rendering chu
 
 - Full CommonMark/GFM conformance fixture import.
 - Full YAML/TOML parsing through dedicated parsers.
-- Mermaid/PlantUML/Vega rendering.
+- Broader diagram runtimes and syntax coverage beyond the safe built-in Mermaid graph/flowchart subset.
 - Code highlighter theme integration through `packages/theme-engine`.
-- Viewer app integration.

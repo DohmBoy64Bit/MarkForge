@@ -1,8 +1,10 @@
 import {
   conversionWarningStatus,
-  createBrowserPrintConverter,
-  createHtmlConverter,
-  defaultHtmlExportPath
+  converterCanHandle,
+  createDefaultConverters,
+  defaultHtmlExportPath,
+  type ConversionFormat,
+  type MarkdownConverter
 } from '@markforge/converters'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
 import {
@@ -16,6 +18,7 @@ import {
   type WorkspaceSearchMatch
 } from '@markforge/platform'
 import { appVisibleThemes, getTheme, themeToAppCssVariables, type ThemeId } from '@markforge/theme-engine'
+import { IconButton } from '@markforge/ui'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { writeText } from '@tauri-apps/plugin-clipboard-manager'
@@ -45,6 +48,12 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSPr
 type SearchMatch = {
   line: number
   text: string
+}
+
+function hasTauriWindowMetadata(): boolean {
+  return Boolean((window as Window & {
+    __TAURI_INTERNALS__?: { metadata?: unknown }
+  }).__TAURI_INTERNALS__?.metadata)
 }
 
 const nativeFileWatcher = createNativeFileWatcher({
@@ -88,11 +97,20 @@ const platform = createPlatformServices({
     print: () => window.print()
   }
 })
-const browserPrintConverter = createBrowserPrintConverter(() => {
-  const result = platform.print.print()
-  if (!result.ok) throw new Error(result.error.message)
+const appConverters = createDefaultConverters({
+  print: () => {
+    const result = platform.print.print()
+    if (!result.ok) throw new Error(result.error.message)
+  }
 })
-const htmlConverter = createHtmlConverter()
+const htmlConverter = requiredAppConverter(appConverters, 'html')
+const browserPrintConverter = requiredAppConverter(appConverters, 'browser-print')
+
+function requiredAppConverter(converters: MarkdownConverter[], format: ConversionFormat): MarkdownConverter {
+  const converter = converters.find(candidate => converterCanHandle(candidate, format))
+  if (!converter) throw new Error(`Missing MarkForge converter for ${format}.`)
+  return converter
+}
 
 const sampleDocument = `---
 title: Viewer foundation
@@ -298,7 +316,14 @@ export function App() {
     setStatus(result.ok ? 'Print dialog opened' : result.error.message)
   }, [documentText])
 
+  const selectSearchMatch = useCallback((match: SearchMatch, index: number) => {
+    setSelectedMatch(index)
+    const scrolled = scrollRenderedTextMatch(articleRef.current, match.text)
+    setStatus(scrolled ? `Jumped to line ${match.line}` : `Selected line ${match.line}`)
+  }, [])
+
   useEffect(() => {
+    if (!hasTauriWindowMetadata()) return
     if (startupFileLoadedRef.current) return
 
     startupFileLoadedRef.current = true
@@ -313,17 +338,21 @@ export function App() {
   }, [])
 
   useEffect(() => {
+    if (!hasTauriWindowMetadata()) return
+
     let unlisten: (() => void) | null = null
 
     void listen<string>('markforge://viewer-menu', event => {
       const id = event.payload
       if (id === 'file.open') void openDocument()
-      if (id === 'file.openWorkspace') void openWorkspace()
-      if (id === 'file.reload') void reloadDocument()
-      if (id === 'file.exportHtml') void exportHtml()
-      if (id === 'file.copySource') void copySource()
-      if (id === 'file.copyRendered') void copyRendered()
-      if (id === 'file.print') void printDocument()
+      else if (id === 'file.openWorkspace') void openWorkspace()
+      else if (id === 'file.reload') void reloadDocument()
+      else if (id === 'file.exportHtml') void exportHtml()
+      else if (id === 'file.copySource') void copySource()
+      else if (id === 'file.copyRendered') void copyRendered()
+      else if (id === 'file.print') void printDocument()
+      else if (id === 'help.about') setStatus('MarkForge Viewer shows sanitized Markdown, workspace search, document outline, HTML export, and print preview.')
+      else setStatus(`Unsupported menu command: ${id}`)
     }).then(cleanup => {
       unlisten = cleanup
     }).catch(error => {
@@ -413,27 +442,27 @@ export function App() {
         </div>
 
         <nav className="toolbar" aria-label="File actions">
-          <button type="button" onClick={() => void openDocument()} title="Open file" aria-label="Open file">
+          <IconButton onClick={() => void openDocument()} title="Open file" ariaLabel="Open file">
             <FileInput size={18} />
-          </button>
-          <button type="button" onClick={() => void openWorkspace()} title="Open workspace" aria-label="Open workspace">
+          </IconButton>
+          <IconButton onClick={() => void openWorkspace()} title="Open workspace" ariaLabel="Open workspace">
             <FolderOpen size={18} />
-          </button>
-          <button type="button" onClick={() => void reloadDocument()} title="Reload file" aria-label="Reload file">
+          </IconButton>
+          <IconButton onClick={() => void reloadDocument()} title="Reload file" ariaLabel="Reload file">
             <RefreshCcw size={18} />
-          </button>
-          <button type="button" onClick={() => void copyRendered()} title="Copy rendered text" aria-label="Copy rendered text">
+          </IconButton>
+          <IconButton onClick={() => void copyRendered()} title="Copy rendered text" ariaLabel="Copy rendered text">
             <Copy size={18} />
-          </button>
-          <button type="button" onClick={() => void copySource()} title="Copy source" aria-label="Copy source">
+          </IconButton>
+          <IconButton onClick={() => void copySource()} title="Copy source" ariaLabel="Copy source">
             <Clipboard size={18} />
-          </button>
-          <button type="button" onClick={() => void exportHtml()} title="Export HTML" aria-label="Export HTML">
+          </IconButton>
+          <IconButton onClick={() => void exportHtml()} title="Export HTML" ariaLabel="Export HTML">
             <FileCode size={18} />
-          </button>
-          <button type="button" onClick={() => void printDocument()} title="Print" aria-label="Print">
+          </IconButton>
+          <IconButton onClick={() => void printDocument()} title="Print" ariaLabel="Print">
             <Printer size={18} />
-          </button>
+          </IconButton>
         </nav>
 
         <label className="searchBox">
@@ -611,7 +640,7 @@ export function App() {
                 <ol className="matches">
                   {searchMatches.map((match, index) => (
                     <li key={`${match.line}-${match.text}`} className={index === selectedMatch ? 'selected' : ''}>
-                      <button type="button" onClick={() => setSelectedMatch(index)}>
+                      <button type="button" onClick={() => selectSearchMatch(match, index)}>
                         <span>Line {match.line}</span>
                         <mark>{highlightSnippet(match.text, searchQuery)}</mark>
                       </button>
@@ -708,6 +737,30 @@ function highlightSnippet(text: string, query: string): string {
   const suffix = end < trimmed.length ? '...' : ''
 
   return `${prefix}${trimmed.slice(start, end)}${suffix}`
+}
+
+function scrollRenderedTextMatch(root: HTMLElement | null, text: string): boolean {
+  const query = normalizeSearchText(text)
+  if (!root || !query) return false
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  let node = walker.nextNode()
+
+  while (node) {
+    if (normalizeSearchText(node.textContent ?? '').includes(query)) {
+      const target = node.parentElement ?? root
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return true
+    }
+
+    node = walker.nextNode()
+  }
+
+  return false
+}
+
+function normalizeSearchText(text: string): string {
+  return text.trim().replace(/\s+/g, ' ').toLowerCase()
 }
 
 function formatBytes(value: number): string {

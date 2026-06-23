@@ -32,11 +32,13 @@ apps/editor ─┬─> packages/editor-engine
              ├─> packages/converters
              ├─> packages/theme-engine
              ├─> packages/llm
+             ├─> packages/ui
              └─> packages/shared
 
 apps/viewer ─┬─> packages/markdown-engine
              ├─> packages/converters
              ├─> packages/theme-engine
+             ├─> packages/ui
              └─> packages/platform
 
 packages/editor-engine ─┬─> packages/markdown-engine
@@ -91,6 +93,8 @@ Provider interfaces and local-only AI workflows. It owns Ollama/llama.cpp/LM Stu
 ### `packages/ui`
 
 Reusable presentational components, layout primitives, dialogs, menus, toolbars, settings panels, icons, and accessibility helpers. Components receive data/actions through props or adapters.
+
+Pinned future extraction note: `@markforge/ui` is product-wired for the shared icon-only command button primitive. Continue broader extraction only when concrete reusable primitives can move without changing behavior or layout. Low-risk candidates are panel headers, search fields, empty states, status rows, and other stable presentation-only controls. App shells should keep workflow state, document orchestration, Tauri adapters, and page layout composition until a component is proven reusable.
 
 ### `packages/platform`
 

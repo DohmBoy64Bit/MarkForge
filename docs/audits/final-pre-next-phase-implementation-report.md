@@ -49,8 +49,8 @@ This pass implemented the safest high-value architecture slice from the drift/de
 
 Actual package edges added or confirmed:
 
-- `apps/editor -> packages/core`, `platform`, `converters`, `editor-engine`, `markdown-engine`, `templates`.
-- `apps/viewer -> packages/platform`, `converters`, `markdown-engine`.
+- `apps/editor -> packages/core`, `platform`, `converters`, `editor-engine`, `llm`, `shared`, `theme-engine`, `ui`.
+- `apps/viewer -> packages/platform`, `converters`, `markdown-engine`, `theme-engine`, `ui`.
 - `packages/core -> packages/shared`.
 - `packages/platform -> packages/shared`.
 - `packages/converters -> packages/markdown-engine`, `packages/shared`.

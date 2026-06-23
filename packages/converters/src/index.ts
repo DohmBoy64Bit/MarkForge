@@ -327,7 +327,7 @@ export type ConverterSetOptions = {
   fetchHtml?: UrlHtmlFetcher
 }
 
-export function createPhase7AConverters(options: ConverterSetOptions = {}): MarkdownConverter[] {
+export function createDefaultConverters(options: ConverterSetOptions = {}): MarkdownConverter[] {
   const browserPrintConverter = options.print
     ? createBrowserPrintConverter(options.print)
     : createUnsupportedConverter('browser-print', 'Browser print', 'Browser print requires an app-provided print adapter.')
@@ -344,6 +344,10 @@ export function createPhase7AConverters(options: ConverterSetOptions = {}): Mark
     createUnsupportedConverter('pdf-to-markdown', 'PDF to Markdown', 'PDF import needs an explicit text/layout extraction strategy and fixtures.'),
     createUnsupportedConverter('ocr-to-markdown', 'Image OCR to Markdown', 'OCR import needs an OCR engine decision and model/runtime packaging plan.')
   ]
+}
+
+export function createPhase7AConverters(options: ConverterSetOptions = {}): MarkdownConverter[] {
+  return createDefaultConverters(options)
 }
 
 export function converterCanHandle(converter: MarkdownConverter, format: ConversionFormat): boolean {

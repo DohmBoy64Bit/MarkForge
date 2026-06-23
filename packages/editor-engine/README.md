@@ -1,6 +1,6 @@
 # packages/editor-engine
 
-Editing behavior, source/realtime/split mode adapters, autocomplete, block insertion, table tools, image tools, and formatting actions.
+Target owner for editing behavior, source/realtime/split mode adapters, autocomplete, block insertion, table tools, image tools, and formatting actions.
 
 Current implemented surface:
 

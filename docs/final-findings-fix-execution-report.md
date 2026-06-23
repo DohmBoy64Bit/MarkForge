@@ -138,7 +138,7 @@ This section is not empty, so the project is not ready under the strict zero-def
 Actual dependency graph after fixes:
 
 - `apps/editor -> @markforge/core`, `@markforge/editor-engine`, `@markforge/converters`, `@markforge/llm`, `@markforge/platform`, `@markforge/shared`, `@markforge/theme-engine`, `@markforge/ui`.
-- `apps/viewer -> @markforge/converters`, `@markforge/markdown-engine`, `@markforge/platform`, `@markforge/shared`, `@markforge/theme-engine`, `@markforge/ui`.
+- `apps/viewer -> @markforge/converters`, `@markforge/markdown-engine`, `@markforge/platform`, `@markforge/theme-engine`, `@markforge/ui`.
 - `packages/converters -> @markforge/markdown-engine`, `@markforge/shared`.
 - `packages/editor-engine -> @markforge/markdown-engine`, `@markforge/templates`.
 - `packages/core -> @markforge/shared`.

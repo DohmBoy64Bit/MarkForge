@@ -35,5 +35,5 @@ const markdown = applyTemplate(template, variables)
 ## Remaining Scope
 
 - Syncable user-authored template libraries beyond editor-local storage.
-- General autocomplete integration beyond template suggestions.
+- Path-aware/link-aware autocomplete and richer completion sources beyond the current template and Markdown structure suggestions.
 - Template linting and schema validation beyond the typed package surface.

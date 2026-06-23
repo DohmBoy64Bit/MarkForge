@@ -15,6 +15,7 @@ Current status: implemented package boundary.
 - Rich clipboard HTML-to-Markdown converter with lossy-conversion warnings.
 - URL/article-to-Markdown converter with HTTP(S) validation, injected/global fetch support, and trust warnings.
 - Markdown cleanup converter for line endings, trailing whitespace, excessive blank lines, and final newline normalization.
+- Default app converter set factory used by editor/viewer, with browser print enabled only when the app provides a print adapter.
 - Compact app-facing helpers for default HTML export paths and warning-aware conversion status messages.
 - Editor-facing workflow coverage for supported HTML/CSV import insertion and converter activity history lives in `apps/editor/src/ui` with focused tests.
 - Explicit unsupported converter boundaries for DOCX, native PDF import/export, and OCR.

@@ -146,8 +146,8 @@ Code/config/test/build reviewed or searched:
 
 Actual package graph from manifests/source review:
 
-- `apps/editor` depends on `@markforge/core`, `@markforge/editor-engine`, `@markforge/converters`, `@markforge/llm`, `@markforge/markdown-engine`, `@markforge/platform`, `@markforge/shared`, `@markforge/templates`, `@markforge/theme-engine`, and `@markforge/ui`.
-- `apps/viewer` depends on `@markforge/converters`, `@markforge/markdown-engine`, `@markforge/platform`, `@markforge/shared`, `@markforge/theme-engine`, and `@markforge/ui`.
+- `apps/editor` depends on `@markforge/core`, `@markforge/editor-engine`, `@markforge/converters`, `@markforge/llm`, `@markforge/platform`, `@markforge/shared`, `@markforge/theme-engine`, and `@markforge/ui`.
+- `apps/viewer` depends on `@markforge/converters`, `@markforge/markdown-engine`, `@markforge/platform`, `@markforge/theme-engine`, and `@markforge/ui`.
 - `packages/converters` depends on `@markforge/markdown-engine` and `@markforge/shared`.
 - `packages/core`, `platform`, `theme-engine`, and `llm` depend on `@markforge/shared`.
 - `packages/markdown-engine`, `editor-engine`, `templates`, `shared`, and `ui` do not import private package internals.

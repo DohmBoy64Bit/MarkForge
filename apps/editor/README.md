@@ -1,6 +1,6 @@
 # MarkForge Editor
 
-Phase 10-complete Tauri editor shell for the Windows-first local Markdown workspace.
+Tauri editor shell for the Windows-first local Markdown workspace, currently covering Phase 12A-plus source editing and post-Phase-12A remediation scope.
 
 ## Commands
 

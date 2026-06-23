@@ -38,7 +38,7 @@ No new product features were added in this pass. The fixes were documentation an
 
 The required monorepo structure is present: implementation code lives under `apps/*` and `packages/*`, with docs, scripts, tests, and root configuration in documented locations. All required packages now have manifests, public entrypoints, READMEs, and package-level tests. `scripts/docs-check.mjs` verifies that implemented packages keep those public-entrypoint rules.
 
-Dependency direction is materially closer to the target architecture than in the original audit. Editor/viewer code now uses package-owned core, platform, converter, theme, LLM, shared, UI, markdown, editor-engine, and template boundaries where implemented. Remaining drift is documented in `docs/architecture.md`: the editor still directly imports markdown/templates and app shells still own orchestration, workflow dialogs, search state, live preview composition, and adapter wiring.
+Dependency direction is materially closer to the target architecture than in the original audit. Editor/viewer code now uses package-owned core, platform, converter, theme, LLM, shared, UI, markdown, editor-engine, and template boundaries where implemented. Remaining drift is documented in `docs/architecture.md`: app shells still own orchestration, workflow dialogs, search state, live preview composition, and adapter wiring.
 
 Security-sensitive behavior remains package-owned or explicitly bounded. Markdown sanitization remains in `packages/markdown-engine`; converters declare capabilities and unsupported results; local LLM providers reject non-loopback endpoints and require explicit user invocation; platform paths are routed through package contracts at the app boundary.
 
