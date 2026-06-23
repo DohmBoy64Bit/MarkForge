@@ -24,7 +24,7 @@ import {
 } from '@markforge/core'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
 import { runLlmAction } from '@markforge/llm'
-import { createNativeFileWatcher, createPlatformServices, type FileInfo, type NativeFileWatchPayload } from '@markforge/platform'
+import { createNativeFileWatcher, createPlatformServices, type FileInfo, type NativeFileWatchPayload, type PlatformAdapters } from '@markforge/platform'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -83,13 +83,14 @@ import {
   X,
   type LucideIcon
 } from 'lucide-react'
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { templateCatalog, type MarkdownTemplate, type TemplateVariables } from '@markforge/templates'
 import { CommandPalette } from './CommandPalette'
 import { ConverterDialog, type ConverterImportRequest } from './ConverterDialog'
 import { LocalAiDialog, type LocalAiRunRequest, type LocalAiRunResult } from './LocalAiDialog'
 import { PreferencesDialog } from './PreferencesDialog'
 import { QuickInsert } from './QuickInsert'
+import { SourceEditor, type SourceEditorHandle } from './SourceEditor'
 import { TemplatesHelpDialog } from './TemplatesHelpDialog'
 import { UnsavedChangesDialog } from './UnsavedChangesDialog'
 import {
@@ -193,10 +194,7 @@ const platform = createPlatformServices({
   print: {
     print: () => window.print()
   },
-  window: {
-    destroy: () => getCurrentWindow().destroy(),
-    onCloseRequested: handler => getCurrentWindow().onCloseRequested(handler)
-  }
+  window: createWindowLifecycleAdapter()
 })
 const browserPrintConverter = createBrowserPrintConverter(() => {
   const result = platform.print.print()
@@ -206,6 +204,22 @@ const htmlConverter = createHtmlConverter()
 const htmlToMarkdownConverter = createHtmlToMarkdownConverter()
 const csvToMarkdownTableConverter = createCsvToMarkdownTableConverter()
 const markdownCleanupConverter = createMarkdownCleanupConverter()
+
+function createWindowLifecycleAdapter(): PlatformAdapters['window'] {
+  if (!hasTauriWindowMetadata()) return undefined
+
+  return {
+    destroy: () => getCurrentWindow().destroy(),
+    onCloseRequested: handler => getCurrentWindow().onCloseRequested(handler)
+  }
+}
+
+function hasTauriWindowMetadata(): boolean {
+  return Boolean((window as Window & {
+    __TAURI_INTERNALS__?: { metadata?: unknown }
+  }).__TAURI_INTERNALS__?.metadata)
+}
+
 const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   bold: Bold,
   italic: Italic,
@@ -306,7 +320,7 @@ export function App() {
   const [sourceSelection, setSourceSelection] = useState<SourceSelectionState>({ start: 0, end: 0, hasFocus: false })
   const [templateSuggestionActiveIndex, setTemplateSuggestionActiveIndex] = useState(0)
   const [dismissedTemplateSuggestionKey, setDismissedTemplateSuggestionKey] = useState<string | null>(null)
-  const textAreaRef = useRef<HTMLTextAreaElement | null>(null)
+  const sourceEditorRef = useRef<SourceEditorHandle | null>(null)
   const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null)
   const quickInsertReturnFocusRef = useRef<HTMLElement | null>(null)
   const preferencesReturnFocusRef = useRef<HTMLElement | null>(null)
@@ -450,44 +464,28 @@ export function App() {
 
   const setEditorSelection = useCallback((start: number, end: number, scrollTop?: number) => {
     window.requestAnimationFrame(() => {
-      const textarea = textAreaRef.current
-      if (!textarea) return
+      const editor = sourceEditorRef.current
+      if (!editor) return
 
-      textarea.focus()
-      if (typeof scrollTop === 'number') textarea.scrollTop = scrollTop
-      textarea.setSelectionRange(start, end)
+      editor.setSelection(start, end, scrollTop)
       setSourceSelection({ start, end, hasFocus: true })
-    })
-  }, [])
-
-  const updateSourceSelection = useCallback((hasFocus = document.activeElement === textAreaRef.current) => {
-    const textarea = textAreaRef.current
-
-    if (!textarea) {
-      setSourceSelection({ start: 0, end: 0, hasFocus: false })
-      return
-    }
-
-    setSourceSelection({
-      start: textarea.selectionStart,
-      end: textarea.selectionEnd,
-      hasFocus
     })
   }, [])
 
   const applyEditorCommand = useCallback((commandId: EditorCommandId) => {
     const document = activeDocument
     const command = commandById[commandId]
-    const textarea = textAreaRef.current
+    const editor = sourceEditorRef.current
+    const selection = editor?.getSelection()
 
     if (!document || !command) {
       setStatus('No active document for formatting')
       return
     }
 
-    const selectionStart = textarea?.selectionStart ?? document.text.length
-    const selectionEnd = textarea?.selectionEnd ?? selectionStart
-    const scrollTop = textarea?.scrollTop
+    const selectionStart = selection?.start ?? document.text.length
+    const selectionEnd = selection?.end ?? selectionStart
+    const scrollTop = editor?.getScrollTop()
     const edit = command.execute(document.text, { start: selectionStart, end: selectionEnd })
     const confirmation = `${command.label} applied`
 
@@ -665,16 +663,17 @@ export function App() {
 
   const insertTemplate = useCallback((template: MarkdownTemplate, body: string) => {
     const document = activeDocument
-    const textarea = textAreaRef.current
+    const editor = sourceEditorRef.current
+    const selection = editor?.getSelection()
 
     if (!document) {
       setStatus('No active document for template insertion')
       return
     }
 
-    const selectionStart = textarea?.selectionStart ?? document.text.length
-    const selectionEnd = textarea?.selectionEnd ?? selectionStart
-    const scrollTop = textarea?.scrollTop
+    const selectionStart = selection?.start ?? document.text.length
+    const selectionEnd = selection?.end ?? selectionStart
+    const scrollTop = editor?.getScrollTop()
     const edit = insertTextAtSelection(document.text, body, selectionStart, selectionEnd)
 
     updateActiveDocument({ text: edit.text })
@@ -687,11 +686,11 @@ export function App() {
   const insertTemplateSuggestion = useCallback((template: MarkdownTemplate) => {
     const document = activeDocument
     const trigger = templateSuggestionTrigger
-    const textarea = textAreaRef.current
+    const editor = sourceEditorRef.current
 
     if (!document || !trigger) return
 
-    const scrollTop = textarea?.scrollTop
+    const scrollTop = editor?.getScrollTop()
     const body = resolveTemplateSuggestion(template, templateVariables)
     const edit = replaceTemplateTrigger(document.text, trigger, body)
 
@@ -703,7 +702,7 @@ export function App() {
     setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
   }, [activeDocument, setEditorSelection, templateSuggestionTrigger, templateVariables, updateActiveDocument])
 
-  const handleSourceKeyDown = useCallback((event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+  const handleSourceKeyDown = useCallback((event: KeyboardEvent) => {
     const canUseSuggestions = templateSuggestionTrigger &&
       templateSuggestionKey !== dismissedTemplateSuggestionKey &&
       templateSuggestions.length > 0 &&
@@ -768,7 +767,7 @@ export function App() {
     setDocuments(current => [...current, document])
     setActiveId(document.id)
     setStatus('New document')
-    window.setTimeout(() => textAreaRef.current?.focus(), 0)
+    window.setTimeout(() => sourceEditorRef.current?.focus(), 0)
   }, [])
 
   const reloadDocumentFromDisk = useCallback(async (documentId: string): Promise<boolean> => {
@@ -894,6 +893,7 @@ export function App() {
     if (startupFileLoadedRef.current) return
 
     startupFileLoadedRef.current = true
+    if (!hasTauriWindowMetadata()) return
 
     void invoke<string | null>('startup_file_path')
       .then(path => {
@@ -1109,13 +1109,14 @@ export function App() {
         return
       }
 
-      const textarea = textAreaRef.current
+      const editor = sourceEditorRef.current
+      const selection = editor?.getSelection()
       const edit = applyConvertedMarkdown(
         activeDocument.text,
         markdown,
         {
-          start: textarea?.selectionStart ?? sourceSelection.start,
-          end: textarea?.selectionEnd ?? sourceSelection.end
+          start: selection?.start ?? sourceSelection.start,
+          end: selection?.end ?? sourceSelection.end
         },
         request.insertMode
       )
@@ -1123,7 +1124,7 @@ export function App() {
       const message = conversionWarningStatus(action, result.value.warnings)
 
       updateActiveDocument({ text: edit.text })
-      setEditorSelection(edit.selectionStart, edit.selectionEnd, textarea?.scrollTop)
+      setEditorSelection(edit.selectionStart, edit.selectionEnd, editor?.getScrollTop())
       setLastCommand(message)
       setStatus(message)
       recordConverterActivity(
@@ -1187,7 +1188,8 @@ export function App() {
 
   const insertLocalAiResult = useCallback((text: string, mode: LocalAiInsertMode) => {
     const document = activeDocument
-    const textarea = textAreaRef.current
+    const editor = sourceEditorRef.current
+    const selection = editor?.getSelection()
 
     if (!document) {
       setStatus('No active document for Local AI result')
@@ -1198,14 +1200,14 @@ export function App() {
       document.text,
       text,
       {
-        start: textarea?.selectionStart ?? sourceSelection.start,
-        end: textarea?.selectionEnd ?? sourceSelection.end
+        start: selection?.start ?? sourceSelection.start,
+        end: selection?.end ?? sourceSelection.end
       },
       mode
     )
 
     updateActiveDocument({ text: edit.text })
-    setEditorSelection(edit.selectionStart, edit.selectionEnd, textarea?.scrollTop)
+    setEditorSelection(edit.selectionStart, edit.selectionEnd, editor?.getScrollTop())
     setLastCommand('Local AI result inserted')
     setStatus('Local AI result inserted')
   }, [
@@ -1366,12 +1368,10 @@ export function App() {
     setSelectedMatch(index)
     setViewMode(current => current === 'preview' ? 'split' : current)
     window.setTimeout(() => {
-      const textarea = textAreaRef.current
-      if (!textarea) return
-      textarea.focus()
-      textarea.setSelectionRange(match.start, match.end)
-      const lineHeight = Number.parseFloat(window.getComputedStyle(textarea).lineHeight) || 22
-      textarea.scrollTop = Math.max(0, (match.line - 4) * lineHeight)
+      const editor = sourceEditorRef.current
+      if (!editor) return
+      editor.setSelection(match.start, match.end)
+      editor.scrollToLine(match.line)
     }, 0)
   }, [])
 
@@ -1432,6 +1432,8 @@ export function App() {
   }, [activeDocument, replaceText, searchMatches.length, searchOptions, searchQuery, setEditorSelection, updateActiveDocument])
 
   useEffect(() => {
+    if (!hasTauriWindowMetadata()) return
+
     let unlisten: (() => void) | null = null
 
     void listen<string>('markforge://menu', event => {
@@ -1463,7 +1465,7 @@ export function App() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const actionId = actionIdFromKeyboardEvent(event, preferences.keybindings)
 
-      if (!actionId || !shouldHandleEditorShortcut(event, textAreaRef.current)) return
+      if (!actionId || !shouldHandleEditorShortcut(event, sourceEditorRef.current?.element() ?? null)) return
 
       if (actionId === commandPaletteActionId) {
         event.preventDefault()
@@ -1608,6 +1610,8 @@ export function App() {
     })
 
     if (!result.ok) {
+      if (result.error.code === 'not-supported') return
+
       setStatus(result.error.message)
       return
     }
@@ -1952,23 +1956,20 @@ export function App() {
             <strong>Source</strong>
             <span>{activeDirty ? 'Unsaved' : 'Saved'}</span>
           </div>
-          <textarea
-            ref={textAreaRef}
+          <SourceEditor
+            ref={sourceEditorRef}
             value={activeDocument?.text ?? ''}
             spellCheck
-            onBlur={() => setSourceSelection(current => ({ ...current, hasFocus: false }))}
-            onChange={event => {
-              updateActiveDocument({ text: event.target.value })
+            onFocusChange={hasFocus => {
+              if (!hasFocus) setSourceSelection(current => ({ ...current, hasFocus: false }))
+            }}
+            onChange={value => {
+              updateActiveDocument({ text: value })
               setDismissedTemplateSuggestionKey(null)
               setTemplateSuggestionActiveIndex(0)
-              updateSourceSelection(true)
             }}
-            onFocus={() => updateSourceSelection(true)}
             onKeyDown={handleSourceKeyDown}
-            onKeyUp={() => updateSourceSelection(true)}
-            onMouseUp={() => updateSourceSelection(true)}
-            onSelect={() => updateSourceSelection(true)}
-            aria-label="Markdown source"
+            onSelectionChange={setSourceSelection}
           />
           {showTemplateSuggestions && (
             <div
@@ -2427,13 +2428,13 @@ function frontMatterEntries(data: FrontMatterData | null | undefined): [string, 
   return Object.entries(data).map(([key, value]) => [key, String(value)])
 }
 
-function shouldHandleEditorShortcut(event: KeyboardEvent, textarea: HTMLTextAreaElement | null): boolean {
+function shouldHandleEditorShortcut(event: KeyboardEvent, sourceEditor: HTMLElement | null): boolean {
   if (event.defaultPrevented) return false
 
   const target = event.target
 
   if (!(target instanceof HTMLElement)) return true
-  if (target === textarea) return true
+  if (sourceEditor?.contains(target)) return true
   if (target.isContentEditable) return false
 
   return !['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)

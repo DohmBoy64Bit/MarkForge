@@ -72,7 +72,8 @@ Current status:
 - Phase 5G added quick insert and a source selection formatting overlay, both backed by the existing editor-engine command registry and app command execution path.
 - Phase 6A added a compact templates/help dialog, a preference-backed Templates and Help shortcut, and template insertion through the existing source document update path.
 - Phase 6B added template variable metadata/editing, local custom templates in editor `localStorage`, and a bounded `/template`/`/tpl` source suggestion surface.
-- Full preferences schema, non-format command remapping, rendered-preview search highlighting, filesystem/workspace template loading, workspace/folder watching, and rich/WYSIWYG editing remain open.
+- Phase 12A replaces the plain textarea source surface with a CodeMirror 6 Markdown editor while preserving the existing command, template, converter, Local AI, search, selection, dirty-state, and preview workflows.
+- Full preferences schema, non-format command remapping, rendered-preview search highlighting, filesystem/workspace template loading, workspace/folder watching, and rich/WYSIWYG editing beyond CodeMirror source mode remain open.
 
 Exit criteria:
 
@@ -92,6 +93,7 @@ Current status:
 - Phase 5E added unsaved-work protection and external-change reconciliation around the existing metadata polling foundation; Phase 11 routes the same workflow through native Tauri close-request/file-watch events with polling fallback support.
 - Phase 5F added toggle-aware Markdown transforms, H4-H6, strikethrough, duplicate selection/current-line, and shared search/replace matching for literal, case-sensitive, whole-word, and regex modes.
 - Phase 5G added a compact quick insert surface for block/insert commands and a floating selection overlay for common inline formatting in source mode.
+- Phase 12A adds the CodeMirror 6 source editor foundation with Markdown syntax highlighting, line numbers, history, line wrapping, active-line highlighting, and app command compatibility.
 - WYSIWYG/realtime editing, advanced table tools, image workflows, autocomplete, linting, formatter integration, non-format command remapping, full settings schema, workspace/folder watching, and focus/typewriter modes remain open.
 
 Exit criteria:
@@ -212,3 +214,22 @@ Exit criteria:
 - Native watcher and close-protection tests pass.
 - Editor/viewer builds and Rust checks pass.
 - Linux smoke status is documented honestly.
+
+## Phase 12: Rich Editor Surface
+
+- Replace the plain textarea source editor with the planned CodeMirror 6 source surface.
+- Preserve existing MarkForge command, quick insert, template, converter, Local AI, search/replace, dirty-state, and preview workflows.
+- Keep MarkForge visually distinct from MarkText while improving source editing fidelity.
+
+Current status:
+
+- Phase 12A is implemented for CodeMirror 6 source editing in `apps/editor`.
+- The source editor now supports line numbers, history, Markdown syntax highlighting, bracket matching, active-line highlighting, line wrapping, and app-theme-compatible styling.
+- Existing formatting commands, command palette, quick insert, template insertion/suggestions, converter insertion, Local AI insertion, search jumps, replace actions, source/split/preview modes, and selection overlay operate through the CodeMirror selection bridge.
+- WYSIWYG/realtime editing remains deferred beyond this source editor foundation.
+
+Exit criteria:
+
+- CodeMirror editor builds and passes app tests.
+- Bundle budget remains enforced through CodeMirror vendor chunks.
+- Visual evaluation confirms the workbench renders on desktop and mobile.

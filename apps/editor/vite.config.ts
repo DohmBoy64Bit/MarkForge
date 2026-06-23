@@ -25,6 +25,22 @@ export default defineConfig({
           if (id.includes('node_modules/lucide-react')) {
             return 'icons-vendor'
           }
+
+          if (
+            id.includes('node_modules/@codemirror/lang-') ||
+            id.includes('node_modules/@lezer')
+          ) {
+            return 'codemirror-language-vendor'
+          }
+
+          if (
+            id.includes('node_modules/@codemirror') ||
+            id.includes('node_modules/crelt') ||
+            id.includes('node_modules/style-mod') ||
+            id.includes('node_modules/w3c-keyname')
+          ) {
+            return 'codemirror-vendor'
+          }
         }
       }
     }

@@ -45,6 +45,7 @@ Validated in the current baseline:
 - Windows x64 installer creation.
 - Phase 10 packaging metadata validation through `pnpm packaging:check`.
 - Documented editor/viewer Windows NSIS build commands and smoke checks.
+- CodeMirror 6 source editor foundation in the editor app.
 
 Still open:
 
@@ -55,4 +56,4 @@ Still open:
 - Spellcheck.
 - Code signing, auto-updater publishing, and Linux package artifacts.
 
-Post-Phase-10 release hardening added Windows file association declarations, startup-file loading for Markdown/text files, native open-file watching, and editor close-request protection.
+Post-Phase-10 release hardening added Windows file association declarations, startup-file loading for Markdown/text files, native open-file watching, editor close-request protection, and the Phase 12A CodeMirror source editor foundation.

@@ -16,6 +16,7 @@ pnpm --filter @markforge/editor tauri build
 - Tabbed Markdown document foundation with per-tab dirty state.
 - New, open, save, save as, Export HTML, Import Conversion, Clean Markdown, Local AI, copy Markdown, clipboard check, and print actions.
 - Source, split, and preview view modes.
+- CodeMirror 6-backed Markdown source editor with line numbers, history, Markdown syntax highlighting, bracket matching, active-line highlighting, line wrapping, and package-compatible selection handling.
 - Sanitized preview rendering through `@markforge/markdown-engine`.
 - Source search with match counts, match navigation, case-sensitive/whole-word/regex options, replace current, and replace all.
 - Typed Markdown command registry for source-mode editing commands.
@@ -44,7 +45,7 @@ pnpm --filter @markforge/editor tauri build
 
 ## Deferred
 
-- Rich WYSIWYG/realtime editing.
+- Rich WYSIWYG/realtime editing beyond the CodeMirror source editor foundation.
 - Table editing beyond starter scaffold insertion.
 - Richer line transform menus.
 - Filesystem/workspace template loading and syncable template libraries beyond editor-local custom templates.

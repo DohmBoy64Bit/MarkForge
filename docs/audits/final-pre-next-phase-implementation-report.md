@@ -90,7 +90,7 @@ Updated package READMEs for `core`, `platform`, `ui`, `shared`, `converters`, `t
 - Native file watching and native close interception: Phase 11 implements open-file native watch events and editor dirty-document Tauri close-request interception; browser `beforeunload` and polling remain fallback behavior.
 - Full native PDF/DOCX/OCR/CSV/URL conversion: current app supports browser print and sanitized HTML conversion only.
 - Ollama, LM Studio, and llama.cpp runtime adapters: provider boundaries are implemented, but endpoint protocols and UI invocation flows are not defined enough to call them.
-- CodeMirror 6 and WYSIWYG/realtime editing: current editor surface is textarea/source-command based.
+- CodeMirror 6 and WYSIWYG/realtime editing: Phase 12A replaces the textarea source surface with CodeMirror 6; WYSIWYG/realtime editing remains deferred.
 - Filesystem/workspace templates: current behavior is built-in templates plus local custom templates.
 - Linux packaging/file associations/updates/shell integration/spellcheck: Tauri release contracts need a dedicated packaging pass.
 - Code splitting: release hardening Milestone 5 split renderer chunks and tightened the JavaScript asset budget to 500 KiB. Route-level lazy loading can still be considered if future feature work grows app chunks.

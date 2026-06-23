@@ -25,14 +25,14 @@ Phase 5A starts MarkForge's advanced editing track by making source Markdown dir
 
 ## Selection Behavior
 
-- Formatting commands operate on the current textarea selection when available.
+- Formatting commands operate on the current CodeMirror source selection when available.
 - Empty selections insert useful fallback Markdown such as `**bold text**`, `[label](https://example.com)`, or a starter table.
-- After a command runs, focus returns to the source textarea and the next useful selection is restored.
+- After a command runs, focus returns to the CodeMirror source editor and the next useful selection is restored.
 - Commands update the active document text through the editor app while the source transforms live in `packages/editor-engine`.
 - When no match or no active search exists, replace actions report a status message instead of changing text.
-- Command palette execution closes the overlay, applies the selected editor-engine command, and restores the useful textarea selection through the app's existing focus path.
+- Command palette execution closes the overlay, applies the selected editor-engine command, and restores the useful CodeMirror selection through the app's existing focus path.
 - Quick insert execution follows the same editor-engine command path as the command rail and command palette.
-- The source selection overlay appears only while the textarea owns a non-empty selection and hides for cleared selections, preview-only view, other overlays/dialogs, or missing active documents.
+- The source selection overlay appears only while the CodeMirror source editor owns a non-empty selection and hides for cleared selections, preview-only view, other overlays/dialogs, or missing active documents.
 - Inline source commands toggle existing Markdown markers when the selected text includes the wrapper or the selected text is already surrounded by the wrapper.
 - Heading commands cover H1-H6 and remove the matching heading marker when the selected line range already uses that level.
 - Blockquote, unordered list, ordered list, and task list commands remove their prefixes when every selected line already has the target marker.
@@ -75,13 +75,13 @@ Phase 5G adds compact insertion and inline-format surfaces for source editing wh
 - The quick insert dialog filters block and insert commands, including H1-H6, blockquote, unordered list, ordered list, task list, code fence, horizontal rule, and table.
 - Arrow keys, Home/End, Enter, Escape, backdrop click, and focus restoration follow the command palette interaction model.
 - Filtering is backed by focused helper tests and searches command labels, groups, ids, shortcuts, and compact insertion hints.
-- A floating selection toolbar appears near the source pane when the source textarea has a non-empty selection.
+- A floating selection toolbar appears near the source pane when the CodeMirror source editor has a non-empty selection.
 - Selection toolbar buttons expose accessible labels/titles and run bold, italic, inline code, strikethrough, and link through the existing app command path.
 - The overlay avoids caret-coordinate math; it stays anchored near the source pane header and hides when another overlay/dialog is open or the source selection is no longer active.
 
 ## Phase 5B Extraction
 
-Phase 5B moved the Phase 5A command registry and text transforms from `apps/editor` into `packages/editor-engine`. The React app still owns toolbar rendering, icon mapping, textarea focus restoration, and active-document state, but command behavior is now package-owned and covered by package-level tests.
+Phase 5B moved the Phase 5A command registry and text transforms from `apps/editor` into `packages/editor-engine`. Phase 12A later replaces the textarea surface with CodeMirror while the React app still owns toolbar rendering, icon mapping, focus restoration, and active-document state. Command behavior remains package-owned and covered by package-level tests.
 
 ## Phase 5C Command Palette
 
@@ -107,7 +107,7 @@ Phase 5D adds a compact Preferences dialog and moves existing editor shortcut di
 
 ## Deferred
 
-- Rich WYSIWYG/realtime editing behavior.
+- Rich WYSIWYG/realtime editing behavior beyond the Phase 12A CodeMirror source foundation.
 - Full preferences schema beyond the Phase 5D local editor settings foundation.
 - Non-format command remapping and platform-native/global shortcut registration.
 - Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.

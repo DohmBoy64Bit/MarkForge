@@ -93,7 +93,7 @@ Remaining intentionally deferred:
 
 - Native filesystem watcher events.
 - Native close interception.
-- Full CodeMirror/WYSIWYG editor surface.
+- WYSIWYG/realtime editor surface beyond the Phase 12A CodeMirror source foundation.
 - Diagram rendering and broader Markdown conformance corpus.
 - Full native PDF/DOCX/OCR/URL conversion.
 - Filesystem/workspace template loading.

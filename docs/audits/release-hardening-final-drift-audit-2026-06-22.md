@@ -48,7 +48,7 @@ Observed test result:
 | App-owned file-change timers / TD-01 | Reduced. Polling remains, but ownership moved into `packages/platform`. | App source calls `platform.watchFile`; direct `window.setInterval` remains only inside the platform fallback. |
 | Native file watching | Completed by Phase 11 for opened files. | Rust `notify` watchers emit `markforge://file-watch`; `packages/platform` keeps polling fallback. |
 | Native close interception | Completed by Phase 11 for editor dirty documents. | Tauri `onCloseRequested` routes through the existing Save/Discard/Cancel flow; browser `beforeunload` remains a fallback. |
-| CodeMirror/WYSIWYG editor surface | Deferred. | Editor still uses the source textarea and package-backed source transforms. |
+| CodeMirror/WYSIWYG editor surface | CodeMirror source surface completed by Phase 12A; WYSIWYG remains deferred. | Editor uses a CodeMirror-backed source surface with package-backed source transforms. |
 | Diagram rendering and conformance corpus | Deferred. | Markdown engine still emits explicit deferred diagram warnings. |
 | Full native conversion/export stack | Deferred. | Current implementation supports browser print and sanitized HTML export/import/cleanup paths, not native PDF/DOCX/OCR/URL conversions. |
 | Filesystem/workspace templates | Deferred. | Current templates are built-in plus local custom templates. |
