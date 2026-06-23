@@ -19,6 +19,7 @@ const requiredFiles = [
   'docs/phase-10-packaging-documentation.md',
   'docs/packaging-release.md',
   'docs/release-hardening.md',
+  'docs/update-signing-strategy.md',
   'docs/product-requirements.md',
   'docs/user-documentation.md',
   'packages/markdown-engine/README.md',

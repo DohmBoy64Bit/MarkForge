@@ -57,12 +57,14 @@ for (const app of apps) {
   requireEqual(`${app.app} version`, config.version, rootPackage.version)
   requireEqual(`${app.app} build.beforeBuildCommand`, config.build?.beforeBuildCommand, 'pnpm build')
   requireEqual(`${app.app} bundle.active`, config.bundle?.active, true)
+  requireEqual(`${app.app} updater artifact generation`, config.bundle?.createUpdaterArtifacts, false)
 
   if (!Array.isArray(config.bundle?.targets) || !config.bundle.targets.includes('nsis')) {
     errors.push(`${app.app} must keep Windows NSIS in bundle.targets`)
   }
 
   requireEqual(`${app.app} NSIS install mode`, config.bundle?.windows?.nsis?.installMode, 'currentUser')
+  requireUnsignedReleaseGuard(app, config)
   requireFileAssociation(app, config)
 
   const windowConfig = config.app?.windows?.[0]
@@ -91,6 +93,19 @@ for (const app of apps) {
   }
   if (!cargoToml.includes(`version = "${rootPackage.version}"`)) {
     errors.push(`${app.app} Cargo package version must match root package version ${rootPackage.version}`)
+  }
+}
+
+function requireUnsignedReleaseGuard(app, config) {
+  const windows = config.bundle?.windows ?? {}
+  for (const field of ['certificateThumbprint', 'digestAlgorithm', 'signCommand', 'timestampUrl']) {
+    if (windows[field]) {
+      errors.push(`${app.app} must not configure Windows signing field ${field} until release signing is intentionally enabled`)
+    }
+  }
+
+  if (config.plugins?.updater) {
+    errors.push(`${app.app} must not configure updater plugin endpoints until signing keys and release channels are approved`)
   }
 }
 

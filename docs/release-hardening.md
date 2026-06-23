@@ -36,8 +36,25 @@ Implemented:
 - Installed editor/viewer processes launch successfully with a sample Markdown file path argument.
 - Silent uninstall removes install folders, shortcuts, ProgIDs, uninstall entries, and running processes.
 
+## Milestone 3: Update and Signing Strategy
+
+Status: complete for guarded baseline.
+
+Implemented:
+
+- Added [Update and Signing Strategy](update-signing-strategy.md).
+- Explicitly set `bundle.createUpdaterArtifacts` to `false` in editor and viewer Tauri configs.
+- `pnpm packaging:check` now fails if updater endpoints or Windows signing fields are configured before signing/update policy is approved.
+
+Deferred until real release infrastructure exists:
+
+- Tauri updater plugin dependencies and UI.
+- Updater key generation and CI secret storage.
+- Windows certificate configuration or signing command.
+- Release channel endpoints and static update JSON.
+- Signed artifact validation in CI.
+
 ## Remaining Milestones
 
-- Milestone 3: signing/update strategy and guarded updater artifact configuration where safe.
 - Milestone 4: Linux smoke pass.
 - Milestone 5: deferred feature implementation and final drift/debt audit.

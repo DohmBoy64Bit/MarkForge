@@ -25,6 +25,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": false,
     "fileAssociations": [
       {
         "ext": ["md", "markdown", "mdown", "txt"],

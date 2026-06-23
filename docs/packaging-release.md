@@ -98,4 +98,4 @@ Linux is not product-ready until this plan has real build artifacts and smoke ev
 
 ## Update Path
 
-The Phase 10 baseline documents the release path and validates packaging configuration. Auto-update publishing, signing, release channels, and update metadata are still deferred until versioning, signing keys, hosting, and rollback policy are chosen.
+The Phase 10 baseline documents the release path and validates packaging configuration. Auto-update publishing, signing, release channels, and update metadata are guarded by [Update and Signing Strategy](update-signing-strategy.md). Updater artifacts remain disabled until versioning, signing keys, hosting, and rollback policy are chosen.

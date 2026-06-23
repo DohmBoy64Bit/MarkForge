@@ -59,3 +59,5 @@ pnpm tauri:viewer:build
 - Native file watching, spellcheck, rich clipboard, and native PDF export.
 
 Post-Phase-10 release-hardening has since added Windows file association declarations and startup-file loading. See [Release Hardening](release-hardening.md).
+
+Update/signing is now guarded by explicit disabled updater artifacts and [Update and Signing Strategy](update-signing-strategy.md).

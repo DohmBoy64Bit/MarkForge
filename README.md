@@ -49,6 +49,7 @@ The audit config is:
 - [Phase 10 packaging and documentation](docs/phase-10-packaging-documentation.md)
 - [Packaging and release](docs/packaging-release.md)
 - [Release hardening](docs/release-hardening.md)
+- [Update and signing strategy](docs/update-signing-strategy.md)
 - [Developer documentation](docs/developer-documentation.md)
 - [User documentation](docs/user-documentation.md)
 - [Theming documentation](docs/theming-documentation.md)
