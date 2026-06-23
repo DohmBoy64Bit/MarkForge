@@ -57,7 +57,7 @@ export type ParsedMarkdownDocument = {
 
 export type MarkdownRenderWarning = {
   code:
-    | 'diagram-rendering-deferred'
+    | 'diagram-rendering-limited'
     | 'front-matter-json-parse-failed'
     | 'front-matter-structured-parse-limited'
     | 'renderer-failed'
@@ -96,7 +96,7 @@ hljs.registerLanguage('yml', yaml)
 
 export function renderMarkdown(source: string, options: RenderMarkdownOptions = {}): RenderedMarkdown {
   const parsed = parseFrontMatter(source)
-  const warnings = [...parsed.warnings, ...detectDeferredDiagrams(parsed.body)]
+  const warnings = [...parsed.warnings]
   const markdown = createMarkdownIt(options, warnings)
   const rawHtml = markdown.render(parsed.body, {
     slugCounts: new Map<string, number>(),
@@ -179,8 +179,21 @@ function createMarkdownIt(options: RenderMarkdownOptions, warnings: MarkdownRend
   }
 
   const defaultRenderToken = markdown.renderer.renderToken.bind(markdown.renderer)
+  const defaultFence = markdown.renderer.rules.fence?.bind(markdown.renderer)
   const defaultLinkOpen = markdown.renderer.rules.link_open ?? defaultRenderToken
   const defaultHeadingOpen = markdown.renderer.rules.heading_open ?? defaultRenderToken
+
+  markdown.renderer.rules.fence = (tokens, index, renderOptions, env, self) => {
+    const token = tokens[index]
+    const language = token.info.trim().split(/\s+/)[0]?.toLowerCase()
+
+    if (language && diagramLanguages.has(language)) {
+      return renderDiagramFence(language, token.content, warnings)
+    }
+
+    if (defaultFence) return defaultFence(tokens, index, renderOptions, env, self)
+    return self.renderToken(tokens, index, renderOptions)
+  }
 
   markdown.renderer.rules.link_open = (tokens, index, renderOptions, env, self) => {
     tokens[index].attrSet('target', '_blank')
@@ -263,16 +276,29 @@ function sanitizeHtml(rawHtml: string): string {
       'aria-hidden',
       'checked',
       'class',
+      'd',
+      'data-diagram-language',
       'fill',
       'height',
       'id',
+      'marker-end',
       'mathvariant',
       'rel',
+      'role',
+      'rx',
       'stroke',
       'target',
+      'text-anchor',
+      'transform',
       'viewBox',
       'width',
-      'xmlns'
+      'x',
+      'x1',
+      'x2',
+      'xmlns',
+      'y',
+      'y1',
+      'y2'
     ]
   })
 }
@@ -346,27 +372,6 @@ function parseKeyValueFrontMatter(
   return { data, warnings }
 }
 
-function detectDeferredDiagrams(source: string): MarkdownRenderWarning[] {
-  const warnings: MarkdownRenderWarning[] = []
-  const lines = source.split(/\r?\n/)
-
-  lines.forEach((line, index) => {
-    const match = /^```\s*([A-Za-z0-9_-]+)/.exec(line.trim())
-    const language = match?.[1]?.toLowerCase()
-
-    if (language && diagramLanguages.has(language)) {
-      warnings.push({
-        code: 'diagram-rendering-deferred',
-        line: index + 1,
-        message: `${language} diagrams are detected but rendered as fenced code until the diagram renderer is implemented.`,
-        severity: 'info'
-      })
-    }
-  })
-
-  return warnings
-}
-
 function parseScalar(value: string): FrontMatterScalar {
   const unquoted = value.replace(/^["']|["']$/g, '')
 
@@ -380,6 +385,90 @@ function parseScalar(value: string): FrontMatterScalar {
   }
 
   return unquoted
+}
+
+function renderDiagramFence(language: string, source: string, warnings: MarkdownRenderWarning[]): string {
+  if (language === 'mermaid') {
+    const rendered = renderMermaidFlowchart(source)
+    if (rendered) return rendered
+  }
+
+  warnings.push({
+    code: 'diagram-rendering-limited',
+    message: `${language} diagram syntax is outside the built-in safe renderer and is shown as source.`,
+    severity: 'info'
+  })
+
+  return [
+    `<figure class="mf-diagram mf-diagram-source" data-diagram-language="${escapeHtml(language)}">`,
+    '<figcaption>Diagram source</figcaption>',
+    `<pre><code>${escapeHtml(source)}</code></pre>`,
+    '</figure>'
+  ].join('')
+}
+
+function renderMermaidFlowchart(source: string): string | null {
+  const lines = source
+    .split(/\r?\n|;/)
+    .map(line => line.trim())
+    .filter(Boolean)
+  const header = lines.shift()
+
+  if (!header || !/^(graph|flowchart)\s+(TD|TB|BT|LR|RL)$/i.test(header)) {
+    return null
+  }
+
+  const edges: Array<{ from: string; to: string }> = []
+  const labels = new Map<string, string>()
+
+  for (const line of lines) {
+    const match = /^([A-Za-z0-9_-]+)(?:\["([^"]+)"\])?\s*-+>+\s*([A-Za-z0-9_-]+)(?:\["([^"]+)"\])?$/.exec(line)
+    if (!match) continue
+
+    const [, from, fromLabel, to, toLabel] = match
+    edges.push({ from, to })
+    labels.set(from, fromLabel ?? from)
+    labels.set(to, toLabel ?? to)
+  }
+
+  if (edges.length === 0) return null
+
+  const nodeIds = Array.from(new Set(edges.flatMap(edge => [edge.from, edge.to])))
+  const nodeIndex = new Map(nodeIds.map((id, index) => [id, index]))
+  const width = 320
+  const rowHeight = 78
+  const height = Math.max(96, nodeIds.length * rowHeight + 24)
+  const nodeWidth = 180
+  const nodeHeight = 42
+  const x = (width - nodeWidth) / 2
+
+  const nodeY = (id: string) => 18 + (nodeIndex.get(id) ?? 0) * rowHeight
+  const nodes = nodeIds.map(id => {
+    const y = nodeY(id)
+    return [
+      `<g class="mf-diagram-node" transform="translate(${x} ${y})">`,
+      `<rect width="${nodeWidth}" height="${nodeHeight}" rx="7"></rect>`,
+      `<text x="${nodeWidth / 2}" y="26" text-anchor="middle">${escapeHtml(labels.get(id) ?? id)}</text>`,
+      '</g>'
+    ].join('')
+  }).join('')
+  const connectors = edges.map(edge => {
+    const fromY = nodeY(edge.from) + nodeHeight
+    const toY = nodeY(edge.to)
+    const center = width / 2
+    return `<line class="mf-diagram-edge" x1="${center}" y1="${fromY}" x2="${center}" y2="${toY}" marker-end="url(#mf-arrow)"></line>`
+  }).join('')
+
+  return [
+    '<figure class="mf-diagram mf-diagram-mermaid" data-diagram-language="mermaid">',
+    '<figcaption>Mermaid flowchart</figcaption>',
+    `<svg role="img" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`,
+    '<defs><marker id="mf-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"></path></marker></defs>',
+    connectors,
+    nodes,
+    '</svg>',
+    '</figure>'
+  ].join('')
 }
 
 function getSlugCounts(env: unknown): Map<string, number> {

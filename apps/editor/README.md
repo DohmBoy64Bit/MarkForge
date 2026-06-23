@@ -17,17 +17,18 @@ pnpm --filter @markforge/editor tauri build
 - New, open, save, save as, Export HTML, Import Conversion, Clean Markdown, Local AI, copy Markdown, clipboard check, and print actions.
 - Source, split, and preview view modes.
 - CodeMirror 6-backed Markdown source editor with line numbers, history, Markdown syntax highlighting, bracket matching, active-line highlighting, line wrapping, and package-compatible selection handling.
-- Sanitized preview rendering through `@markforge/markdown-engine`.
+- Sanitized preview rendering through the editor-facing `@markforge/editor-engine` preview API.
 - Source search with match counts, match navigation, case-sensitive/whole-word/regex options, replace current, and replace all.
 - Typed Markdown command registry for source-mode editing commands.
 - Formatting command rail for reversible bold, italic, inline code, strikethrough, link, H1-H6, blockquote, unordered list, ordered list, task list, code fence, horizontal rule, table scaffold, and duplicate selection/current-line.
 - Preference-backed keyboard shortcuts for Ctrl+B, Ctrl+I, Ctrl+K, Ctrl+D, Ctrl+Shift+7, Ctrl+Shift+8, quick insert, and the command palette when focus is in the editor or command surface.
 - Command palette opened by the toolbar or the configured shortcut, with searchable command metadata, grouped results, keyboard navigation, shortcut badges, empty state, and execution through the shared editor-engine commands.
 - Quick insert opened by the toolbar or Ctrl+/, with searchable block/insert commands, keyboard navigation, Escape/backdrop close, focus restoration, and execution through the same editor-engine command path.
-- Templates and help dialog opened by the toolbar or Ctrl+Alt+T, with searchable typed templates from `@markforge/templates`, guided variable fields, live resolved preview, insertion into the active source document, local custom-template create/delete/reset behavior, and a compact Markdown syntax reference.
+- Templates and help dialog opened by the toolbar or Ctrl+Alt+T, with searchable typed templates from `@markforge/editor-engine`, guided variable fields, live resolved preview, insertion into the active source document, local custom-template create/delete/reset behavior, and a compact Markdown syntax reference.
 - Source template suggestions for line-leading `/template` and `/tpl` triggers, with filtering, Arrow key navigation, Enter insertion through the shared template resolver, and Escape close.
 - Converter-backed Export HTML writes the active Markdown document to a selected `.html` file through `@markforge/converters` and `@markforge/platform`.
 - Converter-backed Import Conversion accepts supported HTML and CSV source input, then inserts converted Markdown by selection, cursor, or append mode.
+- Converter-backed Import Conversion also accepts rich clipboard HTML and HTTP(S) URL/article input through supported package converters.
 - Converter-backed Clean Markdown normalizes whitespace in the active document through the same source document update path as other editing actions.
 - Local AI dialog for loopback providers only, with disabled-by-default enablement, provider/endpoint/model configuration, summarize/improve/outline/explain actions, selection/document source controls, prompt preview, result output, running/error states, and explicit result insertion.
 - Selection formatting overlay for non-empty source selections with bold, italic, inline code, strikethrough, and link buttons.
@@ -35,6 +36,9 @@ pnpm --filter @markforge/editor tauri build
 - Prompted close/reload protection for dirty tabs with Save, Discard, and Cancel decisions.
 - Native Tauri close-request protection plus browser `beforeunload` fallback when any open document has unsaved edits.
 - Native file watching across open file-backed tabs, with package polling fallback support and changed-on-disk/missing-on-disk reconciliation notices.
+- Workspace panel for opening a folder, indexing Markdown/text files, filtering file paths, searching across file contents, opening results, and refreshing from native workspace watch events.
+- Workspace `.markforge/templates/*.md` files are loaded into the template/help and `/template` suggestion flows.
+- Windows shell recent-document updates are attempted through the platform service when files are opened or saved.
 - Reload from disk and Keep local actions for external changes, including dirty-document confirmation before replacing local edits.
 - Inspector panels for file state, command status, converter activity history, search, outline, recent files, front matter, warnings, clipboard state, and external-change state.
 - LocalStorage-backed restore for unsaved/dirty tabs, recent file paths, theme, view mode, editor keybindings, and editor-local custom templates.
@@ -48,9 +52,9 @@ pnpm --filter @markforge/editor tauri build
 - Rich WYSIWYG/realtime editing beyond the CodeMirror source editor foundation.
 - Table editing beyond starter scaffold insertion.
 - Richer line transform menus.
-- Filesystem/workspace template loading and syncable template libraries beyond editor-local custom templates.
-- General Markdown autocomplete beyond the Phase 6B template suggestion foundation.
+- Syncable template libraries beyond editor-local and workspace `.markforge/templates/*.md` templates.
+- General Markdown autocomplete beyond template suggestions.
 - Full preference schema beyond the Phase 5D local editor settings foundation.
-- DOCX, native PDF, OCR, URL/article, and rich clipboard converter UI beyond explicit unsupported package boundaries.
+- DOCX, native PDF, and OCR converter UI beyond explicit unsupported package boundaries.
 - Streaming Local AI output, provider model discovery, persisted Local AI settings, and additional prompt actions.
-- Workspace/folder watching, code signing, auto-update publishing, shell recent documents, and Linux installer artifacts.
+- Code signing, auto-update publishing, richer native spellcheck providers, and Linux installer artifacts.

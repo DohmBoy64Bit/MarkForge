@@ -9,6 +9,8 @@ Typed Markdown template catalog for MarkForge-owned starter documents.
 - Filtering helpers for search terms, category, and tags.
 - Simple `{{variable}}` replacement helpers with unknown placeholders preserved by default.
 - Placeholder extraction, derived variable definitions, template default merging, and custom-template validation/normalization.
+- Workspace template recognition for `.markforge/templates/*.md`.
+- Workspace template normalization into typed Markdown templates with derived variables.
 
 ## API
 
@@ -30,9 +32,8 @@ const variables = mergeTemplateVariables(template, {
 const markdown = applyTemplate(template, variables)
 ```
 
-## Deferred
+## Remaining Scope
 
-- Filesystem/workspace template loading.
 - Syncable user-authored template libraries beyond editor-local storage.
-- General autocomplete integration beyond the editor's first `/template` and `/tpl` suggestion surface.
+- General autocomplete integration beyond template suggestions.
 - Template linting and schema validation beyond the typed package surface.

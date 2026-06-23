@@ -48,7 +48,8 @@ Phase 6B baseline:
 - The editor exposes template search, guided variable editing, live resolved preview, and insertion plus compact Markdown reference help.
 - Local custom templates are supported through editor `localStorage` with create, search, insert, delete, and reset behavior.
 - Source-mode template suggestions are supported for line-leading `/template` and `/tpl` triggers.
-- Filesystem/workspace template loading, syncable template libraries, and general Markdown autocomplete remain later requirements.
+- Workspace template files under `.markforge/templates/*.md` load into the editor template/search/autocomplete flow when a workspace is open.
+- Syncable template libraries and general Markdown autocomplete remain later requirements.
 
 ## Conversion Requirements
 
@@ -65,13 +66,14 @@ The `packages/converters` package must expose a plugin-style conversion architec
 
 Each converter must be independently testable and report confidence, warnings, and unsupported structures.
 
-Phase 7F baseline:
+Current converter baseline:
 
-- `packages/converters` exposes tested Markdown-to-HTML export, browser-print handoff, HTML-to-Markdown import, CSV-to-Markdown table conversion, and Markdown cleanup.
-- The editor exposes supported active-document converter UI for Export HTML, Import Conversion for HTML/CSV input, Clean Markdown, and converter activity history.
+- `packages/converters` exposes tested Markdown-to-HTML export, browser-print handoff, HTML-to-Markdown import, CSV-to-Markdown table conversion, rich clipboard HTML import, URL/article HTML import, basic HTML export settings, and Markdown cleanup.
+- The editor exposes supported active-document converter UI for Export HTML, Import Conversion for HTML/CSV/rich clipboard/URL input, Clean Markdown, and converter activity history.
 - The viewer exposes Export HTML for the currently rendered Markdown/text document.
 - HTML-to-Markdown reports lossy conversion because styling/layout are not preserved.
-- DOCX, native PDF import/export, rich clipboard import, URL/article extraction, and OCR return explicit unsupported capability results until their parsing/runtime/trust requirements are defined.
+- URL/article conversion validates HTTP(S) input and uses the converter fetch path with trust/lossiness warnings.
+- DOCX, native PDF import/export, and OCR return explicit unsupported capability results until their parsing/runtime/trust requirements are defined.
 
 ## Local LLM Requirements
 
@@ -128,15 +130,16 @@ Phase 10 baseline:
 - `pnpm packaging:check` validates release-critical packaging configuration and version alignment.
 - Manual Windows installer smoke checks are documented.
 - Linux compatibility is started as a smoke plan, with AppImage evaluated first before deb/rpm.
-- Code signing, updater publishing, shell recent documents, and Linux artifacts remain later release-hardening requirements.
+- Code signing, updater publishing, and Linux artifacts remain later release-hardening requirements.
 
 Release-hardening baseline:
 
 - Windows installer smoke passed for install, shortcut creation, launch, uninstall, and cleanup.
 - Windows file association declarations are implemented for `.md`, `.markdown`, `.mdown`, and `.txt` in editor and viewer installers.
 - Editor and viewer can load a supported startup file path argument through their existing platform file-read services.
+- The editor updates Windows shell recent documents for opened/saved supported files through the platform shell service.
 - Update/signing is guarded by explicit disabled updater artifact configuration and `packaging:check` drift prevention.
-- Code signing, updater publishing, shell recent documents, and Linux artifacts remain later release-hardening requirements.
+- Code signing, updater publishing, and Linux artifacts remain later release-hardening requirements.
 
 ## Non-Goals for the First Baseline
 

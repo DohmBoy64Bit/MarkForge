@@ -100,13 +100,22 @@ describe('renderMarkdown', () => {
     expect(rendered.html).toContain('$x^2$')
   })
 
-  it('warns when diagram fences are detected before renderer support exists', () => {
+  it('renders supported Mermaid flowchart fences as sanitized diagrams', () => {
     const rendered = renderMarkdown('```mermaid\ngraph TD; A-->B;\n```')
 
+    expect(rendered.html).toContain('mf-diagram-mermaid')
+    expect(rendered.html).toContain('<svg')
+    expect(rendered.html).toContain('Mermaid flowchart')
+    expect(rendered.warnings).toEqual([])
+  })
+
+  it('warns when diagram syntax is outside the built-in safe renderer', () => {
+    const rendered = renderMarkdown('```plantuml\nAlice -> Bob\n```')
+
+    expect(rendered.html).toContain('mf-diagram-source')
     expect(rendered.warnings).toContainEqual({
-      code: 'diagram-rendering-deferred',
-      line: 1,
-      message: 'mermaid diagrams are detected but rendered as fenced code until the diagram renderer is implemented.',
+      code: 'diagram-rendering-limited',
+      message: 'plantuml diagram syntax is outside the built-in safe renderer and is shown as source.',
       severity: 'info'
     })
   })

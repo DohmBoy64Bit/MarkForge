@@ -2,7 +2,7 @@
 
 MarkForge is being built as a professional, local-first Markdown editor and standalone Markdown viewer for Windows and Linux, with Windows as the first production target.
 
-The initial architecture and parity audit are complete, and implementation has progressed through Phase 10 packaging/documentation. MarkForge is not product-ready yet and remains intentionally distinct from a 1:1 MarkText clone.
+The initial architecture and parity audit are complete, and implementation has progressed through Phase 12A rich editor surface work. MarkForge is not product-ready yet and remains intentionally distinct from a 1:1 MarkText clone.
 
 ## Current Status
 
@@ -16,6 +16,9 @@ The initial architecture and parity audit are complete, and implementation has p
 - Phase 8 completes built-in app theme exposure: editor/viewer chrome now uses `packages/theme-engine` app tokens for Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral.
 - Phase 9 adds the first local-only AI surface: `packages/llm` owns provider contracts/adapters and privacy guards, while the editor exposes a disabled-by-default Local AI dialog for loopback providers only.
 - Phase 10 adds reproducible packaging documentation and validation: Windows NSIS installer commands, release smoke checks, `packaging:check`, and a started Linux smoke plan.
+- Phase 11 adds native open-file watching and editor close-request protection through `packages/platform`, with polling/browser guards preserved as fallback paths.
+- Phase 12A replaces the plain textarea with a CodeMirror 6 Markdown source editor while preserving existing command, template, converter, Local AI, search, dirty-state, and preview workflows.
+- Post-Phase-12A remediation adds editor workspace listing/search/watch, workspace templates, rich clipboard HTML import, URL/article HTML import, basic HTML export settings, safe Mermaid flowchart rendering, Windows shell recent-document updates, and platform spellcheck/updater contracts.
 - Several package boundaries are still transitional; see [Architecture](docs/architecture.md).
 
 ## Evidence
@@ -47,6 +50,8 @@ The audit config is:
 - [Phase 8 theme engine](docs/phase-8-theme-engine.md)
 - [Phase 9 local LLM](docs/phase-9-local-llm.md)
 - [Phase 10 packaging and documentation](docs/phase-10-packaging-documentation.md)
+- [Phase 11 native platform hardening](docs/phase-11-native-platform-hardening.md)
+- [Phase 12 rich editor surface](docs/phase-12-rich-editor-surface.md)
 - [Packaging and release](docs/packaging-release.md)
 - [Release hardening](docs/release-hardening.md)
 - [Update and signing strategy](docs/update-signing-strategy.md)

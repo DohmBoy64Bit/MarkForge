@@ -54,10 +54,10 @@ pnpm tauri:viewer:build
 - Code signing.
 - Auto-updater plugin and update metadata publishing.
 - Release-channel policy.
-- Windows recent-document shell integration.
 - Linux AppImage/deb/rpm artifacts and smoke evidence.
-- Native file watching, spellcheck, rich clipboard, and native PDF export.
+- Native spellcheck providers and native PDF export.
+- Richer installer-level smoke evidence for shell recent-document behavior.
 
-Post-Phase-10 release-hardening has since added Windows file association declarations and startup-file loading. See [Release Hardening](release-hardening.md).
+Post-Phase-10 release-hardening has since added Windows file association declarations, startup-file loading, native file watching, editor workspace listing/search/watch, shell recent-document updates, and rich clipboard HTML import. See [Release Hardening](release-hardening.md).
 
 Update/signing is now guarded by explicit disabled updater artifacts and [Update and Signing Strategy](update-signing-strategy.md).

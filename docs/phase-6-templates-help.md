@@ -22,8 +22,11 @@ Phase 6 starts the MarkForge-owned templates and help track without turning the 
 
 ## Deferred
 
-- Filesystem/workspace template loading.
 - Syncable or shared user-authored template libraries beyond local browser-profile storage.
 - General Markdown autocomplete for links, headings, front matter, images, tables, and code fences.
 - Full documentation website.
-- Converter-backed insertion flows.
+
+## Post-Phase-6 Updates
+
+- The editor now loads workspace templates from `.markforge/templates/*.md` in an opened workspace and folds them into template search, insertion, and `/template` or `/tpl` suggestions.
+- Converter-backed insertion flows are implemented through the Import Conversion dialog for supported converter inputs.

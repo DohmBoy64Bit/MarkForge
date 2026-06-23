@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { templateCatalog } from '@markforge/templates'
 import {
   filterTemplateSuggestions,
   findTemplateSuggestionTrigger,
   replaceTemplateTrigger,
-  resolveTemplateSuggestion
-} from './templateAutocomplete'
+  resolveTemplateSuggestion,
+  templateCatalog
+} from './index'
 
 describe('template autocomplete helpers', () => {
   it('detects /template and /tpl triggers at the start of the current line', () => {

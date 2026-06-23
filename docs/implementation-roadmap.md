@@ -35,7 +35,7 @@ Exit criteria:
 Current status:
 
 - Initial renderer contract, sanitization, front matter extraction, heading IDs, GFM-style task lists/tables/footnotes, KaTeX math, code highlighting, and renderer warnings are implemented.
-- Full conformance fixtures, full YAML/TOML parsing, diagram rendering, and theme-integrated code highlighting remain open.
+- Full conformance fixtures, full YAML/TOML parsing, broader diagram runtime coverage beyond safe Mermaid flowcharts, and theme-integrated code highlighting remain open.
 
 Exit criteria:
 
@@ -50,7 +50,7 @@ Exit criteria:
 Current status:
 
 - Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, native file watching with package polling fallback, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and package-backed built-in app theme controls.
-- Rendered search highlighting, copy code buttons, workspace/folder watching, and broader export workflows remain open.
+- Rendered search highlighting, copy code buttons, workspace/folder browsing in the viewer, and broader export workflows remain open.
 
 Exit criteria:
 
@@ -73,7 +73,7 @@ Current status:
 - Phase 6A added a compact templates/help dialog, a preference-backed Templates and Help shortcut, and template insertion through the existing source document update path.
 - Phase 6B added template variable metadata/editing, local custom templates in editor `localStorage`, and a bounded `/template`/`/tpl` source suggestion surface.
 - Phase 12A replaces the plain textarea source surface with a CodeMirror 6 Markdown editor while preserving the existing command, template, converter, Local AI, search, selection, dirty-state, and preview workflows.
-- Full preferences schema, non-format command remapping, rendered-preview search highlighting, filesystem/workspace template loading, workspace/folder watching, and rich/WYSIWYG editing beyond CodeMirror source mode remain open.
+- Full preferences schema, non-format command remapping, rendered-preview search highlighting, syncable template libraries, viewer workspace browsing, and rich/WYSIWYG editing beyond CodeMirror source mode remain open.
 
 Exit criteria:
 
@@ -94,7 +94,7 @@ Current status:
 - Phase 5F added toggle-aware Markdown transforms, H4-H6, strikethrough, duplicate selection/current-line, and shared search/replace matching for literal, case-sensitive, whole-word, and regex modes.
 - Phase 5G added a compact quick insert surface for block/insert commands and a floating selection overlay for common inline formatting in source mode.
 - Phase 12A adds the CodeMirror 6 source editor foundation with Markdown syntax highlighting, line numbers, history, line wrapping, active-line highlighting, and app command compatibility.
-- WYSIWYG/realtime editing, advanced table tools, image workflows, autocomplete, linting, formatter integration, non-format command remapping, full settings schema, workspace/folder watching, and focus/typewriter modes remain open.
+- WYSIWYG/realtime editing, advanced table tools, image workflows, broader autocomplete beyond template triggers, linting, formatter integration, non-format command remapping, full settings schema, viewer workspace browsing, and focus/typewriter modes remain open.
 
 Exit criteria:
 
@@ -111,7 +111,7 @@ Current status:
 - Phase 6A activates `packages/templates` with a typed starter catalog, search/filter helpers, simple variable application, and package tests.
 - Phase 6B adds typed variable metadata/helpers, guided variable editing in the dialog, local custom templates with create/delete/reset behavior, and a first source suggestion surface for `/template` and `/tpl`.
 - The editor exposes a compact toolbar/shortcut dialog for built-in/custom template search, live resolved preview, insertion, and a concise Markdown reference.
-- Filesystem/workspace template loading, general Markdown autocomplete, syncable user template libraries, and a docs website remain open.
+- Workspace template loading from `.markforge/templates/*.md` is implemented in the editor. General Markdown autocomplete, syncable user template libraries, and a docs website remain open.
 
 Exit criteria:
 
@@ -130,7 +130,8 @@ Current status:
 - Phase 7D adds converter activity history for supported editor conversion actions.
 - Phase 7E polishes the converter import workflow with responsive segmented controls, disabled/converting states, and stable dialog layout.
 - Phase 7F updates converter documentation, validation, and screenshot evidence.
-- DOCX, native PDF import/export, rich clipboard import, URL/article extraction, and OCR are exposed as explicit unsupported converter boundaries until file parsing, platform MIME access, network/readability policy, OCR runtime, and fixture requirements are defined.
+- The current converter set also supports rich clipboard HTML import, URL/article HTML import through a validated fetch path, and basic HTML export settings for generated metadata/TOC.
+- DOCX, native PDF import/export, and OCR are exposed as explicit unsupported converter boundaries until file parsing, runtime, and fixture requirements are defined.
 
 Exit criteria:
 
@@ -187,7 +188,7 @@ Current status:
 - Windows NSIS build commands, expected artifact paths, manual installer smoke checks, and release prerequisites are documented in `docs/packaging-release.md`.
 - `pnpm packaging:check` validates package/Tauri/Cargo version alignment, Windows NSIS targets, per-user installer mode, window baselines, CSP baseline, icons, capabilities, and root release scripts.
 - Linux packaging is started as a documented smoke plan with AppImage-first evaluation, followed by deb/rpm only after Tauri prerequisite and launch smoke checks.
-- Auto-updater publishing, code signing, shell recent-doc integration, and Linux artifacts remain later release-hardening work. Windows file associations and startup-file loading are implemented for editor and viewer.
+- Auto-updater publishing, code signing, richer shell recent-document smoke coverage, and Linux artifacts remain later release-hardening work. Windows file associations, startup-file loading, and editor Windows shell recent-document updates are implemented.
 
 Exit criteria:
 
@@ -206,6 +207,7 @@ Current status:
 
 - Editor and viewer Tauri shells use the Rust `notify` crate to watch opened Markdown/text files and emit `markforge://file-watch` events.
 - `packages/platform` prefers native file-watch adapters and keeps the polling implementation as a fallback.
+- The editor Tauri shell also exposes workspace listing, workspace search, and recursive workspace watch commands for supported Markdown/text files.
 - The editor registers Tauri `onCloseRequested` protection through `packages/platform` and walks every dirty document through the existing Save/Discard/Cancel dialog before force-destroying the window.
 - Linux artifact smoke remains blocked by missing native Linux prerequisites on the current WSL host.
 

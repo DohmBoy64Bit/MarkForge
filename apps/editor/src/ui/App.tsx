@@ -2,8 +2,20 @@ import {
   commandById,
   commandGroups,
   editorCommands,
+  filterTemplateSuggestions,
+  findTemplateSuggestionTrigger,
+  isWorkspaceTemplatePath,
+  replaceTemplateTrigger,
+  renderEditorMarkdownPreview,
+  resolveTemplateSuggestion,
+  templateCatalog,
+  workspaceTemplateFromFile,
   type EditorCommandIcon,
-  type EditorCommandId
+  type EditorCommandId,
+  type FrontMatterData,
+  type MarkdownTemplate,
+  type RenderedMarkdown,
+  type TemplateVariables
 } from '@markforge/editor-engine'
 import {
   conversionWarningStatus,
@@ -12,6 +24,8 @@ import {
   createHtmlConverter,
   createHtmlToMarkdownConverter,
   createMarkdownCleanupConverter,
+  createRichClipboardToMarkdownConverter,
+  createUrlToMarkdownConverter,
   defaultHtmlExportPath
 } from '@markforge/converters'
 import {
@@ -22,9 +36,18 @@ import {
   saveRecentFiles,
   type PersistedEditorSession
 } from '@markforge/core'
-import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
 import { runLlmAction } from '@markforge/llm'
-import { createNativeFileWatcher, createPlatformServices, type FileInfo, type NativeFileWatchPayload, type PlatformAdapters } from '@markforge/platform'
+import {
+  createNativeFileWatcher,
+  createNativeWorkspaceWatcher,
+  createPlatformServices,
+  type FileInfo,
+  type NativeFileWatchPayload,
+  type NativeWorkspaceWatchPayload,
+  type PlatformAdapters,
+  type WorkspaceFileEntry,
+  type WorkspaceSearchMatch
+} from '@markforge/platform'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -47,8 +70,10 @@ import {
   FileInput,
   FilePenLine,
   FilePlus2,
+  FileSearch,
   FileText,
   Files,
+  FolderOpen,
   Heading1,
   Heading2,
   Heading3,
@@ -67,6 +92,7 @@ import {
   Printer,
   Quote,
   Replace,
+  RefreshCcw,
   Regex,
   Save,
   Search,
@@ -84,7 +110,6 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { templateCatalog, type MarkdownTemplate, type TemplateVariables } from '@markforge/templates'
 import { CommandPalette } from './CommandPalette'
 import { ConverterDialog, type ConverterImportRequest } from './ConverterDialog'
 import { LocalAiDialog, type LocalAiRunRequest, type LocalAiRunResult } from './LocalAiDialog'
@@ -141,12 +166,6 @@ import {
   type SourceSearchMatch,
   type SourceSearchOptions
 } from './sourceSearch'
-import {
-  filterTemplateSuggestions,
-  findTemplateSuggestionTrigger,
-  replaceTemplateTrigger,
-  resolveTemplateSuggestion
-} from './templateAutocomplete'
 
 type EditorDocument = {
   id: string
@@ -171,18 +190,35 @@ type SourceSelectionState = {
   start: number
 }
 
+const nativeFileWatcher = createNativeFileWatcher({
+  listen: async (eventName, handler) => listen<NativeFileWatchPayload>(eventName, event => handler(event.payload)),
+  onError: error => console.warn(error),
+  start: path => invoke<void>('watch_text_file', { path }),
+  stop: path => invoke<void>('unwatch_text_file', { path })
+})!
+
 const platform = createPlatformServices({
   filesystem: {
     getFileInfo: path => invoke<FileInfo>('get_file_info', { path }),
+    listWorkspaceFiles: root => invoke<WorkspaceFileEntry[]>('list_workspace_files', { root }),
     readTextFile: path => invoke<string>('read_text_file', { path }),
+    searchWorkspace: (root, options) => invoke<WorkspaceSearchMatch[]>('search_workspace', {
+      root,
+      query: options.query,
+      caseSensitive: options.caseSensitive,
+      limit: options.limit
+    }),
     writeTextFile: (path, contents) => invoke<void>('write_text_file', { path, contents })
   },
-  fileWatcher: createNativeFileWatcher({
-    listen: async (eventName, handler) => listen<NativeFileWatchPayload>(eventName, event => handler(event.payload)),
-    onError: error => console.warn(error),
-    start: path => invoke<void>('watch_text_file', { path }),
-    stop: path => invoke<void>('unwatch_text_file', { path })
-  }),
+  fileWatcher: {
+    watchFile: nativeFileWatcher.watchFile,
+    watchWorkspace: createNativeWorkspaceWatcher({
+      listen: async (eventName, handler) => listen<NativeWorkspaceWatchPayload>(eventName, event => handler(event.payload)),
+      onError: error => console.warn(error),
+      start: root => invoke<void>('watch_workspace', { root }),
+      stop: root => invoke<void>('unwatch_workspace', { root })
+    })
+  },
   dialogs: {
     open,
     save
@@ -194,6 +230,9 @@ const platform = createPlatformServices({
   print: {
     print: () => window.print()
   },
+  shell: {
+    addRecentDocument: path => invoke<void>('add_recent_document', { path })
+  },
   window: createWindowLifecycleAdapter()
 })
 const browserPrintConverter = createBrowserPrintConverter(() => {
@@ -204,6 +243,8 @@ const htmlConverter = createHtmlConverter()
 const htmlToMarkdownConverter = createHtmlToMarkdownConverter()
 const csvToMarkdownTableConverter = createCsvToMarkdownTableConverter()
 const markdownCleanupConverter = createMarkdownCleanupConverter()
+const richClipboardToMarkdownConverter = createRichClipboardToMarkdownConverter()
+const urlToMarkdownConverter = createUrlToMarkdownConverter()
 
 function createWindowLifecycleAdapter(): PlatformAdapters['window'] {
   if (!hasTauriWindowMetadata()) return undefined
@@ -303,6 +344,14 @@ export function App() {
   const [clipboardStatus, setClipboardStatus] = useState('Not checked')
   const [recentFiles, setRecentFiles] = useState<string[]>(restored.recentFiles)
   const [customTemplates, setCustomTemplates] = useState<MarkdownTemplate[]>(() => loadCustomTemplates())
+  const [workspaceTemplates, setWorkspaceTemplates] = useState<MarkdownTemplate[]>([])
+  const [workspaceRoot, setWorkspaceRoot] = useState<string | null>(null)
+  const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFileEntry[]>([])
+  const [workspaceFileFilter, setWorkspaceFileFilter] = useState('')
+  const [workspaceSearchQuery, setWorkspaceSearchQuery] = useState('')
+  const [workspaceSearchMatches, setWorkspaceSearchMatches] = useState<WorkspaceSearchMatch[]>([])
+  const [workspaceStatus, setWorkspaceStatus] = useState('No workspace open')
+  const [isWorkspaceRefreshing, setIsWorkspaceRefreshing] = useState(false)
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false)
   const [isQuickInsertOpen, setIsQuickInsertOpen] = useState(false)
   const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
@@ -393,9 +442,17 @@ export function App() {
     [activeDocument]
   )
   const allTemplates = useMemo(
-    () => [...templateCatalog, ...customTemplates],
-    [customTemplates]
+    () => [...templateCatalog, ...customTemplates, ...workspaceTemplates],
+    [customTemplates, workspaceTemplates]
   )
+  const filteredWorkspaceFiles = useMemo(() => {
+    const query = workspaceFileFilter.trim().toLowerCase()
+    if (!query) return workspaceFiles.slice(0, 80)
+
+    return workspaceFiles
+      .filter(file => file.relativePath.toLowerCase().includes(query))
+      .slice(0, 80)
+  }, [workspaceFileFilter, workspaceFiles])
   const templateSuggestionTrigger = useMemo(
     () => activeDocument && sourceSelection.hasFocus
       ? findTemplateSuggestionTrigger(activeDocument.text, sourceSelection.end)
@@ -438,7 +495,82 @@ export function App() {
 
   const rememberRecentFile = useCallback((path: string) => {
     persistRecentFiles(rememberRecentFilePath(path, recentFiles))
+    void platform.shell.addRecentDocument(path).then(result => {
+      if (!result.ok && result.error.code !== 'not-supported') {
+        setStatus(result.error.message)
+      }
+    })
   }, [persistRecentFiles, recentFiles])
+
+  const refreshWorkspaceFiles = useCallback(async (root = workspaceRoot) => {
+    if (!root) return
+
+    setIsWorkspaceRefreshing(true)
+    const result = await platform.filesystem.listWorkspaceFiles(root)
+    setIsWorkspaceRefreshing(false)
+
+    if (!result.ok) {
+      setWorkspaceStatus(result.error.message)
+      return
+    }
+
+    setWorkspaceFiles(result.value)
+    const templateFiles = result.value.filter(file => isWorkspaceTemplatePath(file.relativePath))
+    const loadedTemplates: MarkdownTemplate[] = []
+
+    for (const file of templateFiles) {
+      const body = await platform.filesystem.readTextFile(file.path)
+      if (body.ok) {
+        loadedTemplates.push(workspaceTemplateFromFile({
+          body: body.value,
+          path: file.path,
+          relativePath: file.relativePath
+        }))
+      }
+    }
+
+    setWorkspaceTemplates(loadedTemplates)
+    setWorkspaceStatus(`${result.value.length} workspace files indexed; ${loadedTemplates.length} workspace templates`)
+  }, [workspaceRoot])
+
+  const openWorkspace = useCallback(async () => {
+    const selected = await platform.dialogs.openWorkspaceDirectory()
+
+    if (!selected.ok) {
+      setWorkspaceStatus(selected.error.message)
+      return
+    }
+
+    if (!selected.value) return
+
+    setWorkspaceRoot(selected.value)
+    setWorkspaceFiles([])
+    setWorkspaceTemplates([])
+    setWorkspaceSearchMatches([])
+    setWorkspaceStatus('Indexing workspace')
+    await refreshWorkspaceFiles(selected.value)
+  }, [refreshWorkspaceFiles])
+
+  const runWorkspaceSearch = useCallback(async (query = workspaceSearchQuery) => {
+    if (!workspaceRoot || !query.trim()) {
+      setWorkspaceSearchMatches([])
+      return
+    }
+
+    const result = await platform.filesystem.searchWorkspace(workspaceRoot, {
+      caseSensitive: searchOptions.caseSensitive,
+      limit: 80,
+      query
+    })
+
+    if (!result.ok) {
+      setWorkspaceStatus(result.error.message)
+      return
+    }
+
+    setWorkspaceSearchMatches(result.value)
+    setWorkspaceStatus(`${result.value.length} workspace matches`)
+  }, [searchOptions.caseSensitive, workspaceRoot, workspaceSearchQuery])
 
   const recordConverterActivity = useCallback((
     label: string,
@@ -1086,15 +1218,9 @@ export function App() {
     setIsConvertingImport(true)
 
     try {
-      const converter = request.mode === 'html-to-markdown'
-        ? htmlToMarkdownConverter
-        : csvToMarkdownTableConverter
-      const result = await converter.convert(
-        request.mode === 'html-to-markdown'
-          ? { format: request.mode, html: request.input }
-          : { format: request.mode, csv: request.input }
-      )
-      const label = request.mode === 'html-to-markdown' ? 'HTML import' : 'CSV import'
+      const converter = converterForImportMode(request.mode)
+      const result = await converter.convert(conversionRequestForImport(request.mode, request.input))
+      const label = labelForImportMode(request.mode)
 
       if (!result.ok) {
         setStatus(result.error.message)
@@ -1633,6 +1759,36 @@ export function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [documents])
 
+  useEffect(() => {
+    if (!workspaceRoot) return
+
+    const watcher = platform.watchWorkspace({ root: workspaceRoot }, event => {
+      setWorkspaceStatus(`${event.relativePath} ${event.type}`)
+      void refreshWorkspaceFiles(workspaceRoot)
+      if (workspaceSearchQuery.trim()) void runWorkspaceSearch(workspaceSearchQuery)
+    })
+
+    if (!watcher.ok) {
+      setWorkspaceStatus(watcher.error.message)
+      return
+    }
+
+    return () => watcher.value.dispose()
+  }, [refreshWorkspaceFiles, runWorkspaceSearch, workspaceRoot, workspaceSearchQuery])
+
+  useEffect(() => {
+    if (!workspaceRoot || !workspaceSearchQuery.trim()) {
+      setWorkspaceSearchMatches([])
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      void runWorkspaceSearch(workspaceSearchQuery)
+    }, 250)
+
+    return () => window.clearTimeout(timer)
+  }, [runWorkspaceSearch, workspaceRoot, workspaceSearchQuery])
+
   const selectedSearchMatch = searchMatches[selectedMatch]
   const pendingLifecycleDocument = pendingLifecycleAction
     ? documents.find(document => document.id === pendingLifecycleAction.documentId) ?? null
@@ -2068,6 +2224,79 @@ export function App() {
         <aside className="inspector" aria-label="Document inspector">
           <section>
             <div className="panelTitle">
+              <FolderOpen size={16} />
+              <h2>Workspace</h2>
+            </div>
+            <div className="workspaceActions">
+              <button type="button" onClick={() => void openWorkspace()} title="Open folder">
+                <FolderOpen size={15} aria-hidden="true" />
+                <span>Open</span>
+              </button>
+              <button
+                type="button"
+                disabled={!workspaceRoot || isWorkspaceRefreshing}
+                onClick={() => void refreshWorkspaceFiles()}
+                title="Refresh workspace"
+              >
+                <RefreshCcw size={15} aria-hidden="true" />
+                <span>Refresh</span>
+              </button>
+            </div>
+            <p className="workspaceStatus" title={workspaceRoot ?? workspaceStatus}>
+              {workspaceRoot ? workspaceRoot : workspaceStatus}
+            </p>
+            {workspaceRoot && (
+              <>
+                <label className="workspaceInput">
+                  <Search size={14} aria-hidden="true" />
+                  <input
+                    value={workspaceFileFilter}
+                    onChange={event => setWorkspaceFileFilter(event.target.value)}
+                    placeholder="Filter files"
+                    aria-label="Filter workspace files"
+                  />
+                </label>
+                <ol className="workspaceFiles">
+                  {filteredWorkspaceFiles.map(file => (
+                    <li key={file.path}>
+                      <button type="button" onClick={() => void openDocument(file.path)} title={file.path}>
+                        <FileText size={14} aria-hidden="true" />
+                        <span>{file.relativePath}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+                {workspaceFiles.length === 0 && <p className="emptyLine">No Markdown or text files</p>}
+                <label className="workspaceInput">
+                  <FileSearch size={14} aria-hidden="true" />
+                  <input
+                    value={workspaceSearchQuery}
+                    onChange={event => setWorkspaceSearchQuery(event.target.value)}
+                    placeholder="Search workspace"
+                    aria-label="Search workspace"
+                  />
+                </label>
+                {workspaceSearchMatches.length > 0 ? (
+                  <ol className="workspaceMatches">
+                    {workspaceSearchMatches.map(match => (
+                      <li key={`${match.path}-${match.line}-${match.column}`}>
+                        <button type="button" onClick={() => void openDocument(match.path)} title={match.path}>
+                          <span>{match.relativePath}:{match.line}</span>
+                          <mark>{match.preview}</mark>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                ) : workspaceSearchQuery.trim() ? (
+                  <p className="emptyLine">No workspace matches</p>
+                ) : null}
+                <p className="selectionHint">{workspaceStatus}</p>
+              </>
+            )}
+          </section>
+
+          <section>
+            <div className="panelTitle">
               <ShieldCheck size={16} />
               <h2>File Status</h2>
             </div>
@@ -2397,7 +2626,7 @@ function safeRenderMarkdown(source: string): { rendered: RenderedMarkdown; rende
 
   try {
     return {
-      rendered: renderMarkdown(source),
+      rendered: renderEditorMarkdownPreview(source),
       renderError: null
     }
   } catch (error) {
@@ -2493,6 +2722,27 @@ function templateVariablesForDocument(document: EditorDocument | null): Template
 
 function titleWithoutExtension(title: string): string {
   return title.replace(/\.(md|markdown|mdown|txt)$/i, '') || title
+}
+
+function converterForImportMode(mode: ConverterImportRequest['mode']) {
+  if (mode === 'html-to-markdown') return htmlToMarkdownConverter
+  if (mode === 'csv-to-markdown-table') return csvToMarkdownTableConverter
+  if (mode === 'rich-clipboard-to-markdown') return richClipboardToMarkdownConverter
+  return urlToMarkdownConverter
+}
+
+function conversionRequestForImport(mode: ConverterImportRequest['mode'], input: string) {
+  if (mode === 'html-to-markdown') return { format: mode, html: input } as const
+  if (mode === 'csv-to-markdown-table') return { format: mode, csv: input } as const
+  if (mode === 'rich-clipboard-to-markdown') return { format: mode, html: input } as const
+  return { format: mode, url: input } as const
+}
+
+function labelForImportMode(mode: ConverterImportRequest['mode']): string {
+  if (mode === 'html-to-markdown') return 'HTML import'
+  if (mode === 'csv-to-markdown-table') return 'CSV import'
+  if (mode === 'rich-clipboard-to-markdown') return 'Rich clipboard import'
+  return 'URL import'
 }
 
 function iconForTheme(theme: Theme): LucideIcon {

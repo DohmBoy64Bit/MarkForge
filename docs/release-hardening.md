@@ -91,17 +91,14 @@ Implemented:
 
 Remaining intentionally deferred:
 
-- Native filesystem watcher events.
-- Native close interception.
 - WYSIWYG/realtime editor surface beyond the Phase 12A CodeMirror source foundation.
-- Diagram rendering and broader Markdown conformance corpus.
-- Full native PDF/DOCX/OCR/URL conversion.
-- Filesystem/workspace template loading.
+- Broader diagram runtime coverage beyond safe Mermaid flowcharts and broader Markdown conformance corpus.
+- Full native PDF/DOCX/OCR conversion.
 - Linux artifact smoke, blocked by current host prerequisites.
 
 ## Phase 11: Native Platform Hardening
 
-Status: complete for open-file native watch events, native editor close-request protection, fallback preservation, and current Linux prerequisite audit.
+Status: complete for open-file native watch events, editor workspace listing/search/watch, native editor close-request protection, fallback preservation, and current Linux prerequisite audit.
 
 Evidence:
 
@@ -112,13 +109,14 @@ Implemented:
 - Added Rust `notify`-backed watcher commands in editor and viewer Tauri shells.
 - Editor and viewer emit `markforge://file-watch` payloads with the existing `FileInfo` shape.
 - `packages/platform` prefers native watcher adapters and keeps polling as a fallback.
+- Editor Tauri also exposes workspace directory listing, workspace content search, and recursive `markforge://workspace-watch` events for supported Markdown/text files.
+- Editor opened/saved supported files update Windows shell recent documents through the platform shell service.
 - Editor native window close requests now route through `packages/platform` and the existing dirty-document Save/Discard/Cancel dialog.
 - Browser `beforeunload` remains as a fallback guard.
 
 Remaining intentionally deferred:
 
-- Workspace/folder watching.
-- Shell recent documents.
-- Spellcheck.
+- Richer shell recent-document smoke coverage across installer/rebuilt OS contexts.
+- Native spellcheck providers beyond the CodeMirror/browser attribute and platform service contract.
 - Auto-update publishing and signing.
 - Linux artifact smoke, still blocked by host prerequisites.

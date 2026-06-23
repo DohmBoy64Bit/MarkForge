@@ -46,6 +46,12 @@ export type NormalizeCustomTemplateInput = Omit<Partial<MarkdownTemplate>, 'cate
   variables?: TemplateVariableDefinition[]
 }
 
+export type WorkspaceTemplateFile = {
+  body: string
+  path: string
+  relativePath: string
+}
+
 export type NormalizedCustomTemplateResult =
   | { errors: string[]; template: null }
   | { errors: []; template: MarkdownTemplate }
@@ -560,6 +566,26 @@ export function normalizeCustomTemplate(input: NormalizeCustomTemplateInput): No
   return { errors: [], template }
 }
 
+export function isWorkspaceTemplatePath(relativePath: string): boolean {
+  const normalized = relativePath.replace(/\\/g, '/').toLowerCase()
+  return normalized.startsWith('.markforge/templates/') && normalized.endsWith('.md')
+}
+
+export function workspaceTemplateFromFile(file: WorkspaceTemplateFile): MarkdownTemplate {
+  const title = titleFromWorkspaceTemplate(file.body, file.relativePath)
+  const id = `workspace-${slugFromPath(file.relativePath)}`
+
+  return {
+    id,
+    title,
+    category: 'documentation',
+    description: `Workspace template from ${file.relativePath}.`,
+    tags: ['workspace'],
+    body: file.body,
+    variables: deriveTemplateVariables({ body: file.body })
+  }
+}
+
 function templateSearchText(template: MarkdownTemplate): string {
   return [
     template.id,
@@ -624,4 +650,24 @@ function normalizeTemplateId(id: string | undefined, title: string): string {
     .replace(/^-+|-+$/g, '')
 
   return slug ? `custom-${slug}` : `custom-${Date.now()}`
+}
+
+function titleFromWorkspaceTemplate(body: string, relativePath: string): string {
+  const heading = body.split(/\r?\n/).find(line => /^#\s+\S/.test(line))
+  if (heading) return heading.replace(/^#\s+/, '').trim()
+
+  const fileName = relativePath.split(/[\\/]/).pop()?.replace(/\.md$/i, '') ?? 'Workspace Template'
+  return labelFromVariableName(fileName)
+}
+
+function slugFromPath(relativePath: string): string {
+  const slug = relativePath
+    .toLowerCase()
+    .replace(/\\/g, '/')
+    .replace(/^\.markforge\/templates\//, '')
+    .replace(/\.md$/i, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return slug || 'template'
 }

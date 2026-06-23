@@ -10,6 +10,10 @@ const requiredFiles = [
   'docs/audits/documentation-code-drift-debt-audit.md',
   'docs/audits/drift-debt-remediation-report.md',
   'docs/audits/final-pre-next-phase-implementation-report.md',
+  'docs/changelogs/final-loose-ends-implementation-changelog.md',
+  'docs/changelogs/final-findings-fix-execution-changelog.md',
+  'docs/final-findings-fix-execution-report.md',
+  'docs/final-loose-ends-truthfulness-report.md',
   'docs/implementation-roadmap.md',
   'docs/marktext-parity-matrix.md',
   'docs/phase-4-editor-shell.md',
@@ -69,6 +73,16 @@ const staleMarkers = [
     file: 'docs/developer-documentation.md',
     marker: 'Implementation has progressed through Phase 6B',
     message: 'Developer documentation implementation state must not stop at Phase 6B.'
+  },
+  {
+    file: 'README.md',
+    marker: 'implementation has progressed through Phase 10 packaging/documentation',
+    message: 'README current status must not stop at Phase 10.'
+  },
+  {
+    file: 'docs/developer-documentation.md',
+    marker: 'Implementation has progressed through Phase 10 packaging/documentation',
+    message: 'Developer documentation implementation state must not stop at Phase 10.'
   }
 ]
 

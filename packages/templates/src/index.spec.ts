@@ -6,9 +6,11 @@ import {
   extractTemplatePlaceholders,
   filterTemplates,
   getTemplateById,
+  isWorkspaceTemplatePath,
   mergeTemplateVariables,
   normalizeCustomTemplate,
   searchTemplates,
+  workspaceTemplateFromFile,
   templateCatalog,
   templateCategories
 } from './index'
@@ -139,6 +141,25 @@ describe('@markforge/templates', () => {
       tags: ['ops', 'incident']
     })
     expect(result.template?.variables?.map(variable => variable.name)).toEqual(['service', 'owner'])
+  })
+
+  it('recognizes and normalizes workspace template files', () => {
+    expect(isWorkspaceTemplatePath('.markforge/templates/runbook.md')).toBe(true)
+    expect(isWorkspaceTemplatePath('docs/runbook.md')).toBe(false)
+
+    const template = workspaceTemplateFromFile({
+      body: '# Release Runbook\n\nShip {{version}} with {{owner}}.',
+      path: 'C:/repo/.markforge/templates/runbook.md',
+      relativePath: '.markforge/templates/runbook.md'
+    })
+
+    expect(template).toMatchObject({
+      id: 'workspace-runbook',
+      title: 'Release Runbook',
+      category: 'documentation',
+      tags: ['workspace']
+    })
+    expect(template.variables?.map(variable => variable.name)).toEqual(['version', 'owner'])
   })
 
   it('rejects invalid custom templates with actionable errors', () => {

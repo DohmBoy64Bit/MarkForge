@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createNativeFileWatcher, createPlatformServices } from './index'
+import { createNativeFileWatcher, createNativeWorkspaceWatcher, createPlatformServices } from './index'
 
 describe('@markforge/platform', () => {
   it('wraps filesystem, dialog, clipboard, and print adapters in typed results', async () => {
@@ -45,6 +45,98 @@ describe('@markforge/platform', () => {
     expect(save).toHaveBeenCalledWith({
       defaultPath: 'draft.html',
       filters: [{ name: 'HTML document', extensions: ['html', 'htm'] }]
+    })
+  })
+
+  it('opens workspace directories and exposes sorted workspace file listings', async () => {
+    const open = vi.fn(async () => 'C:/workspace')
+    const services = createPlatformServices({
+      dialogs: {
+        open
+      },
+      filesystem: {
+        getFileInfo: async () => ({ exists: true, modifiedMs: 1, len: 1 }),
+        listWorkspaceFiles: async () => [
+          {
+            extension: 'md',
+            len: 10,
+            modifiedMs: 2,
+            name: 'b.md',
+            path: 'C:/workspace/b.md',
+            relativePath: 'b.md'
+          },
+          {
+            extension: 'md',
+            len: 10,
+            modifiedMs: 2,
+            name: 'a.md',
+            path: 'C:/workspace/docs/a.md',
+            relativePath: 'docs/a.md'
+          }
+        ],
+        readTextFile: async () => 'doc'
+      }
+    })
+
+    await expect(services.dialogs.openWorkspaceDirectory()).resolves.toEqual({ ok: true, value: 'C:/workspace' })
+    expect(open).toHaveBeenCalledWith({ directory: true, multiple: false })
+    await expect(services.filesystem.listWorkspaceFiles('C:/workspace')).resolves.toEqual({
+      ok: true,
+      value: [
+        {
+          extension: 'md',
+          len: 10,
+          modifiedMs: 2,
+          name: 'b.md',
+          path: 'C:/workspace/b.md',
+          relativePath: 'b.md'
+        },
+        {
+          extension: 'md',
+          len: 10,
+          modifiedMs: 2,
+          name: 'a.md',
+          path: 'C:/workspace/docs/a.md',
+          relativePath: 'docs/a.md'
+        }
+      ]
+    })
+  })
+
+  it('searches workspaces with normalized result limits', async () => {
+    const searchWorkspace = vi.fn(async () => [
+      {
+        column: 4,
+        line: 2,
+        path: 'C:/workspace/readme.md',
+        preview: '## Alpha',
+        relativePath: 'readme.md'
+      }
+    ])
+    const services = createPlatformServices({
+      filesystem: {
+        getFileInfo: async () => ({ exists: true, modifiedMs: 1, len: 1 }),
+        readTextFile: async () => 'doc',
+        searchWorkspace
+      }
+    })
+
+    await expect(services.filesystem.searchWorkspace('C:/workspace', { query: 'alpha', limit: 9999 })).resolves.toEqual({
+      ok: true,
+      value: [
+        {
+          column: 4,
+          line: 2,
+          path: 'C:/workspace/readme.md',
+          preview: '## Alpha',
+          relativePath: 'readme.md'
+        }
+      ]
+    })
+    expect(searchWorkspace).toHaveBeenCalledWith('C:/workspace', { query: 'alpha', limit: 500 })
+    await expect(services.filesystem.searchWorkspace('C:/workspace', { query: '   ' })).resolves.toEqual({
+      ok: true,
+      value: []
     })
   })
 
@@ -94,6 +186,50 @@ describe('@markforge/platform', () => {
     await expect(services.filesystem.getFileInfo('note.md')).resolves.toEqual({
       ok: true,
       value: { exists: true, modifiedMs: 42, len: 8 }
+    })
+  })
+
+  it('wraps shell recent documents, spellcheck, and updater status adapters', async () => {
+    const addRecentDocument = vi.fn(async () => undefined)
+    const checkText = vi.fn(async () => [{ start: 0, end: 5, word: 'teh', suggestion: 'the' }])
+    const getStatus = vi.fn(async () => ({ currentVersion: '1.0.0', status: 'current' as const }))
+    const services = createPlatformServices({
+      shell: { addRecentDocument },
+      spellcheck: { checkText },
+      updater: { getStatus }
+    })
+
+    await expect(services.shell.addRecentDocument('C:/docs/readme.md')).resolves.toEqual({ ok: true, value: undefined })
+    await expect(services.spellcheck.checkText('teh doc')).resolves.toEqual({
+      ok: true,
+      value: [{ start: 0, end: 5, word: 'teh', suggestion: 'the' }]
+    })
+    await expect(services.updater.getStatus()).resolves.toEqual({
+      ok: true,
+      value: { currentVersion: '1.0.0', status: 'current' }
+    })
+    expect(addRecentDocument).toHaveBeenCalledWith('C:/docs/readme.md')
+    expect(checkText).toHaveBeenCalledWith('teh doc', undefined)
+  })
+
+  it('reports disabled updater status explicitly when no updater adapter is configured', async () => {
+    const services = createPlatformServices({})
+
+    await expect(services.updater.getStatus()).resolves.toEqual({
+      ok: true,
+      value: {
+        channel: 'disabled',
+        reason: 'Updater adapter is not configured for this build.',
+        status: 'disabled'
+      }
+    })
+    await expect(services.shell.addRecentDocument('note.md')).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'not-supported' }
+    })
+    await expect(services.spellcheck.checkText('teh')).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'not-supported' }
     })
   })
 
@@ -151,6 +287,47 @@ describe('@markforge/platform', () => {
 
     expect(result.ok).toBe(true)
     expect(watchFile).toHaveBeenCalledOnce()
+  })
+
+  it('uses native workspace watchers when available', async () => {
+    let handler: ((payload: { path: string; relativePath: string; root: string; type: 'changed' | 'created' | 'missing' }) => void) | null = null
+    const unlisten = vi.fn()
+    const start = vi.fn(async () => undefined)
+    const stop = vi.fn(async () => undefined)
+    const watchWorkspace = createNativeWorkspaceWatcher({
+      listen: async (_eventName, nextHandler) => {
+        handler = nextHandler
+        return unlisten
+      },
+      start,
+      stop
+    })
+    const services = createPlatformServices({
+      fileWatcher: {
+        watchFile: vi.fn(() => ({
+          ok: true as const,
+          value: { dispose: vi.fn() }
+        })),
+        watchWorkspace
+      }
+    })
+    const events: string[] = []
+
+    const result = services.watchWorkspace({ root: 'C:/workspace' }, event => events.push(event.relativePath))
+
+    expect(result.ok).toBe(true)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    handler?.({ root: 'C:/other', path: 'C:/other/a.md', relativePath: 'a.md', type: 'changed' })
+    handler?.({ root: 'C:/workspace', path: 'C:/workspace/a.md', relativePath: 'a.md', type: 'changed' })
+
+    expect(start).toHaveBeenCalledWith('C:/workspace')
+    expect(events).toEqual(['a.md'])
+
+    if (result.ok) result.value.dispose()
+    expect(unlisten).toHaveBeenCalledOnce()
+    expect(stop).toHaveBeenCalledWith('C:/workspace')
   })
 
   it('adapts native file watch events and stops native watching on dispose', async () => {

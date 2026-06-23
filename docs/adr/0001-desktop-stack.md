@@ -29,7 +29,7 @@ Phase 1 validated enough of the Tauri v2 baseline to continue implementation on 
 - The team must maintain Rust platform commands for desktop integration.
 - Phase 1 validated the editor shell, native file dialogs, local file read/write, menu accelerators, clipboard smoke controls, metadata polling, browser print foundation, and Windows x64 NSIS installer creation.
 - Phase 10 added a repeatable packaging validation gate and release documentation for editor/viewer Windows NSIS installers.
-- Later phases must still validate rich clipboard formats, image paste, workspace/folder watching, spellcheck, export/PDF workflows, and final renderer hardening.
+- Later phases must still validate image paste, spellcheck providers, export/PDF workflows, broader cross-platform workspace stress behavior, and final renderer hardening. Rich clipboard HTML import, URL import, and editor workspace listing/search/watch now have package/app implementations.
 - If a remaining native-integration gate fails in Tauri, evaluate a targeted Rust/plugin implementation before reconsidering Electron.
 
 ## Validation Status
@@ -49,11 +49,11 @@ Validated in the current baseline:
 
 Still open:
 
-- Open folder and workspace/folder watching.
+- Editor open-folder workspace listing, search, and recursive watch behavior.
 - Clipboard read/write for HTML, rich text, and images.
 - Native menus and configurable keyboard shortcuts.
 - Export/PDF pipeline beyond browser print.
 - Spellcheck.
 - Code signing, auto-updater publishing, and Linux package artifacts.
 
-Post-Phase-10 release hardening added Windows file association declarations, startup-file loading for Markdown/text files, native open-file watching, editor close-request protection, and the Phase 12A CodeMirror source editor foundation.
+Post-Phase-10 release hardening added Windows file association declarations, startup-file loading for Markdown/text files, native open-file watching, editor workspace listing/search/watch, editor shell recent-document updates, editor close-request protection, and the Phase 12A CodeMirror source editor foundation.

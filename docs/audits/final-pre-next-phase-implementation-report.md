@@ -14,13 +14,13 @@ This pass implemented the safest high-value architecture slice from the drift/de
 | DW-04 | Deferred | Partial | Converter contract, HTML converter, browser-print converter implemented. | Converter README/report/app print source. | Converter tests. |
 | DW-05 | Deferred | Partial | Theme engine registry/tokens/mapping implemented. | Architecture/theme docs. | Theme tests. |
 | DW-06 | Deferred | Partial | LLM provider boundary, prompt templates, mock provider, privacy guard implemented. | LLM docs/architecture. | LLM tests. |
-| DW-07 | Deferred | Deferred | Filesystem/workspace templates not implemented. | Template docs/source. | Existing tests. |
+| DW-07 | Deferred | Partial | Workspace templates are implemented for `.markforge/templates/*.md`; broader autocomplete and syncable libraries remain open. | Template/editor-engine/app source and docs. | Template/editor-engine tests. |
 | DW-08 | Fixed | Fixed expanded | Docs-check expanded for package structure. | Script/package inventory. | Docs-check. |
 | DW-09 | Deferred | Deferred | Packaging work not implemented. | Tauri configs/docs. | Builds. |
 | AD-01 | Partial | Complete | All required packages now real. | Package inventory. | Package tests/docs-check. |
 | AD-02 | Deferred | Partial | Core/platform/converter ownership reduced app responsibility. | App source before/after. | Tests/builds. |
 | AD-03 | Partial | Partial | New edges added; remaining editor direct imports documented. | Package manifests/source. | Builds/docs-check. |
-| AD-04 | Deferred | Partial | Theme engine real; app theme UI not fully migrated. | Theme package/app CSS. | Theme tests. |
+| AD-04 | Deferred | Partial | Theme engine real; Phase 8F migrates editor/viewer app-visible themes to package-owned tokens and theme lists. | Theme package/app CSS; Phase 8 docs. | Theme tests and editor preference tests. |
 | ID-01 | Fixed | Fixed | Previous remediation preserved. | Docs. | Docs-check. |
 | ID-02 | Fixed | Fixed | Previous remediation preserved. | Tests/parity doc. | Test suite. |
 | ID-03 | Fixed | Fixed | Previous remediation preserved. | Phase docs. | Docs-check. |
@@ -57,7 +57,7 @@ Actual package edges added or confirmed:
 - `packages/theme-engine -> packages/shared`.
 - `packages/llm -> packages/shared`.
 
-Remaining differences: `apps/editor` still imports `packages/markdown-engine` and `packages/templates` directly. This is documented as temporary drift because moving preview/template orchestration behind editor-engine/core requires a broader editor-engine/template ownership pass.
+Remaining differences: `apps/editor` no longer imports `packages/markdown-engine` or `packages/templates` directly; preview/template APIs flow through `packages/editor-engine`. App shells still own React orchestration, workflow dialogs, search state, and Tauri adapter construction.
 
 ## App Responsibility Reduction
 
@@ -88,11 +88,11 @@ Updated package READMEs for `core`, `platform`, `ui`, `shared`, `converters`, `t
 ## Remaining Unsupported Capabilities
 
 - Native file watching and native close interception: Phase 11 implements open-file native watch events and editor dirty-document Tauri close-request interception; browser `beforeunload` and polling remain fallback behavior.
-- Full native PDF/DOCX/OCR/CSV/URL conversion: current app supports browser print and sanitized HTML conversion only.
-- Ollama, LM Studio, and llama.cpp runtime adapters: provider boundaries are implemented, but endpoint protocols and UI invocation flows are not defined enough to call them.
+- Full native PDF/DOCX/OCR conversion: current app supports browser print, sanitized HTML conversion/export, CSV table import, rich clipboard HTML import, URL/article HTML import, and basic HTML export settings.
+- Local AI streaming, persisted provider profiles, model benchmarking guidance, and broader AI actions remain future work; Ollama and OpenAI-compatible local adapters for LM Studio/llama.cpp-style servers are implemented for the Phase 9 baseline.
 - CodeMirror 6 and WYSIWYG/realtime editing: Phase 12A replaces the textarea source surface with CodeMirror 6; WYSIWYG/realtime editing remains deferred.
-- Filesystem/workspace templates: current behavior is built-in templates plus local custom templates.
-- Linux packaging/file associations/updates/shell integration/spellcheck: Tauri release contracts need a dedicated packaging pass.
+- Workspace templates: current behavior includes built-in, local custom, and workspace templates under `.markforge/templates/*.md`; syncable libraries and broader autocomplete remain open.
+- Linux packaging/updates/signing/native spellcheck: Tauri release contracts need a dedicated packaging pass.
 - Code splitting: release hardening Milestone 5 split renderer chunks and tightened the JavaScript asset budget to 500 KiB. Route-level lazy loading can still be considered if future feature work grows app chunks.
 
 ## Final Double-Check

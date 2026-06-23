@@ -1,4 +1,4 @@
-import { normalizeCustomTemplate, type MarkdownTemplate, type NormalizeCustomTemplateInput } from '@markforge/templates'
+import { normalizeCustomTemplate, type MarkdownTemplate, type NormalizeCustomTemplateInput } from '@markforge/editor-engine'
 
 export const customTemplatesStorageKey = 'markforge.editor.customTemplates.v1'
 

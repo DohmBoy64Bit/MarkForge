@@ -1,8 +1,12 @@
-import { ArrowDownToLine, Code2, FileCode, Table2, X } from 'lucide-react'
+import { ArrowDownToLine, Clipboard, Code2, FileCode, Link, Table2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { labelForConverterInsertMode, type ConverterInsertMode } from './converterWorkflow'
 
-export type ConverterImportMode = 'csv-to-markdown-table' | 'html-to-markdown'
+export type ConverterImportMode =
+  | 'csv-to-markdown-table'
+  | 'html-to-markdown'
+  | 'rich-clipboard-to-markdown'
+  | 'url-to-markdown'
 
 export type ConverterImportRequest = {
   input: string
@@ -31,6 +35,16 @@ const converterModes: Array<{
     id: 'csv-to-markdown-table',
     label: 'CSV',
     description: 'CSV to table'
+  },
+  {
+    id: 'rich-clipboard-to-markdown',
+    label: 'Clipboard',
+    description: 'Rich clipboard HTML to Markdown'
+  },
+  {
+    id: 'url-to-markdown',
+    label: 'URL',
+    description: 'URL/article to Markdown'
   }
 ]
 
@@ -121,7 +135,7 @@ export function ConverterDialog({
                   title={item.description}
                   aria-label={item.description}
                 >
-                  {item.id === 'html-to-markdown' ? <FileCode size={16} /> : <Table2 size={16} />}
+                  {iconForMode(item.id)}
                   <span>{item.label}</span>
                 </button>
               ))}
@@ -145,12 +159,12 @@ export function ConverterDialog({
           </div>
 
           <label className="converterSource">
-            <span>{mode === 'html-to-markdown' ? 'HTML Source' : 'CSV Source'}</span>
+            <span>{inputLabelForMode(mode)}</span>
             <textarea
               ref={inputRef}
               value={input}
               onChange={event => setInput(event.target.value)}
-              placeholder={mode === 'html-to-markdown' ? '<h1>Release notes</h1>' : 'Name,Status\nAlpha,Ready'}
+              placeholder={placeholderForMode(mode)}
               spellCheck={false}
             />
           </label>
@@ -181,4 +195,25 @@ function insertModeTitle(mode: ConverterInsertMode): string {
   if (mode === 'replace-selection') return 'Replace selected text'
   if (mode === 'insert-at-cursor') return 'Insert at cursor'
   return 'Append to document'
+}
+
+function iconForMode(mode: ConverterImportMode) {
+  if (mode === 'html-to-markdown') return <FileCode size={16} />
+  if (mode === 'csv-to-markdown-table') return <Table2 size={16} />
+  if (mode === 'rich-clipboard-to-markdown') return <Clipboard size={16} />
+  return <Link size={16} />
+}
+
+function inputLabelForMode(mode: ConverterImportMode): string {
+  if (mode === 'html-to-markdown') return 'HTML Source'
+  if (mode === 'csv-to-markdown-table') return 'CSV Source'
+  if (mode === 'rich-clipboard-to-markdown') return 'Clipboard HTML'
+  return 'Article URL'
+}
+
+function placeholderForMode(mode: ConverterImportMode): string {
+  if (mode === 'html-to-markdown') return '<h1>Release notes</h1>'
+  if (mode === 'csv-to-markdown-table') return 'Name,Status\nAlpha,Ready'
+  if (mode === 'rich-clipboard-to-markdown') return '<meta charset="utf-8"><p>Copied rich text</p>'
+  return 'https://example.com/article'
 }

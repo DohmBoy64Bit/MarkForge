@@ -112,7 +112,7 @@ Phase 5D adds a compact Preferences dialog and moves existing editor shortcut di
 - Non-format command remapping and platform-native/global shortcut registration.
 - Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.
 - Richer line transformer menus beyond the duplicate command.
-- Workspace/folder watching beyond open-file native watch events.
+- Viewer workspace browsing and broader cross-platform workspace stress testing beyond the editor workspace listing/search/watch implementation.
 
 ## Verification
 

@@ -8,7 +8,7 @@ import {
   type MarkdownTemplate,
   type TemplateCategory,
   type TemplateVariables
-} from '@markforge/templates'
+} from '@markforge/editor-engine'
 import {
   BookOpenText,
   CornerDownLeft,

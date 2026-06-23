@@ -27,20 +27,30 @@ export type ConverterMetadata = {
 
 export type ConversionWarning = {
   code:
+    | 'export-settings-applied'
     | 'host-print-required'
     | 'lossy-conversion'
+    | 'network-fetch'
     | 'normalized-markdown'
     | 'unsupported-capability'
     | 'unsupported-format'
   message: string
 }
 
+export type HtmlExportSettings = {
+  includeGeneratedMeta?: boolean
+  includeTableOfContents?: boolean
+  title?: string
+}
+
 export type ConversionRequest = CancellableOptions & {
   csv?: string
+  exportSettings?: HtmlExportSettings
   format: ConversionFormat
   html?: string
   markdown?: string
   title?: string
+  url?: string
 }
 
 export type ConversionResult = {
@@ -86,6 +96,18 @@ export const markdownCleanupConverterMetadata: ConverterMetadata = {
   capabilities: [{ format: 'markdown-cleanup' }]
 }
 
+export const richClipboardToMarkdownConverterMetadata: ConverterMetadata = {
+  id: 'rich-clipboard-markdown',
+  label: 'Rich Clipboard to Markdown',
+  capabilities: [{ format: 'rich-clipboard-to-markdown' }]
+}
+
+export const urlToMarkdownConverterMetadata: ConverterMetadata = {
+  id: 'url-markdown',
+  label: 'URL/Article to Markdown',
+  capabilities: [{ format: 'url-to-markdown' }]
+}
+
 export function createHtmlConverter(): MarkdownConverter {
   return {
     metadata: htmlConverterMetadata,
@@ -100,10 +122,13 @@ export function createHtmlConverter(): MarkdownConverter {
       if (typeof markdown !== 'string') return err('invalid-input', 'Markdown input is required.')
 
       const rendered = renderMarkdown(markdown)
+      const exportSettings = request.exportSettings ?? {}
       return ok({
         format: 'html',
-        html: wrapHtmlDocument(rendered.html, request.title ?? 'MarkForge document'),
-        warnings: []
+        html: wrapHtmlDocument(rendered.html, exportSettings.title ?? request.title ?? 'MarkForge document', exportSettings, rendered.headings),
+        warnings: Object.values(exportSettings).some(value => value)
+          ? [{ code: 'export-settings-applied', message: 'HTML export settings were applied.' }]
+          : []
       })
     }
   }
@@ -211,8 +236,71 @@ export function createMarkdownCleanupConverter(): MarkdownConverter {
   }
 }
 
+export function createRichClipboardToMarkdownConverter(): MarkdownConverter {
+  return {
+    metadata: richClipboardToMarkdownConverterMetadata,
+    canConvert(format) {
+      return format === 'rich-clipboard-to-markdown'
+    },
+    async convert(request) {
+      if (request.signal?.aborted) return err('cancelled', 'Conversion was cancelled.')
+      if (request.format !== 'rich-clipboard-to-markdown') return unsupportedFormat(request.format)
+      if (typeof request.html !== 'string' || !request.html.trim()) {
+        return err('invalid-input', 'Rich clipboard HTML input is required.')
+      }
+
+      const service = await createTurndownService()
+      return ok({
+        format: 'rich-clipboard-to-markdown',
+        markdown: normalizeConvertedMarkdown(service.turndown(request.html)),
+        warnings: [
+          {
+            code: 'lossy-conversion',
+            message: 'Rich clipboard conversion preserves text and common structure, but inline styling and unsupported clipboard metadata are dropped.'
+          }
+        ]
+      })
+    }
+  }
+}
+
+export type UrlHtmlFetcher = (url: string, options?: CancellableOptions) => Promise<string>
+
+export function createUrlToMarkdownConverter(fetchHtml: UrlHtmlFetcher = defaultFetchHtml): MarkdownConverter {
+  return {
+    metadata: urlToMarkdownConverterMetadata,
+    canConvert(format) {
+      return format === 'url-to-markdown'
+    },
+    async convert(request) {
+      if (request.signal?.aborted) return err('cancelled', 'Conversion was cancelled.')
+      if (request.format !== 'url-to-markdown') return unsupportedFormat(request.format)
+
+      const parsed = parseImportUrl(request.url)
+      if (!parsed.ok) return parsed
+
+      const html = await fetchHtml(parsed.value, { signal: request.signal })
+      const service = await createTurndownService()
+      return ok({
+        format: 'url-to-markdown',
+        markdown: normalizeConvertedMarkdown(service.turndown(html)),
+        warnings: [
+          {
+            code: 'network-fetch',
+            message: `Fetched HTML from ${parsed.value} before converting it to Markdown.`
+          },
+          {
+            code: 'lossy-conversion',
+            message: 'URL import preserves article text and common structure, but site scripts, styling, and interactive widgets are dropped.'
+          }
+        ]
+      })
+    }
+  }
+}
+
 export function createUnsupportedConverter(
-  format: Exclude<ConversionFormat, 'browser-print' | 'csv-to-markdown-table' | 'html' | 'html-to-markdown' | 'markdown-cleanup'>,
+  format: Exclude<ConversionFormat, 'browser-print' | 'csv-to-markdown-table' | 'html' | 'html-to-markdown' | 'markdown-cleanup' | 'rich-clipboard-to-markdown' | 'url-to-markdown'>,
   label: string,
   reason: string
 ): MarkdownConverter {
@@ -229,7 +317,7 @@ export function createUnsupportedConverter(
       if (request.signal?.aborted) return err('cancelled', 'Conversion was cancelled.')
       if (request.format !== format) return unsupportedFormat(request.format)
 
-      return err('not-supported', `${label} is not implemented in Phase 7A.`, { reason })
+      return err('not-supported', `${label} is explicitly unsupported in the current converter set.`, { reason })
     }
   }
 }
@@ -243,10 +331,10 @@ export function createPhase7AConverters(): MarkdownConverter[] {
     createHtmlToMarkdownConverter(),
     createCsvToMarkdownTableConverter(),
     createMarkdownCleanupConverter(),
+    createRichClipboardToMarkdownConverter(),
+    createUrlToMarkdownConverter(),
     createUnsupportedConverter('docx-to-markdown', 'DOCX to Markdown', 'DOCX import needs file parsing and fixture coverage before it can be supported.'),
     createUnsupportedConverter('pdf-to-markdown', 'PDF to Markdown', 'PDF import needs an explicit text/layout extraction strategy and fixtures.'),
-    createUnsupportedConverter('rich-clipboard-to-markdown', 'Rich Clipboard to Markdown', 'Rich clipboard import needs platform clipboard MIME access.'),
-    createUnsupportedConverter('url-to-markdown', 'URL/Article to Markdown', 'URL import needs network/readability policy and user trust decisions.'),
     createUnsupportedConverter('ocr-to-markdown', 'Image OCR to Markdown', 'OCR import needs an OCR engine decision and model/runtime packaging plan.')
   ]
 }
@@ -383,19 +471,64 @@ function unsupportedFormat(format: ConversionFormat): Result<never> {
   return err('not-supported', `Converter does not support ${format}.`, { format })
 }
 
-function wrapHtmlDocument(body: string, title: string): string {
+function wrapHtmlDocument(
+  body: string,
+  title: string,
+  settings: HtmlExportSettings = {},
+  headings: Array<{ id: string; level: number; text: string }> = []
+): string {
+  const toc = settings.includeTableOfContents && headings.length > 0
+    ? [
+        '<nav aria-label="Table of contents">',
+        '<h2>Contents</h2>',
+        '<ol>',
+        ...headings.map(heading => `<li data-level="${heading.level}"><a href="#${escapeHtml(heading.id)}">${escapeHtml(heading.text)}</a></li>`),
+        '</ol>',
+        '</nav>'
+      ].join('')
+    : ''
+  const generated = settings.includeGeneratedMeta
+    ? `<meta name="generator" content="MarkForge">`
+    : ''
+
   return [
     '<!doctype html>',
     '<html>',
     '<head>',
     '<meta charset="utf-8">',
+    generated,
     `<title>${escapeHtml(title)}</title>`,
     '</head>',
     '<body>',
+    toc,
     body,
     '</body>',
     '</html>'
   ].join('')
+}
+
+function parseImportUrl(value: string | undefined): Result<string> {
+  if (!value?.trim()) return err('invalid-input', 'URL input is required.')
+
+  try {
+    const parsed = new URL(value.trim())
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return err('invalid-input', 'URL import supports only http and https URLs.')
+    }
+
+    return ok(parsed.toString())
+  } catch {
+    return err('invalid-input', 'URL input must be a valid absolute URL.')
+  }
+}
+
+async function defaultFetchHtml(url: string, options?: CancellableOptions): Promise<string> {
+  if (typeof fetch !== 'function') throw new Error('URL import requires a fetch implementation.')
+
+  const response = await fetch(url, { signal: options?.signal })
+  if (!response.ok) throw new Error(`URL fetch failed with HTTP ${response.status}.`)
+
+  return response.text()
 }
 
 function escapeHtml(value: string): string {
