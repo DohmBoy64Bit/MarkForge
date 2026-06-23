@@ -6,12 +6,12 @@ const budgets = [
   {
     app: 'editor',
     directory: 'apps/editor/dist/assets',
-    maxJavaScriptBytes: 800 * 1024
+    maxJavaScriptBytes: 500 * 1024
   },
   {
     app: 'viewer',
     directory: 'apps/viewer/dist/assets',
-    maxJavaScriptBytes: 725 * 1024
+    maxJavaScriptBytes: 500 * 1024
   }
 ]
 

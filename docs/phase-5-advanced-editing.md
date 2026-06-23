@@ -49,7 +49,7 @@ Phase 5E adds the first reliability pass around local documents.
 - Save closes only after a successful write; Save As keeps the tab open if the picker is canceled or the write fails.
 - Discard closes the dirty tab, or reloads from disk for dirty reload confirmations.
 - Cancel leaves tab state unchanged and restores focus.
-- External-change polling now checks every open file-backed document rather than only the active file.
+- External-change watching now checks every open file-backed document rather than only the active file through the platform polling watcher abstraction.
 - Missing files are distinguished from modified files in the tab, preview notice, and File Status inspector.
 - Keep local clears the current external-change notice by adopting the latest observed metadata as the new baseline; a missing file stays quiet while still missing and alerts again if it reappears.
 

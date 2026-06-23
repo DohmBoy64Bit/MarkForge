@@ -73,6 +73,28 @@ Current blocker:
 
 - The available WSL Ubuntu host is missing native Linux Node.js, Rust/Cargo, WebKitGTK, and JavaScriptCoreGTK packages. Sudo requires interactive authentication, so those prerequisites could not be installed non-interactively in this pass.
 
-## Remaining Milestones
+## Milestone 5: Deferred Feature and Drift/Debt Cleanup
 
-- Milestone 5: deferred feature implementation and final drift/debt audit.
+Status: complete for the release-hardening cleanup slice and final audit.
+
+Evidence:
+
+- [Release hardening final drift audit - 2026-06-22](audits/release-hardening-final-drift-audit-2026-06-22.md)
+
+Implemented:
+
+- Split editor and viewer renderer bundles into app, React, icon, and markdown/rendering chunks.
+- Tightened `pnpm bundle:check` to a 500 KiB JavaScript asset ceiling per emitted asset.
+- Migrated editor/viewer file-change detection through the package-backed platform watcher instead of app-owned timers.
+- Added watcher regression coverage for change, missing, and dispose behavior.
+- Updated current-state docs for bundle and watcher behavior.
+
+Remaining intentionally deferred:
+
+- Native filesystem watcher events.
+- Native close interception.
+- Full CodeMirror/WYSIWYG editor surface.
+- Diagram rendering and broader Markdown conformance corpus.
+- Full native PDF/DOCX/OCR/URL conversion.
+- Filesystem/workspace template loading.
+- Linux artifact smoke, blocked by current host prerequisites.

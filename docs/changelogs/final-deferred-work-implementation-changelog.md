@@ -35,7 +35,7 @@ Scope: architecture-completion slice after `docs/audits/drift-debt-remediation-r
 | TD-02 | Deferred | Partially completed | Core now owns editor preferences, session restore, recent files, and storage helpers. | App localStorage source. | Core/app tests. | Custom templates remain app-local. |
 | TD-03 | Fixed | Fixed / expanded | Docs-check remains real and now validates new package boundaries. | Script/package inventory. | `pnpm docs:check`. | None introduced. |
 | TD-04 | Deferred | Partially completed | Browser print now runs through converter-backed path in both apps. | App print source. | Converter tests/builds. | Native PDF/export options unsupported. |
-| TD-05 | Deferred | Partially completed | Added `pnpm bundle:check` with per-app JS budgets and validated current build output. | Build output assets. | `pnpm bundle:check`. | Vite chunk-size warnings remain; code splitting still needed. |
+| TD-05 | Deferred | Completed by release hardening Milestone 5 | Added `pnpm bundle:check`; release hardening later split app, React, icon, and markdown/rendering chunks and tightened the JavaScript asset budget to 500 KiB. | Build output assets; release-hardening audit. | `pnpm build:editor`, `pnpm build:viewer`, `pnpm bundle:check`. | Route-level lazy loading can still be considered if future features grow the app chunks. |
 
 ## Files Changed By This Pass
 
@@ -82,4 +82,4 @@ Scope: architecture-completion slice after `docs/audits/drift-debt-remediation-r
 
 ## Unsupported Capabilities
 
-Unsupported capabilities are explicit package results or documented remaining work: native file watching, native close interception, shell links, spellcheck, auto-update publishing, Linux package artifacts, full native PDF/DOCX/OCR/CSV/URL conversion, local AI streaming and persisted provider profiles, CodeMirror 6, WYSIWYG/realtime editing, filesystem/workspace templates, and broader code splitting.
+Unsupported capabilities are explicit package results or documented remaining work: native file watching, native close interception, shell links, spellcheck, auto-update publishing, Linux package artifacts, full native PDF/DOCX/OCR/CSV/URL conversion, local AI streaming and persisted provider profiles, CodeMirror 6, WYSIWYG/realtime editing, and filesystem/workspace templates. Broader route-level lazy loading remains optional future optimization rather than current chunk-warning debt.

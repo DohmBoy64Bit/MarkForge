@@ -28,7 +28,7 @@ cargo check
 pnpm docs:check
 ```
 
-`pnpm build:editor` currently reports a Vite chunk-size warning. That is expected after adding KaTeX and syntax highlighting. A later performance slice should split the markdown engine/highlighter path or lazy-load heavier renderers.
+The renderer bundles are split into app, React, icon, and markdown/rendering chunks. `pnpm bundle:check` enforces a 500 KiB JavaScript asset ceiling so markdown/highlighter growth does not silently reintroduce the previous Vite chunk-size warning.
 
 ## Still Deferred
 

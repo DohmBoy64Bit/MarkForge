@@ -231,25 +231,20 @@ export function App() {
   useEffect(() => {
     if (!filePath || !lastKnownFileInfo?.modifiedMs) return
 
-    const interval = window.setInterval(async () => {
-      try {
-        const current = await getFileInfoFromPlatform(filePath)
-        if (!current.exists) {
-          setExternalChange(true)
-          setStatus('File is no longer available')
-          return
-        }
-
-        if (current.modifiedMs && current.modifiedMs !== lastKnownFileInfo.modifiedMs) {
-          setExternalChange(true)
-          setStatus('File changed on disk')
-        }
-      } catch (error) {
-        setStatus(messageFromError(error))
+    const watcher = platform.watchFile(
+      { path: filePath, previousInfo: lastKnownFileInfo },
+      event => {
+        setExternalChange(true)
+        setStatus(event.type === 'missing' ? 'File is no longer available' : 'File changed on disk')
       }
-    }, 2500)
+    )
 
-    return () => window.clearInterval(interval)
+    if (!watcher.ok) {
+      setStatus(watcher.error.message)
+      return
+    }
+
+    return () => watcher.value.dispose()
   }, [filePath, lastKnownFileInfo])
 
   useEffect(() => {
@@ -366,7 +361,7 @@ export function App() {
               <dt>Loaded</dt>
               <dd>{lastLoadedAt ? lastLoadedAt.toLocaleTimeString() : 'Startup sample'}</dd>
               <dt>Watcher</dt>
-              <dd>{filePath ? (externalChange ? 'Refresh pending' : 'Polling metadata') : 'Waiting for file'}</dd>
+              <dd>{filePath ? (externalChange ? 'Refresh pending' : 'Watching file') : 'Waiting for file'}</dd>
               <dt>Message</dt>
               <dd>{status}</dd>
             </dl>
@@ -549,12 +544,6 @@ async function readDocumentFromPlatform(path: string): Promise<{ contents: strin
 async function writeDocumentToPlatform(path: string, contents: string): Promise<void> {
   const written = await platform.filesystem.writeTextFile(path, contents)
   if (!written.ok) throw new Error(written.error.message)
-}
-
-async function getFileInfoFromPlatform(path: string): Promise<FileInfo> {
-  const result = await platform.filesystem.getFileInfo(path)
-  if (!result.ok) throw new Error(result.error.message)
-  return result.value
 }
 
 async function writeClipboardText(value: string): Promise<void> {

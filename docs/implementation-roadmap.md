@@ -49,7 +49,7 @@ Exit criteria:
 
 Current status:
 
-- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, metadata polling, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and package-backed built-in app theme controls.
+- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, package-backed polling file watching, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and package-backed built-in app theme controls.
 - Real filesystem watching, rendered search highlighting, copy code buttons, and broader export workflows remain open.
 
 Exit criteria:
@@ -63,11 +63,11 @@ Exit criteria:
 
 Current status:
 
-- Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, package-backed built-in app theme preferences, native menu event handling, metadata polling for active-file external changes, and a compact document status bar.
+- Initial editor shell foundation is implemented with tabbed document state, per-tab dirty tracking, new/open/save/save-as/copy/clipboard-check/print actions, source/split/preview modes, source search, shared markdown preview rendering, inspector panels, localStorage session restore for unsaved or dirty tabs, recent file paths, package-backed built-in app theme preferences, native menu event handling, package-backed polling file watching for external changes, and a compact document status bar.
 - Phase 5A added the first typed source-mode command registry, Markdown formatting command rail, core formatting shortcuts, command status feedback, and replace-current/replace-all source search actions.
 - Phase 5C added the first command palette foundation over the shared editor-engine command registry, including Ctrl+Shift+P, grouped search results, keyboard navigation, shortcut display, and execution through the source-mode command path.
 - Phase 5D added a compact Preferences dialog for theme/default view selection and a local preference-backed keybinding foundation for the command palette plus existing editor commands, including editable shortcut strings, reset controls, duplicate conflict display, and deterministic first-registry-item shortcut dispatch.
-- Phase 5E added dirty-tab close/reload protection, browser `beforeunload` guarding, all-open-file metadata polling, changed/missing-on-disk reconciliation notices, Keep local snoozing, and clearer inspector file status labels.
+- Phase 5E added dirty-tab close/reload protection, browser `beforeunload` guarding, all-open-file polling watch behavior, changed/missing-on-disk reconciliation notices, Keep local snoozing, and clearer inspector file status labels.
 - Phase 5F added reversible source formatting, H1-H6 command coverage, strikethrough, duplicate selection/current-line, and compact source search options for case-sensitive, whole-word, and regex matching/replacement.
 - Phase 5G added quick insert and a source selection formatting overlay, both backed by the existing editor-engine command registry and app command execution path.
 - Phase 6A added a compact templates/help dialog, a preference-backed Templates and Help shortcut, and template insertion through the existing source document update path.

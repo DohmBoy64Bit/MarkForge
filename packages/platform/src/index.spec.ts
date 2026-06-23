@@ -96,4 +96,38 @@ describe('@markforge/platform', () => {
       value: { exists: true, modifiedMs: 42, len: 8 }
     })
   })
+
+  it('emits file watch changes and disposes the polling fallback', async () => {
+    vi.useFakeTimers()
+
+    const events: string[] = []
+    const infos = [
+      { exists: true, modifiedMs: 2, len: 10 },
+      { exists: false, modifiedMs: null, len: null },
+      { exists: false, modifiedMs: null, len: null }
+    ]
+    const getFileInfo = vi.fn(async () => infos.shift() ?? { exists: true, modifiedMs: 3, len: 11 })
+    const services = createPlatformServices({
+      filesystem: {
+        getFileInfo,
+        readTextFile: async () => 'watched'
+      }
+    })
+
+    const watcher = services.watchFile(
+      { intervalMs: 10, path: 'note.md', previousInfo: { exists: true, modifiedMs: 1, len: 9 } },
+      event => events.push(event.type)
+    )
+
+    expect(watcher.ok).toBe(true)
+    await vi.advanceTimersByTimeAsync(30)
+
+    expect(events).toEqual(['changed', 'missing'])
+
+    if (watcher.ok) watcher.value.dispose()
+    await vi.advanceTimersByTimeAsync(20)
+
+    expect(getFileInfo).toHaveBeenCalledTimes(3)
+    vi.useRealTimers()
+  })
 })

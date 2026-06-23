@@ -1471,59 +1471,46 @@ export function App() {
 
     if (trackedDocuments.length === 0) return
 
-    const pollDocuments = async () => {
-      const results = await Promise.all(trackedDocuments.map(async document => {
-        if (!document.path) return null
+    const watchers = trackedDocuments.map(document => {
+      if (!document.path) return null
 
-        try {
-          const info = await getFileInfoFromPlatform(document.path)
-          return {
-            documentId: document.id,
-            next: reconcileFileInfo(document, info)
-          }
-        } catch (error) {
-          setStatus(messageFromError(error))
-          return null
+      const watcher = platform.watchFile(
+        { path: document.path, previousInfo: document.lastKnownFileInfo },
+        event => {
+          setDocuments(current => current.map(currentDocument => {
+            if (currentDocument.id !== document.id) return currentDocument
+
+            const next = reconcileFileInfo(currentDocument, event.current)
+            if (
+              currentDocument.externalChange === next.externalChange &&
+              fileInfoEquals(currentDocument.lastKnownFileInfo, next.lastKnownFileInfo)
+            ) {
+              return currentDocument
+            }
+
+            return {
+              ...currentDocument,
+              externalChange: next.externalChange,
+              lastKnownFileInfo: next.lastKnownFileInfo,
+              updatedAt: Date.now()
+            }
+          }))
+
+          setStatus(event.type === 'missing' ? 'File is no longer available' : 'File changed on disk')
         }
-      }))
-
-      const updates = results.filter(result => result !== null)
-
-      if (updates.length === 0) return
-
-      setDocuments(current =>
-        current.map(document => {
-          const update = updates.find(item => item.documentId === document.id)
-
-          if (!update) return document
-          if (
-            document.externalChange === update.next.externalChange &&
-            fileInfoEquals(document.lastKnownFileInfo, update.next.lastKnownFileInfo)
-          ) {
-            return document
-          }
-
-          return {
-            ...document,
-            externalChange: update.next.externalChange,
-            lastKnownFileInfo: update.next.lastKnownFileInfo,
-            updatedAt: Date.now()
-          }
-        })
       )
 
-      const changedCount = updates.filter(update => update.next.externalChange !== 'none').length
-
-      if (changedCount > 0) {
-        setStatus(changedCount === 1 ? 'File changed on disk' : `${changedCount} files changed on disk`)
+      if (!watcher.ok) {
+        setStatus(watcher.error.message)
+        return null
       }
+
+      return watcher.value
+    })
+
+    return () => {
+      for (const watcher of watchers) watcher?.dispose()
     }
-
-    const interval = window.setInterval(() => {
-      void pollDocuments()
-    }, 2500)
-
-    return () => window.clearInterval(interval)
   }, [documents])
 
   useEffect(() => {
@@ -2020,7 +2007,7 @@ export function App() {
                 {activeDocument?.externalChange && activeDocument.externalChange !== 'none'
                   ? externalChangeLabel(activeDocument.externalChange)
                   : activeDocument?.path
-                    ? 'Polling metadata'
+                    ? 'Watching file'
                     : 'Not tracked'}
               </dd>
               <dt>Clipboard</dt>

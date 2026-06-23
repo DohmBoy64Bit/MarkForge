@@ -209,7 +209,9 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
 
         const current = result.value
         if (!current.exists) {
-          onEvent({ path: options.path, current, type: 'missing' })
+          if (previousInfo?.exists !== false) {
+            onEvent({ path: options.path, current, type: 'missing' })
+          }
           previousInfo = current
           return
         }

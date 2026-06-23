@@ -28,7 +28,7 @@ This pass implemented the safest high-value architecture slice from the drift/de
 | TD-02 | Deferred | Partial | Preferences/session/recent files moved to core. | App/core source. | Core/app tests. |
 | TD-03 | Fixed | Fixed expanded | Docs-check expanded. | Script. | Docs-check. |
 | TD-04 | Deferred | Partial | Browser print converter path implemented. | App/converter source. | Converter tests/builds. |
-| TD-05 | Deferred | Partial | Bundle budget script added and run. | Build output/script. | Bundle-check. |
+| TD-05 | Deferred | Completed by release hardening Milestone 5 | Bundle budget script added; renderer chunks later split by app/React/icon/markdown groups and budget tightened. | Build output/script/release-hardening audit. | Bundle-check/builds. |
 
 ## Package Structure Compliance
 
@@ -93,7 +93,7 @@ Updated package READMEs for `core`, `platform`, `ui`, `shared`, `converters`, `t
 - CodeMirror 6 and WYSIWYG/realtime editing: current editor surface is textarea/source-command based.
 - Filesystem/workspace templates: current behavior is built-in templates plus local custom templates.
 - Linux packaging/file associations/updates/shell integration/spellcheck: Tauri release contracts need a dedicated packaging pass.
-- Code splitting: bundle budgets are now tracked, but Vite chunk-size warnings remain.
+- Code splitting: release hardening Milestone 5 split renderer chunks and tightened the JavaScript asset budget to 500 KiB. Route-level lazy loading can still be considered if future feature work grows app chunks.
 
 ## Final Double-Check
 
