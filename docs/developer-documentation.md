@@ -17,6 +17,7 @@ pnpm build:editor
 pnpm build:viewer
 pnpm tauri:build
 pnpm tauri:viewer:build
+pnpm packaging:check
 ```
 
 `pnpm audit:marktext` creates or updates the repomixr checkout under the OS temp directory and runs the required MarkText bundle generation.
@@ -29,9 +30,11 @@ cargo check
 
 `pnpm docs:check` runs the repository documentation validation script. It checks required documentation files, targeted stale-status drift markers, package placeholder/current implementation consistency, and local Markdown links across product documentation.
 
+`pnpm packaging:check` validates the Phase 10 packaging baseline: root release scripts, Tauri product identifiers, version alignment, Windows NSIS targets, per-user installer mode, window minimums, CSP baseline, icon assets, capabilities files, and Cargo package metadata.
+
 ## Implementation State
 
-Implementation has progressed through Phase 9 local LLM integration:
+Implementation has progressed through Phase 10 packaging/documentation:
 
 - Phase 1 Tauri editor proof of concept.
 - Phase 2 shared Markdown engine.
@@ -42,6 +45,7 @@ Implementation has progressed through Phase 9 local LLM integration:
 - Phase 7F converter app integration for editor Export HTML, Import Conversion for HTML/CSV input, Clean Markdown, converter activity history, viewer Export HTML, browser print handoff preservation, and explicit unsupported results for heavier conversion targets.
 - Phase 8 theme integration for package-backed editor/viewer app tokens and Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral app-visible controls.
 - Phase 9 local LLM integration for package-owned local provider contracts/adapters/privacy guards and a disabled-by-default editor Local AI dialog.
+- Phase 10 packaging/documentation baseline for reproducible Windows NSIS installer builds, release smoke checks, `packaging:check`, and an initial Linux smoke plan.
 
 The architecture remains the target contract, but some app components still own temporary platform/session/editing logic while packages are being extracted.
 

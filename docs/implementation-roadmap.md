@@ -179,6 +179,14 @@ Exit criteria:
 - Complete developer and user docs.
 - Add Linux compatibility pass and package strategy.
 
+Current status:
+
+- Phase 10 is implemented for the reproducible packaging/documentation baseline.
+- Windows NSIS build commands, expected artifact paths, manual installer smoke checks, and release prerequisites are documented in `docs/packaging-release.md`.
+- `pnpm packaging:check` validates package/Tauri/Cargo version alignment, Windows NSIS targets, per-user installer mode, window baselines, CSP baseline, icons, capabilities, and root release scripts.
+- Linux packaging is started as a documented smoke plan with AppImage-first evaluation, followed by deb/rpm only after Tauri prerequisite and launch smoke checks.
+- Auto-updater publishing, code signing, file associations, shell recent-doc integration, and Linux artifacts remain later release-hardening work.
+
 Exit criteria:
 
 - Initial working Windows build is reproducible.

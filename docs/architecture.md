@@ -121,9 +121,10 @@ The structure and dependency graph above remain the target architecture. The cur
 - `packages/ui` owns initial reusable presentational helpers. App-specific dialogs and workflow components remain in `apps/editor` and `apps/viewer` until they are safely reusable.
 - `apps/editor` now delegates preference/session/recent-file schema behavior to `packages/core`, platform read/write/dialog/clipboard/print behavior to `packages/platform`, supported conversion execution to `packages/converters`, app theme variables to `packages/theme-engine`, and Local AI provider execution to `packages/llm`. It still owns document orchestration, search state, converter workflow UI/activity history, Local AI dialog state, command UI wiring, custom template UI persistence, live preview composition, and direct imports of `@markforge/markdown-engine` and `@markforge/templates`; those are remaining dependency-direction drifts to resolve when editor-engine/template ownership is expanded.
 - `apps/viewer` now delegates file-open/read/info, clipboard, metadata polling, and print behavior through `packages/platform`/`packages/converters`. It still owns viewer search state, rendered view composition, and Tauri adapter wiring.
-- Native file watching, native close interception, shell links, spellcheck, update checks, Linux packaging hardening, and full native PDF/DOCX/OCR/CSV/URL conversion remain unsupported because the current code/docs do not provide enough exact contracts to implement them safely.
+- Native file watching, native close interception, shell links, spellcheck, auto-update publishing, Linux packaging artifacts, and full native PDF/DOCX/OCR/CSV/URL conversion remain unsupported because the current code/docs do not provide enough exact contracts to implement them safely.
 - `pnpm docs:check` validates required docs, local Markdown links, stale markers, and implemented package README/manifest/source/test/public-entrypoint coverage.
 - `pnpm bundle:check` validates current built JavaScript bundles against documented per-app budgets after `pnpm build:editor` and `pnpm build:viewer`.
+- `pnpm packaging:check` validates the Phase 10 Windows packaging baseline and release-critical Tauri/Cargo/package metadata.
 
 Remaining drift is tracked debt, not the final intended ownership model.
 

@@ -28,6 +28,7 @@ Phase 1 validated enough of the Tauri v2 baseline to continue implementation on 
 
 - The team must maintain Rust platform commands for desktop integration.
 - Phase 1 validated the editor shell, native file dialogs, local file read/write, menu accelerators, clipboard smoke controls, metadata polling, browser print foundation, and Windows x64 NSIS installer creation.
+- Phase 10 added a repeatable packaging validation gate and release documentation for editor/viewer Windows NSIS installers.
 - Later phases must still validate file associations, rich clipboard formats, image paste, native file watching, spellcheck, export/PDF workflows, and final renderer hardening.
 - If a remaining native-integration gate fails in Tauri, evaluate a targeted Rust/plugin implementation before reconsidering Electron.
 
@@ -42,6 +43,8 @@ Validated in the current baseline:
 - Browser print foundation.
 - Sanitized Markdown preview inside the webview.
 - Windows x64 installer creation.
+- Phase 10 packaging metadata validation through `pnpm packaging:check`.
+- Documented editor/viewer Windows NSIS build commands and smoke checks.
 
 Still open:
 
@@ -51,3 +54,4 @@ Still open:
 - Native menus and configurable keyboard shortcuts.
 - Export/PDF pipeline beyond browser print.
 - Spellcheck.
+- Code signing, auto-updater publishing, and Linux package artifacts.

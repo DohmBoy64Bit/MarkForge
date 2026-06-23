@@ -28,6 +28,10 @@ In source mode, start a line with `/template` or `/tpl` to open the first templa
 
 The editor toolbar now includes **Local AI**. The dialog starts disabled, requires an explicit local provider enable toggle, accepts only loopback provider endpoints, shows prompt/result state, and inserts returned text only after the user chooses an insert action.
 
+## Install Status
+
+MarkForge currently has a Windows-first packaging baseline. Developers can build per-user NSIS installers for the editor and viewer with the commands in [Packaging and Release](packaging-release.md). Linux packaging is not end-user-ready yet; the current Linux work is a documented smoke plan for future AppImage/deb/rpm validation.
+
 ## Privacy Promise
 
 MarkForge is local-first. Local AI assistance is disabled until configured by the user for a local loopback provider and does not send document text until the user presses Run. User documents will not be sent to cloud APIs unless a future cloud provider is explicitly added and configured by the user.

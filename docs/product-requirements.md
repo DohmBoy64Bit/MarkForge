@@ -89,12 +89,6 @@ Phase 9 baseline:
 - Current implemented actions are summarize, improve clarity, create outline, and explain Markdown syntax.
 - Cloud AI providers remain out of scope.
 
-Phase 9 baseline:
-
-- `packages/llm` provides local-only provider contracts, local action templates, Ollama generation, OpenAI-compatible local adapters for LM Studio/llama.cpp-style servers, loopback endpoint validation, and an explicit user-invocation privacy guard.
-- The editor provides a disabled-by-default Local AI dialog with provider/endpoint/model configuration, summarize/improve/outline/explain actions, selection/document source choice, prompt preview, result output, running/error states, and explicit result insertion.
-- Streaming output, provider/model discovery, persisted provider settings, and the remaining planned actions are later requirements.
-
 ## Standalone Viewer Requirements
 
 - Separate viewer mode/app component.
@@ -127,6 +121,14 @@ Phase 8 baseline:
 - Windows baseline first: installer, file associations, recent documents, update story, shell integration, network paths, high DPI, and keyboard layouts.
 - Linux follows after Windows baseline stability: AppImage, deb, rpm, or Flatpak based on packaging research.
 - Platform assumptions must be isolated behind `packages/platform`.
+
+Phase 10 baseline:
+
+- The editor and viewer have documented Windows NSIS build commands and expected installer artifact paths.
+- `pnpm packaging:check` validates release-critical packaging configuration and version alignment.
+- Manual Windows installer smoke checks are documented.
+- Linux compatibility is started as a smoke plan, with AppImage evaluated first before deb/rpm.
+- Code signing, updater publishing, file associations, shell recent documents, and Linux artifacts remain later release-hardening requirements.
 
 ## Non-Goals for the First Baseline
 

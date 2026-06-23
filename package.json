@@ -22,7 +22,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "browser:install": "playwright install chromium",
-    "bundle:check": "node scripts/bundle-check.mjs"
+    "bundle:check": "node scripts/bundle-check.mjs",
+    "packaging:check": "node scripts/packaging-check.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.0.0",

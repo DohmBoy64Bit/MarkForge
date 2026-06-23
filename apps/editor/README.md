@@ -1,6 +1,6 @@
 # MarkForge Editor
 
-Phase 9-complete Tauri editor shell for the Windows-first local Markdown workspace.
+Phase 10-complete Tauri editor shell for the Windows-first local Markdown workspace.
 
 ## Commands
 
@@ -53,3 +53,4 @@ pnpm --filter @markforge/editor tauri build
 - Full preference schema beyond the Phase 5D local editor settings foundation.
 - DOCX, native PDF, OCR, URL/article, and rich clipboard converter UI beyond explicit unsupported package boundaries.
 - Streaming Local AI output, provider model discovery, persisted Local AI settings, and additional prompt actions.
+- Code signing, auto-update publishing, file associations, shell recent documents, and Linux installer artifacts.

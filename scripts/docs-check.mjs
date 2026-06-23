@@ -16,6 +16,8 @@ const requiredFiles = [
   'docs/phase-5-advanced-editing.md',
   'docs/phase-6-templates-help.md',
   'docs/phase-7-converters.md',
+  'docs/phase-10-packaging-documentation.md',
+  'docs/packaging-release.md',
   'docs/product-requirements.md',
   'docs/user-documentation.md',
   'packages/markdown-engine/README.md',

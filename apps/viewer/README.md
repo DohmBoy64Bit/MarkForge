@@ -1,6 +1,6 @@
 # MarkForge Viewer
 
-Standalone Markdown viewer app/mode for local Markdown and text files.
+Phase 10-complete standalone Markdown viewer app/mode for local Markdown and text files.
 
 ## Current Scope
 
@@ -18,6 +18,7 @@ Standalone Markdown viewer app/mode for local Markdown and text files.
 ```bash
 pnpm --filter @markforge/viewer build
 pnpm --filter @markforge/viewer tauri dev
+pnpm --filter @markforge/viewer tauri build
 ```
 
 From the repository root:
@@ -25,4 +26,11 @@ From the repository root:
 ```bash
 pnpm build:viewer
 pnpm tauri:viewer:dev
+pnpm tauri:viewer:build
 ```
+
+## Packaging Status
+
+- Windows NSIS installer output is documented in `docs/packaging-release.md`.
+- Release-critical Tauri/Cargo/package metadata is checked by `pnpm packaging:check`.
+- Linux installer artifacts, signing, updater publishing, and file associations remain release-hardening work.

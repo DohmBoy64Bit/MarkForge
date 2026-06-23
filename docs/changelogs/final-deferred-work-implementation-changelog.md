@@ -82,4 +82,4 @@ Scope: architecture-completion slice after `docs/audits/drift-debt-remediation-r
 
 ## Unsupported Capabilities
 
-Unsupported capabilities are explicit package results or documented remaining work: native file watching, native close interception, shell links, spellcheck, update checks, Linux packaging hardening, full native PDF/DOCX/OCR/CSV/URL conversion, local AI streaming and persisted provider profiles, CodeMirror 6, WYSIWYG/realtime editing, filesystem/workspace templates, and broader code splitting.
+Unsupported capabilities are explicit package results or documented remaining work: native file watching, native close interception, shell links, spellcheck, auto-update publishing, Linux package artifacts, full native PDF/DOCX/OCR/CSV/URL conversion, local AI streaming and persisted provider profiles, CodeMirror 6, WYSIWYG/realtime editing, filesystem/workspace templates, and broader code splitting.
