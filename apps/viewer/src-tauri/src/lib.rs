@@ -51,6 +51,13 @@ fn get_file_info(path: String) -> Result<FileInfo, String> {
     }
 }
 
+#[tauri::command]
+fn startup_file_path() -> Option<String> {
+    std::env::args()
+        .skip(1)
+        .find(|path| ensure_supported_text_path(path).is_ok())
+}
+
 fn ensure_supported_text_path(path: &str) -> Result<(), String> {
     let extension = Path::new(path)
         .extension()
@@ -89,7 +96,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read_text_file,
             write_text_file,
-            get_file_info
+            get_file_info,
+            startup_file_path
         ])
         .setup(|app| {
             configure_menu(app)?;

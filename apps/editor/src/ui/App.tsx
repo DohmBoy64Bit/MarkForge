@@ -302,6 +302,7 @@ export function App() {
   const converterDialogReturnFocusRef = useRef<HTMLElement | null>(null)
   const localAiReturnFocusRef = useRef<HTMLElement | null>(null)
   const unsavedDialogReturnFocusRef = useRef<HTMLElement | null>(null)
+  const startupFileLoadedRef = useRef(false)
 
   const theme = preferences.theme
   const activeTheme = useMemo(() => getTheme(theme), [theme])
@@ -875,6 +876,20 @@ export function App() {
       setStatus(messageFromError(error))
     }
   }, [documents, reloadDocumentFromDisk, rememberRecentFile])
+
+  useEffect(() => {
+    if (startupFileLoadedRef.current) return
+
+    startupFileLoadedRef.current = true
+
+    void invoke<string | null>('startup_file_path')
+      .then(path => {
+        if (path) void openDocument(path)
+      })
+      .catch(error => {
+        setStatus(`Startup file unavailable: ${messageFromError(error)}`)
+      })
+  }, [openDocument])
 
   const saveDocumentAs = useCallback(async (documentId = activeId): Promise<boolean> => {
     const document = documents.find(item => item.id === documentId)

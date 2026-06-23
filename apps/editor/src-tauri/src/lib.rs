@@ -1,6 +1,7 @@
 use serde::Serialize;
 use std::{
     fs,
+    path::Path,
     time::{SystemTime, UNIX_EPOCH},
 };
 use tauri::{
@@ -15,6 +16,8 @@ struct FileInfo {
     modified_ms: Option<u128>,
     len: Option<u64>,
 }
+
+const SUPPORTED_STARTUP_EXTENSIONS: &[&str] = &["md", "markdown", "mdown", "txt"];
 
 #[tauri::command]
 fn read_text_file(path: String) -> Result<String, String> {
@@ -43,6 +46,24 @@ fn get_file_info(path: String) -> Result<FileInfo, String> {
     }
 }
 
+#[tauri::command]
+fn startup_file_path() -> Option<String> {
+    std::env::args()
+        .skip(1)
+        .find(|path| is_supported_startup_path(path))
+}
+
+fn is_supported_startup_path(path: &str) -> bool {
+    Path::new(path)
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|extension| {
+            SUPPORTED_STARTUP_EXTENSIONS
+                .contains(&extension.to_ascii_lowercase().as_str())
+        })
+        .unwrap_or(false)
+}
+
 fn system_time_to_ms(value: SystemTime) -> Option<u128> {
     value
         .duration_since(UNIX_EPOCH)
@@ -57,7 +78,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read_text_file,
             write_text_file,
-            get_file_info
+            get_file_info,
+            startup_file_path
         ])
         .setup(|app| {
             configure_menu(app)?;

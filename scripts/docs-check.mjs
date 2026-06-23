@@ -18,6 +18,7 @@ const requiredFiles = [
   'docs/phase-7-converters.md',
   'docs/phase-10-packaging-documentation.md',
   'docs/packaging-release.md',
+  'docs/release-hardening.md',
   'docs/product-requirements.md',
   'docs/user-documentation.md',
   'packages/markdown-engine/README.md',

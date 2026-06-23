@@ -10,6 +10,8 @@ const apps = [
     minHeight: 640,
     minWidth: 900,
     productName: 'MarkForge',
+    requiredAssociationExtensions: ['md', 'markdown', 'mdown', 'txt'],
+    requiredAssociationRole: 'Editor',
     tauriDir: 'apps/editor/src-tauri'
   },
   {
@@ -19,6 +21,8 @@ const apps = [
     minHeight: 620,
     minWidth: 860,
     productName: 'MarkForge Viewer',
+    requiredAssociationExtensions: ['md', 'markdown', 'mdown', 'txt'],
+    requiredAssociationRole: 'Viewer',
     tauriDir: 'apps/viewer/src-tauri'
   }
 ]
@@ -59,6 +63,7 @@ for (const app of apps) {
   }
 
   requireEqual(`${app.app} NSIS install mode`, config.bundle?.windows?.nsis?.installMode, 'currentUser')
+  requireFileAssociation(app, config)
 
   const windowConfig = config.app?.windows?.[0]
   if (!windowConfig) {
@@ -86,6 +91,31 @@ for (const app of apps) {
   }
   if (!cargoToml.includes(`version = "${rootPackage.version}"`)) {
     errors.push(`${app.app} Cargo package version must match root package version ${rootPackage.version}`)
+  }
+}
+
+function requireFileAssociation(app, config) {
+  const associations = config.bundle?.fileAssociations
+  if (!Array.isArray(associations) || associations.length === 0) {
+    errors.push(`${app.app} must declare bundle.fileAssociations`)
+    return
+  }
+
+  const association = associations.find(item => item.role === app.requiredAssociationRole)
+  if (!association) {
+    errors.push(`${app.app} must declare a ${app.requiredAssociationRole} file association`)
+    return
+  }
+
+  const extensions = Array.isArray(association.ext) ? association.ext : []
+  for (const extension of app.requiredAssociationExtensions) {
+    if (!extensions.includes(extension)) {
+      errors.push(`${app.app} file association is missing .${extension}`)
+    }
+  }
+
+  if (!association.description) {
+    errors.push(`${app.app} file association must include a Windows description`)
   }
 }
 

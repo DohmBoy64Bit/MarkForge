@@ -94,6 +94,7 @@ export function App() {
   const [theme, setTheme] = useState<ThemeId>('light')
   const [selectedMatch, setSelectedMatch] = useState(0)
   const articleRef = useRef<HTMLElement | null>(null)
+  const startupFileLoadedRef = useRef(false)
 
   const renderState = useMemo(() => safeRenderMarkdown(documentText), [documentText])
   const { rendered, renderError } = renderState
@@ -190,6 +191,20 @@ export function App() {
 
     setStatus(result.ok ? 'Print dialog opened' : result.error.message)
   }, [documentText])
+
+  useEffect(() => {
+    if (startupFileLoadedRef.current) return
+
+    startupFileLoadedRef.current = true
+
+    void invoke<string | null>('startup_file_path')
+      .then(path => {
+        if (path) void loadDocument(path, 'Opened')
+      })
+      .catch(error => {
+        setStatus(`Startup file unavailable: ${messageFromError(error)}`)
+      })
+  }, [])
 
   useEffect(() => {
     let unlisten: (() => void) | null = null

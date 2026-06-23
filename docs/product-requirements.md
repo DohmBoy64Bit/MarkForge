@@ -128,7 +128,14 @@ Phase 10 baseline:
 - `pnpm packaging:check` validates release-critical packaging configuration and version alignment.
 - Manual Windows installer smoke checks are documented.
 - Linux compatibility is started as a smoke plan, with AppImage evaluated first before deb/rpm.
-- Code signing, updater publishing, file associations, shell recent documents, and Linux artifacts remain later release-hardening requirements.
+- Code signing, updater publishing, shell recent documents, and Linux artifacts remain later release-hardening requirements.
+
+Release-hardening baseline:
+
+- Windows installer smoke passed for install, shortcut creation, launch, uninstall, and cleanup.
+- Windows file association declarations are implemented for `.md`, `.markdown`, `.mdown`, and `.txt` in editor and viewer installers.
+- Editor and viewer can load a supported startup file path argument through their existing platform file-read services.
+- Code signing, updater publishing, shell recent documents, and Linux artifacts remain later release-hardening requirements.
 
 ## Non-Goals for the First Baseline
 

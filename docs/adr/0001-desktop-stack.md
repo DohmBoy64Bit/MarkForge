@@ -48,10 +48,11 @@ Validated in the current baseline:
 
 Still open:
 
-- File associations.
 - Open folder and native file watching.
 - Clipboard read/write for HTML, rich text, and images.
 - Native menus and configurable keyboard shortcuts.
 - Export/PDF pipeline beyond browser print.
 - Spellcheck.
 - Code signing, auto-updater publishing, and Linux package artifacts.
+
+Post-Phase-10 release hardening added Windows file association declarations and startup-file loading for Markdown/text files.

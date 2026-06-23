@@ -40,6 +40,7 @@ pnpm --filter @markforge/editor tauri build
 - Light, Dark, Sepia Paper, High Contrast, GitHub, and Modern Neutral MarkForge-native workspace themes backed by `@markforge/theme-engine` app variables.
 - Compact status bar with file, save, line, word, character, and warning counts.
 - Compact status bar shows Local AI off/open/running state.
+- Windows installer declares `.md`, `.markdown`, `.mdown`, and `.txt` file associations and startup file arguments load through the existing document-open path.
 
 ## Deferred
 
@@ -53,4 +54,4 @@ pnpm --filter @markforge/editor tauri build
 - Full preference schema beyond the Phase 5D local editor settings foundation.
 - DOCX, native PDF, OCR, URL/article, and rich clipboard converter UI beyond explicit unsupported package boundaries.
 - Streaming Local AI output, provider model discovery, persisted Local AI settings, and additional prompt actions.
-- Code signing, auto-update publishing, file associations, shell recent documents, and Linux installer artifacts.
+- Code signing, auto-update publishing, shell recent documents, and Linux installer artifacts.

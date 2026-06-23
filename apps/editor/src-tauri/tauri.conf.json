@@ -25,6 +25,15 @@
   },
   "bundle": {
     "active": true,
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown", "mdown", "txt"],
+        "name": "MarkForge Markdown Document",
+        "description": "Markdown and text documents",
+        "mimeType": "text/markdown",
+        "role": "Editor"
+      }
+    ],
     "targets": ["nsis"],
     "windows": {
       "nsis": {

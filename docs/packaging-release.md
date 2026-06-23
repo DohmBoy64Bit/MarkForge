@@ -53,12 +53,25 @@ apps/viewer/src-tauri/target/release/bundle/nsis/MarkForge Viewer_0.0.0_x64-setu
 
 The current installer mode is per-user NSIS. Version numbers must stay aligned across root `package.json`, each app `tauri.conf.json`, and each app `Cargo.toml`; `pnpm packaging:check` enforces that alignment.
 
+## Windows Shell Integration
+
+The editor and viewer installers declare file associations for:
+
+- `.md`
+- `.markdown`
+- `.mdown`
+- `.txt`
+
+The editor registers as an editor role. The viewer registers as a viewer role. Both apps accept a startup file path argument and load it through the existing platform file-read service. Windows default-app choice remains user-controlled, so smoke checks should verify Open With entries rather than assuming MarkForge becomes the default handler.
+
 ## Manual Smoke Checks
 
 After building installers on Windows:
 
 - Install the editor and viewer for the current user.
 - Launch both apps from the installer-created shortcuts.
+- Launch both apps with a sample Markdown file path argument and confirm the file opens.
+- Confirm `.md` files expose MarkForge and MarkForge Viewer in Open With after install.
 - Confirm editor open/save/save-as, recent file persistence, source/split/preview switching, theme switching, Export HTML, Import Conversion, Clean Markdown, Local AI disabled state, and print handoff.
 - Confirm viewer file open, reload, search, theme switching, Export HTML, and print handoff.
 - Uninstall both apps and confirm no obvious user-document files are removed.
@@ -66,6 +79,7 @@ After building installers on Windows:
 Latest smoke evidence:
 
 - [Windows installer smoke - 2026-06-22](audits/windows-installer-smoke-2026-06-22.md)
+- [Windows shell integration smoke - 2026-06-22](audits/windows-shell-integration-smoke-2026-06-22.md)
 
 ## Linux Smoke Plan
 
