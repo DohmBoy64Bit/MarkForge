@@ -5,11 +5,11 @@ export type SourceSearchOptions = {
 }
 
 export type SourceSearchMatch = {
-  line: number
   column: number
-  text: string
-  start: number
   end: number
+  line: number
+  start: number
+  text: string
 }
 
 export type SourceSearchResult = {
@@ -50,7 +50,7 @@ export function replaceCurrentSourceMatch(
   replacement: string,
   options: SourceSearchOptions,
   match: SourceSearchMatch | undefined
-): { error: string | null; text: string; replacementLength: number } {
+): { error: string | null; replacementLength: number; text: string } {
   const expression = createSearchExpression(query, options, false)
 
   if (expression.error) return { error: expression.error, text: source, replacementLength: 0 }

@@ -1,6 +1,6 @@
+import { labelForMarkdownInsertMode, type MarkdownInsertMode } from '@markforge/editor-engine'
 import { ArrowDownToLine, Clipboard, Code2, FileCode, Link, Table2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
-import { labelForConverterInsertMode, type ConverterInsertMode } from './converterWorkflow'
 
 export type ConverterImportMode =
   | 'csv-to-markdown-table'
@@ -10,7 +10,7 @@ export type ConverterImportMode =
 
 export type ConverterImportRequest = {
   input: string
-  insertMode: ConverterInsertMode
+  insertMode: MarkdownInsertMode
   mode: ConverterImportMode
 }
 
@@ -48,7 +48,7 @@ const converterModes: Array<{
   }
 ]
 
-const insertModes: ConverterInsertMode[] = ['replace-selection', 'insert-at-cursor', 'append-to-document']
+const insertModes: MarkdownInsertMode[] = ['replace-selection', 'insert-at-cursor', 'append-to-document']
 
 export function ConverterDialog({
   activeSelectionLength,
@@ -57,7 +57,7 @@ export function ConverterDialog({
   onRequestClose
 }: ConverterDialogProps) {
   const [mode, setMode] = useState<ConverterImportMode>('html-to-markdown')
-  const [insertMode, setInsertMode] = useState<ConverterInsertMode>(
+  const [insertMode, setInsertMode] = useState<MarkdownInsertMode>(
     activeSelectionLength > 0 ? 'replace-selection' : 'insert-at-cursor'
   )
   const [input, setInput] = useState('')
@@ -152,7 +152,7 @@ export function ConverterDialog({
                   aria-label={insertModeTitle(item)}
                 >
                   <Code2 size={16} />
-                  <span>{labelForConverterInsertMode(item)}</span>
+                  <span>{labelForMarkdownInsertMode(item)}</span>
                 </button>
               ))}
             </div>
@@ -182,7 +182,7 @@ export function ConverterDialog({
   )
 }
 
-function converterFooterLabel(mode: ConverterInsertMode, activeSelectionLength: number): string {
+function converterFooterLabel(mode: MarkdownInsertMode, activeSelectionLength: number): string {
   if (mode === 'replace-selection') {
     return activeSelectionLength > 0 ? `${activeSelectionLength} selected characters` : 'No selected text'
   }
@@ -191,7 +191,7 @@ function converterFooterLabel(mode: ConverterInsertMode, activeSelectionLength: 
   return 'Adds content to the end of the document'
 }
 
-function insertModeTitle(mode: ConverterInsertMode): string {
+function insertModeTitle(mode: MarkdownInsertMode): string {
   if (mode === 'replace-selection') return 'Replace selected text'
   if (mode === 'insert-at-cursor') return 'Insert at cursor'
   return 'Append to document'

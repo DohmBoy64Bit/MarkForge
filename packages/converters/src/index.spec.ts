@@ -141,10 +141,12 @@ describe('@markforge/converters', () => {
 
   it('exposes only external-runtime converter capabilities as unsupported without claiming support', async () => {
     const converters = createPhase7AConverters()
+    const browserPrintConverter = converters.find(converter => converter.metadata.id === 'browser-print')
     const pdfConverter = converters.find(converter => converter.metadata.id === 'pdf-to-markdown')
     const richClipboardConverter = converters.find(converter => converter.metadata.id === 'rich-clipboard-markdown')
     const urlConverter = converters.find(converter => converter.metadata.id === 'url-markdown')
 
+    expect(browserPrintConverter && converterCanHandle(browserPrintConverter, 'browser-print')).toBe(false)
     expect(pdfConverter).toBeDefined()
     expect(richClipboardConverter && converterCanHandle(richClipboardConverter, 'rich-clipboard-to-markdown')).toBe(true)
     expect(urlConverter && converterCanHandle(urlConverter, 'url-to-markdown')).toBe(true)
@@ -156,6 +158,19 @@ describe('@markforge/converters', () => {
         message: 'PDF to Markdown is explicitly unsupported in the current converter set.'
       }
     })
+  })
+
+  it('supports browser print in the convenience set only when a print adapter is provided', async () => {
+    const print = vi.fn()
+    const converters = createPhase7AConverters({ print })
+    const browserPrintConverter = converters.find(converter => converter.metadata.id === 'browser-print')
+
+    expect(browserPrintConverter && converterCanHandle(browserPrintConverter, 'browser-print')).toBe(true)
+    await expect(browserPrintConverter?.convert({ format: 'browser-print', markdown: '# Print' })).resolves.toMatchObject({
+      ok: true,
+      value: { format: 'browser-print' }
+    })
+    expect(print).toHaveBeenCalledTimes(1)
   })
 
   it('builds compact UI defaults for HTML export paths and warning statuses', () => {

@@ -158,6 +158,10 @@ button {
 .themeSwitch button:focus-visible,
 .searchBox:focus-within,
 .matches button:focus-visible,
+.workspaceActions button:focus-visible,
+.workspaceFiles button:focus-visible,
+.workspaceInput:focus-within,
+.workspaceMatches button:focus-visible,
 .changeNotice button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -495,6 +499,8 @@ button {
 
 .toc,
 .matches,
+.workspaceFiles,
+.workspaceMatches,
 .warnings {
   margin: 0;
   padding: 0;
@@ -559,6 +565,131 @@ button {
   font-size: 12px;
   line-height: 1.45;
   text-overflow: ellipsis;
+}
+
+.workspaceActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.workspaceActions button {
+  min-width: 0;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: var(--page);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.workspaceActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.workspaceActions button:not(:disabled):hover,
+.workspaceFiles button:hover,
+.workspaceMatches button:hover {
+  border-color: color-mix(in srgb, var(--accent), transparent 68%);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.workspaceStatus {
+  margin: 0 0 10px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceInput {
+  height: 34px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 0 9px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: var(--page);
+}
+
+.workspaceInput svg {
+  color: var(--muted);
+}
+
+.workspaceInput input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.workspaceFiles,
+.workspaceMatches {
+  max-height: 190px;
+  overflow: auto;
+  margin-top: 8px;
+  padding-right: 2px;
+}
+
+.workspaceFiles li + li,
+.workspaceMatches li + li {
+  margin-top: 6px;
+}
+
+.workspaceFiles button,
+.workspaceMatches button {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.workspaceFiles button {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.workspaceFiles span,
+.workspaceMatches span {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceMatches mark {
+  overflow: hidden;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .selectionHint,

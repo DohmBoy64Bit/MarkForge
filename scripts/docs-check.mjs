@@ -135,6 +135,10 @@ for (const pkg of implementedPackages) {
   }
 }
 
+for (const workspacePackage of collectWorkspacePackages()) {
+  validateWorkspacePackageImports(workspacePackage)
+}
+
 for (const pkg of plannedOnlyPackages) {
   const readmePath = `packages/${pkg}/README.md`
   if (!exists(readmePath)) {
@@ -235,4 +239,81 @@ function hasPackageSpec(pkg) {
 
   return fs.readdirSync(sourcePath, { recursive: true })
     .some(file => typeof file === 'string' && /\.spec\.tsx?$/.test(file))
+}
+
+function collectWorkspacePackages() {
+  const packages = []
+
+  for (const base of ['apps', 'packages']) {
+    const basePath = projectPath(base)
+    if (!fs.existsSync(basePath)) continue
+
+    for (const child of fs.readdirSync(basePath, { withFileTypes: true })) {
+      if (!child.isDirectory()) continue
+
+      const relativePath = path.join(base, child.name)
+      const packageJsonPath = path.join(relativePath, 'package.json')
+      if (!exists(packageJsonPath)) continue
+
+      const packageJson = JSON.parse(readText(packageJsonPath))
+      packages.push({ packageJson, packageJsonPath, relativePath })
+    }
+  }
+
+  return packages
+}
+
+function validateWorkspacePackageImports(workspacePackage) {
+  const sourcePath = projectPath(path.join(workspacePackage.relativePath, 'src'))
+  if (!fs.existsSync(sourcePath)) return
+
+  const imports = collectWorkspaceImports(workspacePackage.relativePath)
+  const directImports = new Set(imports.map(importPath => importPath.split('/').slice(0, 2).join('/')))
+  const declaredDependencies = {
+    ...workspacePackage.packageJson.dependencies,
+    ...workspacePackage.packageJson.peerDependencies,
+    ...workspacePackage.packageJson.devDependencies
+  }
+  const declaredWorkspaceDeps = Object.entries(declaredDependencies)
+    .filter(([name, version]) => name.startsWith('@markforge/') && version === 'workspace:*')
+    .map(([name]) => name)
+
+  for (const importPath of imports) {
+    const parts = importPath.split('/')
+    const directPackage = parts.slice(0, 2).join('/')
+
+    if (parts.length > 2) {
+      errors.push(`Private package import is not allowed in ${workspacePackage.relativePath}: ${importPath}`)
+    }
+
+    if (directPackage !== workspacePackage.packageJson.name && !declaredDependencies[directPackage]) {
+      errors.push(`Workspace package imports ${directPackage} without declaring it in ${workspacePackage.packageJsonPath}`)
+    }
+  }
+
+  for (const dependency of declaredWorkspaceDeps) {
+    if (dependency === workspacePackage.packageJson.name) continue
+    if (!directImports.has(dependency)) {
+      errors.push(`Workspace dependency is declared but unused in source: ${workspacePackage.packageJsonPath} -> ${dependency}`)
+    }
+  }
+}
+
+function collectWorkspaceImports(relativePackagePath) {
+  const imports = []
+  const sourcePath = projectPath(path.join(relativePackagePath, 'src'))
+
+  for (const file of fs.readdirSync(sourcePath, { recursive: true })) {
+    if (typeof file !== 'string' || !/\.[cm]?tsx?$/.test(file)) continue
+
+    const relativeFile = path.join(relativePackagePath, 'src', file)
+    const text = readText(relativeFile)
+    const importPattern = /(?:import|export)\s+(?:[^'"]+\s+from\s+)?['"](@markforge\/[^'"]+)['"]/g
+
+    for (const match of text.matchAll(importPattern)) {
+      imports.push(match[1])
+    }
+  }
+
+  return imports
 }

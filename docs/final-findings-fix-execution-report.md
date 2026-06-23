@@ -11,7 +11,7 @@ This pass records the fix-reporting step for every finding in `docs/final-loose-
 - Hard blockers still remaining under the strict zero-deferred standard: 6, but several are now smaller and more specific.
 - Ready for next phase: No, under the attached zero-deferred standard.
 
-The five concrete loose-end findings are fixed in the current tree: stale Phase 10 status, stale parity rows, stale converter runtime wording, stale final implementation records, and docs-check coverage for final artifacts. Follow-up remediation added editor workspace listing/search/watch, workspace templates, rich clipboard HTML import, URL/article HTML import, basic HTML export settings, safe Mermaid flowchart rendering, platform shell recent-document integration, and spellcheck/updater platform contracts. Remaining blockers are now limited to richer editor modes/tools, broader autocomplete, native PDF/DOCX/OCR, full markdown conformance/parser/runtime coverage, native spellcheck providers, updater/signing, Linux artifacts, and additional release smoke evidence.
+The five concrete loose-end findings are fixed in the current tree: stale Phase 10 status, stale parity rows, stale converter runtime wording, stale final implementation records, and docs-check coverage for final artifacts. Follow-up remediation added editor and viewer workspace listing/search/watch, workspace templates, rich clipboard HTML import, URL/article HTML import, basic HTML export settings, safe Mermaid flowchart rendering, general Markdown slash autocomplete, package-owned source search/insertion helpers, source formatting/image/table-row/delete-line commands, platform shell recent-document integration, and spellcheck/updater platform contracts. Remaining blockers are now limited to richer editor modes/tools, path-aware autocomplete, native PDF/DOCX/OCR, full markdown conformance/parser/runtime coverage, native spellcheck providers, updater/signing, Linux artifacts, and additional release smoke evidence.
 
 ## Findings Fixed
 
@@ -72,7 +72,7 @@ This section is not empty, so the project is not ready under the strict zero-def
 
 ### HB-01: WYSIWYG / Advanced Rich Editing
 
-- Exact blocker: WYSIWYG/realtime editing, advanced table/image tools, linting/formatting, broader autocomplete, focus/typewriter modes are not implemented beyond CodeMirror source mode.
+- Exact blocker: WYSIWYG/realtime editing, advanced table/image tools beyond current source helpers, linting/formatting beyond the current source formatter, path-aware autocomplete, focus/typewriter modes are not implemented beyond CodeMirror source mode.
 - Evidence: `docs/implementation-roadmap.md`, `docs/phase-12-rich-editor-surface.md`, `docs/marktext-parity-matrix.md`, `packages/editor-engine/README.md`, `packages/editor-engine/src/index.ts`, `apps/editor/src/ui/SourceEditor.tsx`.
 - Why not fixed now: A complete implementation requires editor-engine adapter design, UI/UX design, command/selection contracts, tests, and likely substantial app architecture work. Implementing it in this remediation pass would be speculative.
 - Decision/input required: Choose the rich editing model and exact Phase 12B/13 scope.
@@ -80,7 +80,7 @@ This section is not empty, so the project is not ready under the strict zero-def
 
 ### HB-02: Workspace / Folder Behavior
 
-- Exact blocker now: Editor workspace listing, filtering, search, and recursive watch are implemented for supported Markdown/text files, but viewer workspace browsing, cross-platform/network-path stress evidence, and richer project-tree ergonomics remain open.
+- Exact blocker now: Editor and viewer workspace listing, filtering, search, and recursive watch are implemented for supported Markdown/text files, but cross-platform/network-path stress evidence and richer project-tree ergonomics remain open.
 - Evidence: `packages/platform/src/index.ts`, `packages/platform/src/index.spec.ts`, `apps/editor/src/ui/App.tsx`, `apps/editor/src-tauri/src/lib.rs`, `docs/implementation-roadmap.md`, `docs/marktext-parity-matrix.md`, `packages/platform/README.md`.
 - Implemented in follow-up: Package-owned workspace list/search/watch contracts, native editor Tauri workspace commands/events, editor workspace panel, and tests.
 - Decision/input required: Decide whether viewer needs full workspace mode and define release smoke expectations for network paths and large workspaces.
@@ -88,10 +88,10 @@ This section is not empty, so the project is not ready under the strict zero-def
 
 ### HB-03: Workspace Templates / Broader Autocomplete
 
-- Exact blocker now: Workspace templates are implemented; broader Markdown autocomplete for links, headings, front matter, images, tables, and code fences remains open.
+- Exact blocker now: Workspace templates and general Markdown structure autocomplete are implemented; path-aware/link-aware autocomplete remains open.
 - Evidence: `packages/templates/src/index.ts`, `packages/templates/src/index.spec.ts`, `packages/editor-engine/src/templateAutocomplete.ts`, `packages/editor-engine/src/templateAutocomplete.spec.ts`, `apps/editor/src/ui/App.tsx`, `docs/phase-6-templates-help.md`, `docs/marktext-parity-matrix.md`.
 - Implemented in follow-up: Workspace templates under `.markforge/templates/*.md` are normalized by `@markforge/templates`, exported through `@markforge/editor-engine`, and loaded into editor template search/insertion/autocomplete when a workspace is open.
-- Decision/input required: Define broader Markdown autocomplete scope and syncable template-library model.
+- Decision/input required: Define path-aware/link-aware autocomplete scope and syncable template-library model.
 - Readiness impact: Not ready under zero-deferred standard.
 
 ### HB-04: Heavy Converters / Export Settings
@@ -126,7 +126,7 @@ This section is not empty, so the project is not ready under the strict zero-def
 | `packages/markdown-engine` | yes | yes | yes | yes | limited diagram warning | partially; hard blocker HB-05 remains |
 | `packages/editor-engine` | yes | yes | yes | yes | yes for source transforms | partially; hard blocker HB-01 remains |
 | `packages/converters` | yes | yes | yes | yes | explicit unsupported boundaries | partially; hard blocker HB-04 remains for DOCX/PDF/OCR |
-| `packages/templates` | yes | yes | yes | yes | yes for catalog/custom/workspace helpers | partially; broader autocomplete remains |
+| `packages/templates` | yes | yes | yes | yes | yes for catalog/custom/workspace helpers | partially; syncable libraries remain |
 | `packages/theme-engine` | yes | yes | yes | yes | yes for built-in themes | partially; system/custom/export settings remain |
 | `packages/llm` | yes | yes | yes | yes | mock provider is test/local contract | yes for Phase 9 baseline |
 | `packages/ui` | yes | yes | yes | yes | yes | partially; more reusable UI extraction remains |
@@ -155,7 +155,7 @@ Current dependency-direction note: the editor app no longer imports `@markforge/
 | Editor file actions | new/open/save/save-as | `packages/platform` app adapters | builds/manual path evidence in source | Functional for current scope |
 | Editor export/import/clean/print | toolbar/menu/dialog paths | `packages/converters`, `packages/platform` | converter/workflow tests, builds | Functional for supported converters |
 | Editor command palette/quick insert/format rail | command execution | `packages/editor-engine` command/transforms | helper tests, builds | Functional for source mode |
-| Editor templates/help/autocomplete | dialog, workspace templates, and `/template`/`/tpl` suggestions | `packages/editor-engine`, app local custom storage, workspace file loading through `packages/platform` | template/custom-template/autocomplete tests | Functional for current scope; broader autocomplete remains |
+| Editor templates/help/autocomplete | dialog, workspace templates, `/template`/`/tpl` suggestions, and general Markdown structure suggestions | `packages/editor-engine`, app local custom storage, workspace file loading through `packages/platform` | template/custom-template/autocomplete tests | Functional for current scope; path-aware/link-aware autocomplete remains |
 | Editor Local AI | disabled-by-default dialog and insert modes | `packages/llm` | LLM/local workflow tests, builds | Functional for Phase 9 baseline |
 | Editor CodeMirror source surface | source/split/preview selection bridge | CodeMirror in app shell + editor-engine transforms | build/tests/Phase 12 screenshots | Functional for source mode; HB-01 remains |
 | Viewer file/render/search/export/print | toolbar and inspector actions | `packages/platform`, `packages/markdown-engine`, `packages/converters`, `packages/theme-engine` | build/tests | Functional for current scope |
@@ -208,4 +208,4 @@ Current dependency-direction note: the editor app no longer imports `@markforge/
 
 Not ready for next phase under the strict zero-deferred standard.
 
-Reason: every concrete loose-end finding is fixed, and follow-up implementation narrowed several hard blockers, but the strict standard still leaves real product/release work: rich WYSIWYG and advanced editing, broader autocomplete, native PDF/DOCX/OCR, markdown conformance/parser/runtime expansion, native spellcheck providers, updater/signing, Linux artifacts, and additional release smoke evidence. Marking the product production/feature complete would still overclaim the current repository.
+Reason: every concrete loose-end finding is fixed, and follow-up implementation narrowed several hard blockers, but the strict standard still leaves real product/release work: rich WYSIWYG and advanced editing, path-aware autocomplete, native PDF/DOCX/OCR, markdown conformance/parser/runtime expansion, native spellcheck providers, updater/signing, Linux artifacts, and additional release smoke evidence. Marking the product production/feature complete would still overclaim the current repository.

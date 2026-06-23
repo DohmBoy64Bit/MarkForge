@@ -59,8 +59,8 @@ Additional visual smoke:
 ## Still Deferred
 
 - WYSIWYG/realtime editing.
-- Advanced table tools.
-- Image insertion and editing tools.
-- General Markdown autocomplete beyond template suggestions.
-- Markdown linting and formatter integration.
+- Advanced table tools beyond starter table and row insertion.
+- Image asset picking/editing beyond Markdown syntax insertion.
+- Path-aware/link-aware Markdown autocomplete beyond the current line-leading structure suggestions.
+- Markdown linting and formatter integration beyond the current package-owned source formatter.
 - Focus mode, typewriter mode, and distraction-free mode.

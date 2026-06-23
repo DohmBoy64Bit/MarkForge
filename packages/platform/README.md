@@ -17,4 +17,4 @@ Current status: implemented package boundary.
 - Explicit updater status service that reports disabled update channels when no updater adapter is configured.
 - Native close-request protection contract for dirty editor windows.
 
-Apps provide thin Tauri adapter wiring at the shell boundary. Editor native code implements workspace listing/search/watch and Windows shell recent-document updates. Signing, updater publishing, Linux artifact production, and richer OS spellcheck providers remain release-environment work.
+Apps provide thin Tauri adapter wiring at the shell boundary. Editor and viewer native code implement workspace listing/search/watch; editor native code also implements Windows shell recent-document updates. Signing, updater publishing, Linux artifact production, and richer OS spellcheck providers remain release-environment work.

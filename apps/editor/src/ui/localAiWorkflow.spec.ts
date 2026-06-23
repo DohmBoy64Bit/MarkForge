@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
-  applyLocalAiResult,
   buildLocalAiPromptPreview,
   createEditorLocalAiProvider,
   defaultEndpointForLocalAiProvider,
-  labelForLocalAiInsertMode,
   labelForLocalAiProvider
 } from './localAiWorkflow'
 
@@ -50,22 +48,8 @@ describe('localAiWorkflow', () => {
     })
   })
 
-  it('applies Local AI output at explicit insertion targets', () => {
-    expect(applyLocalAiResult('One two', 'Done', { start: 4, end: 7 }, 'replace-selection')).toEqual({
-      selectionStart: 4,
-      selectionEnd: 8,
-      text: 'One Done'
-    })
-    expect(applyLocalAiResult('One', 'Two', { start: 3, end: 3 }, 'append-to-document')).toEqual({
-      selectionStart: 5,
-      selectionEnd: 8,
-      text: 'One\n\nTwo'
-    })
-  })
-
-  it('labels provider and insertion choices for compact UI controls', () => {
+  it('labels provider choices for compact UI controls', () => {
     expect(defaultEndpointForLocalAiProvider('lm-studio')).toBe('http://127.0.0.1:1234/v1')
     expect(labelForLocalAiProvider('llama.cpp')).toBe('llama.cpp')
-    expect(labelForLocalAiInsertMode('insert-at-cursor')).toBe('Cursor')
   })
 })

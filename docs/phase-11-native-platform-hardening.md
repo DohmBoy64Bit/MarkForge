@@ -10,12 +10,12 @@ Phase 11 hardens the platform boundary that later feature work depends on. The g
 - Added `watch_text_file` and `unwatch_text_file` commands in both shells.
 - Added Tauri-managed watcher state so watcher handles live on the Rust side until explicitly unwatched or app exit.
 - Added `markforge://file-watch` events with `{ path, current, type }` payloads, where `current` matches the existing `FileInfo` contract.
-- Added editor workspace listing, workspace search, recursive workspace watch, and `markforge://workspace-watch` events.
+- Added editor and viewer workspace listing, workspace search, recursive workspace watch, and `markforge://workspace-watch` events.
 - Extended `packages/platform` with a native file watcher adapter contract.
 - Extended `packages/platform` with workspace directory, workspace search, workspace watch, shell recent-document, spellcheck, and updater-status service contracts.
 - Kept the existing polling watcher as a fallback when no native adapter is supplied.
 - Wired editor and viewer to native watch commands through `packages/platform`.
-- Wired the editor workspace panel to the platform workspace APIs.
+- Wired the editor and viewer workspace panels to the platform workspace APIs.
 - Wired editor file open/save paths to the platform shell recent-document service and added a Windows best-effort native recent-document command.
 - Added `packages/platform` close-protection APIs.
 - Wired editor Tauri `onCloseRequested` events into the existing unsaved-document Save/Discard/Cancel dialog flow.

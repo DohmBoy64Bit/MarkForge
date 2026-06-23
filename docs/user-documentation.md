@@ -24,9 +24,11 @@ MarkForge is not yet ready for end users. This document tracks the planned user-
 
 In the editor, open **Templates and Help** from the toolbar or the default `Ctrl+Alt+T` shortcut. The Built-ins tab searches the catalog, exposes variable fields for the active template, previews the resolved Markdown live, and inserts at the current source cursor or selection. The Custom tab stores local templates in this browser profile with create, delete, and reset controls. The Reference tab is a concise syntax sheet for the Markdown features currently supported by MarkForge.
 
-In source mode, start a line with `/template` or `/tpl` to open the first template suggestion menu. Type after the trigger to filter, use Arrow keys to navigate, Enter to insert, or Escape to close. Workspace templates are included after opening a folder when they live under `.markforge/templates/*.md`. This is intentionally limited to template insertion; general Markdown autocomplete remains future scope.
+In source mode, start a line with `/template` or `/tpl` to open template suggestions. Type after the trigger to filter, use Arrow keys to navigate, Enter to insert, or Escape to close. Workspace templates are included after opening a folder when they live under `.markforge/templates/*.md`. A separate line-leading `/` suggestion menu inserts common Markdown structures including headings, links, images, tables, front matter, code fences, task lists, and blockquotes.
 
 The editor Workspace panel can open a folder, list supported Markdown/text files, filter files, search file contents, and open results. Supported opened/saved files are also sent to the platform shell recent-document service on Windows.
+
+The standalone viewer can also open a workspace folder, index supported Markdown/text files, filter file paths, search file contents, and open workspace file or search results while keeping the rendered document read-only.
 
 The editor toolbar now includes **Local AI**. The dialog starts disabled, requires an explicit local provider enable toggle, accepts only loopback provider endpoints, shows prompt/result state, and inserts returned text only after the user chooses an insert action.
 

@@ -26,8 +26,7 @@ No implementation code should be placed outside these boundaries except standard
 ## Dependency Direction
 
 ```text
-apps/editor ─┬─> packages/ui
-             ├─> packages/editor-engine
+apps/editor ─┬─> packages/editor-engine
              ├─> packages/core
              ├─> packages/platform
              ├─> packages/converters
@@ -35,16 +34,13 @@ apps/editor ─┬─> packages/ui
              ├─> packages/llm
              └─> packages/shared
 
-apps/viewer ─┬─> packages/ui
-             ├─> packages/markdown-engine
+apps/viewer ─┬─> packages/markdown-engine
+             ├─> packages/converters
              ├─> packages/theme-engine
-             ├─> packages/platform
-             └─> packages/shared
+             └─> packages/platform
 
 packages/editor-engine ─┬─> packages/markdown-engine
-                        ├─> packages/templates
-                        ├─> packages/theme-engine
-                        └─> packages/shared
+                        └─> packages/templates
 
 packages/converters ─┬─> packages/markdown-engine
                      └─> packages/shared
@@ -62,7 +58,7 @@ Desktop editor application shell. Owns routing between workspace, editor panes, 
 
 ### `apps/viewer`
 
-Standalone Markdown viewer app/mode. Owns viewer window composition, file-open/view lifecycle, search UI, TOC UI, print/export commands, and file-watch refresh wiring.
+Standalone Markdown viewer app/mode. Owns viewer window composition, file-open/view lifecycle, search UI, TOC UI, workspace panel UI, print/export commands, and thin native adapter wiring.
 
 ### `packages/core`
 
@@ -119,10 +115,10 @@ The structure and dependency graph above remain the target architecture. The cur
 - `packages/converters` owns the converter contract, sanitized HTML export with basic export settings, HTML-to-Markdown import, CSV-to-Markdown table conversion, rich clipboard HTML import, URL/article import, Markdown cleanup, capability checks, browser-print pathway, warnings, and unsupported capability results.
 - `packages/llm` owns local-only provider contracts, prompt templates, local action execution, mock provider tests, cancellation, loopback endpoint validation, Ollama and OpenAI-compatible local adapters, explicit unsupported local adapter boundaries, and the privacy guard. The editor now exposes a disabled-by-default Local AI workflow through this package.
 - `packages/ui` owns initial reusable presentational helpers. App-specific dialogs and workflow components remain in `apps/editor` and `apps/viewer` until they are safely reusable.
-- `apps/editor` now delegates preference/session/recent-file schema behavior to `packages/core`, platform read/write/dialog/clipboard/print/watch/workspace/shell-recent/close behavior to `packages/platform`, supported conversion execution to `packages/converters`, app theme variables to `packages/theme-engine`, editor preview/template/autocomplete APIs to `packages/editor-engine`, and Local AI provider execution to `packages/llm`. The Phase 12A source editor surface is CodeMirror-backed inside the app shell while command transforms remain package-owned in `packages/editor-engine`. The app still owns document orchestration, source search state, workspace panel state, converter workflow UI/activity history, Local AI dialog state, command UI wiring, custom template UI persistence, and live preview composition.
-- `apps/viewer` now delegates file-open/read/info, clipboard, native file watching with package polling fallback, and print behavior through `packages/platform`/`packages/converters`. It still owns viewer search state, rendered view composition, and Tauri adapter wiring.
-- Signing keys, updater publishing endpoints, Linux packaging artifacts, native PDF/DOCX/OCR conversion runtimes, and richer native spellcheck providers remain release/runtime work because they require external keys, release hosts, native Linux prerequisites, or parser/runtime decisions. Workspace/folder watching, workspace search, workspace templates, rich clipboard HTML import, URL import, and Windows shell recent-document updates now have concrete package/app implementations.
-- `pnpm docs:check` validates required docs, local Markdown links, stale markers, and implemented package README/manifest/source/test/public-entrypoint coverage.
+- `apps/editor` now delegates preference/session/recent-file schema behavior to `packages/core`, platform read/write/dialog/clipboard/print/watch/workspace/shell-recent/close behavior to `packages/platform`, supported conversion execution to `packages/converters`, app theme variables to `packages/theme-engine`, editor preview/template/autocomplete/search/insertion APIs to `packages/editor-engine`, and Local AI provider execution to `packages/llm`. The Phase 12A source editor surface is CodeMirror-backed inside the app shell while command transforms remain package-owned in `packages/editor-engine`. The app still owns document orchestration, source search UI state, workspace panel state, converter workflow UI/activity history, Local AI dialog state, command UI wiring, custom template UI persistence, and live preview composition.
+- `apps/viewer` now delegates file-open/read/info, workspace listing/search/watch, clipboard, native file watching with package polling fallback, and print/export behavior through `packages/platform`/`packages/converters`. It still owns viewer search state, workspace panel state, rendered view composition, and Tauri adapter wiring.
+- Signing keys, updater publishing endpoints, Linux packaging artifacts, native PDF/DOCX/OCR conversion runtimes, richer native spellcheck providers, and WYSIWYG/realtime editing remain release/runtime or larger architecture work because they require external keys, release hosts, native Linux prerequisites, parser/runtime decisions, or a dedicated rich-editor engine choice. Workspace/folder watching, workspace search, workspace templates, rich clipboard HTML import, URL import, general Markdown slash autocomplete, source formatting/image/table-row/delete-line commands, and Windows shell recent-document updates now have concrete package/app implementations.
+- `pnpm docs:check` validates required docs, local Markdown links, stale markers, implemented package README/manifest/source/test/public-entrypoint coverage, private package import bans, and workspace dependency/import consistency.
 - `pnpm bundle:check` validates current built JavaScript bundles against documented per-app budgets after `pnpm build:editor` and `pnpm build:viewer`.
 - `pnpm packaging:check` validates the Phase 10 Windows packaging baseline and release-critical Tauri/Cargo/package metadata.
 

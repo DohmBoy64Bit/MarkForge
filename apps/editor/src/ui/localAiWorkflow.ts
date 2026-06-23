@@ -10,18 +10,11 @@ import {
 import { err, ok, type Result } from '@markforge/shared'
 
 export type EditorLocalAiProviderKind = Exclude<LocalLlmProviderKind, 'mock'>
-export type LocalAiInsertMode = 'append-to-document' | 'insert-at-cursor' | 'replace-selection'
 
 export type LocalAiPromptPreview = {
   inputLength: number
   inputSource: 'document' | 'selection'
   prompt: string
-}
-
-export type LocalAiTextEdit = {
-  selectionEnd: number
-  selectionStart: number
-  text: string
 }
 
 export const editorLocalAiProviderKinds: EditorLocalAiProviderKind[] = ['ollama', 'lm-studio', 'llama.cpp']
@@ -85,81 +78,4 @@ export function buildLocalAiPromptPreview(
     inputSource: useSelection && selection ? 'selection' : 'document',
     prompt: rendered.value
   })
-}
-
-export function applyLocalAiResult(
-  source: string,
-  resultText: string,
-  selection: { end: number; start: number },
-  mode: LocalAiInsertMode
-): LocalAiTextEdit {
-  const insertion = normalizeLocalAiResult(resultText)
-  const range = clampSelection(source, selection)
-
-  if (!insertion) {
-    return {
-      selectionStart: range.start,
-      selectionEnd: range.end,
-      text: source
-    }
-  }
-
-  if (mode === 'append-to-document') {
-    const separator = source ? appendSeparatorFor(source) : ''
-    const selectionStart = source.length + separator.length
-
-    return {
-      selectionStart,
-      selectionEnd: selectionStart + insertion.length,
-      text: `${source}${separator}${insertion}`
-    }
-  }
-
-  if (mode === 'replace-selection') {
-    const before = source.slice(0, range.start)
-    const after = source.slice(range.end)
-
-    return {
-      selectionStart: before.length,
-      selectionEnd: before.length + insertion.length,
-      text: `${before}${insertion}${after}`
-    }
-  }
-
-  const start = range.start
-  const end = range.start
-  const before = source.slice(0, start)
-  const after = source.slice(end)
-  const prefix = before && !before.endsWith('\n') ? '\n\n' : ''
-  const suffix = after && !after.startsWith('\n') ? '\n\n' : ''
-  const selectionStart = before.length + prefix.length
-
-  return {
-    selectionStart,
-    selectionEnd: selectionStart + insertion.length,
-    text: `${before}${prefix}${insertion}${suffix}${after}`
-  }
-}
-
-export function labelForLocalAiInsertMode(mode: LocalAiInsertMode): string {
-  if (mode === 'replace-selection') return 'Replace'
-  if (mode === 'insert-at-cursor') return 'Cursor'
-  return 'Append'
-}
-
-function normalizeLocalAiResult(resultText: string): string {
-  return resultText.replace(/\r\n?/g, '\n').trim()
-}
-
-function clampSelection(source: string, selection: { end: number; start: number }): { end: number; start: number } {
-  const start = Math.max(0, Math.min(selection.start, source.length))
-  const end = Math.max(start, Math.min(selection.end, source.length))
-
-  return { start, end }
-}
-
-function appendSeparatorFor(source: string): string {
-  if (source.endsWith('\n\n')) return ''
-  if (source.endsWith('\n')) return '\n'
-  return '\n\n'
 }

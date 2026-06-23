@@ -110,9 +110,9 @@ Phase 5D adds a compact Preferences dialog and moves existing editor shortcut di
 - Rich WYSIWYG/realtime editing behavior beyond the Phase 12A CodeMirror source foundation.
 - Full preferences schema beyond the Phase 5D local editor settings foundation.
 - Non-format command remapping and platform-native/global shortcut registration.
-- Advanced table editing, image insertion/editing tools, autocomplete, linting, formatter integration, focus mode, typewriter mode, and distraction-free layouts.
-- Richer line transformer menus beyond the duplicate command.
-- Viewer workspace browsing and broader cross-platform workspace stress testing beyond the editor workspace listing/search/watch implementation.
+- Advanced table editing beyond starter table/row insertion, image picking/editing beyond Markdown syntax insertion, path-aware autocomplete, linting, formatter integration beyond the current source formatter, focus mode, typewriter mode, and distraction-free layouts.
+- Richer line transformer menus beyond duplicate and delete commands.
+- Broader cross-platform workspace stress testing beyond the editor/viewer workspace listing/search/watch implementation.
 
 ## Verification
 

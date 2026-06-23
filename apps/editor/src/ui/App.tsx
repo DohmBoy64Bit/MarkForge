@@ -1,10 +1,20 @@
 import {
   commandById,
   commandGroups,
+  applyMarkdownInsertion,
+  defaultSearchOptions,
   editorCommands,
+  filterMarkdownAutocompleteSuggestions,
   filterTemplateSuggestions,
+  findMarkdownAutocompleteTrigger,
   findTemplateSuggestionTrigger,
+  findSourceMatches,
+  highlightSourceSnippet,
   isWorkspaceTemplatePath,
+  labelForMarkdownInsertMode,
+  replaceAllSourceMatches,
+  replaceCurrentSourceMatch,
+  replaceMarkdownAutocompleteTrigger,
   replaceTemplateTrigger,
   renderEditorMarkdownPreview,
   resolveTemplateSuggestion,
@@ -14,7 +24,11 @@ import {
   type EditorCommandId,
   type FrontMatterData,
   type MarkdownTemplate,
+  type MarkdownAutocompleteSuggestion,
+  type MarkdownInsertMode,
   type RenderedMarkdown,
+  type SourceSearchMatch,
+  type SourceSearchOptions,
   type TemplateVariables
 } from '@markforge/editor-engine'
 import {
@@ -80,6 +94,7 @@ import {
   Heading4,
   Heading5,
   Heading6,
+  Image,
   Italic,
   Keyboard,
   Link,
@@ -94,6 +109,7 @@ import {
   Replace,
   RefreshCcw,
   Regex,
+  Rows3,
   Save,
   Search,
   Settings,
@@ -103,6 +119,7 @@ import {
   Sun,
   Table2,
   TextCursorInput,
+  Trash2,
   TriangleAlert,
   Wand2,
   WholeWord,
@@ -124,7 +141,6 @@ import {
   type ConverterActivityEntry,
   type ConverterActivityStatus
 } from './converterActivity'
-import { applyConvertedMarkdown, labelForConverterInsertMode } from './converterWorkflow'
 import { loadCustomTemplates } from './customTemplates'
 import {
   closeStatusLabel,
@@ -151,22 +167,10 @@ import {
   type ViewMode
 } from './editorPreferences'
 import {
-  applyLocalAiResult,
   createEditorLocalAiProvider,
-  type LocalAiInsertMode
 } from './localAiWorkflow'
 import type { PaletteCommand } from './paletteCommandHelpers'
 import { toQuickInsertCommands } from './quickInsertHelpers'
-import {
-  defaultSearchOptions,
-  findSourceMatches,
-  highlightSourceSnippet,
-  replaceAllSourceMatches,
-  replaceCurrentSourceMatch,
-  type SourceSearchMatch,
-  type SourceSearchOptions
-} from './sourceSearch'
-
 type EditorDocument = {
   id: string
   title: string
@@ -280,7 +284,11 @@ const commandIconByName: Record<EditorCommandIcon, LucideIcon> = {
   codeFence: TextCursorInput,
   horizontalRule: Minus,
   table: Table2,
-  duplicate: CopyPlus
+  tableRow: Rows3,
+  image: Image,
+  deleteLine: Trash2,
+  duplicate: CopyPlus,
+  formatDocument: Wand2
 }
 
 const selectionOverlayCommandIds: EditorCommandId[] = [
@@ -367,6 +375,8 @@ export function App() {
   const [quickInsertQuery, setQuickInsertQuery] = useState('')
   const [quickInsertActiveIndex, setQuickInsertActiveIndex] = useState(0)
   const [sourceSelection, setSourceSelection] = useState<SourceSelectionState>({ start: 0, end: 0, hasFocus: false })
+  const [dismissedMarkdownSuggestionKey, setDismissedMarkdownSuggestionKey] = useState<string | null>(null)
+  const [markdownSuggestionActiveIndex, setMarkdownSuggestionActiveIndex] = useState(0)
   const [templateSuggestionActiveIndex, setTemplateSuggestionActiveIndex] = useState(0)
   const [dismissedTemplateSuggestionKey, setDismissedTemplateSuggestionKey] = useState<string | null>(null)
   const sourceEditorRef = useRef<SourceEditorHandle | null>(null)
@@ -459,14 +469,29 @@ export function App() {
       : null,
     [activeDocument, sourceSelection.end, sourceSelection.hasFocus]
   )
+  const markdownSuggestionTrigger = useMemo(
+    () => activeDocument && sourceSelection.hasFocus
+      ? findMarkdownAutocompleteTrigger(activeDocument.text, sourceSelection.end)
+      : null,
+    [activeDocument, sourceSelection.end, sourceSelection.hasFocus]
+  )
   const templateSuggestionKey = templateSuggestionTrigger
     ? `${templateSuggestionTrigger.start}:${templateSuggestionTrigger.end}:${templateSuggestionTrigger.query}`
+    : null
+  const markdownSuggestionKey = markdownSuggestionTrigger
+    ? `${markdownSuggestionTrigger.start}:${markdownSuggestionTrigger.end}:${markdownSuggestionTrigger.query}`
     : null
   const templateSuggestions = useMemo(
     () => templateSuggestionTrigger
       ? filterTemplateSuggestions(allTemplates, templateSuggestionTrigger.query)
       : [],
     [allTemplates, templateSuggestionTrigger]
+  )
+  const markdownSuggestions = useMemo(
+    () => markdownSuggestionTrigger
+      ? filterMarkdownAutocompleteSuggestions(markdownSuggestionTrigger.query)
+      : [],
+    [markdownSuggestionTrigger]
   )
   const selectionOverlayCommands = useMemo(
     () => selectionOverlayCommandIds.map(commandId => commandById[commandId]),
@@ -834,6 +859,24 @@ export function App() {
     setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
   }, [activeDocument, setEditorSelection, templateSuggestionTrigger, templateVariables, updateActiveDocument])
 
+  const insertMarkdownSuggestion = useCallback((suggestion: MarkdownAutocompleteSuggestion) => {
+    const document = activeDocument
+    const trigger = markdownSuggestionTrigger
+    const editor = sourceEditorRef.current
+
+    if (!document || !trigger) return
+
+    const scrollTop = editor?.getScrollTop()
+    const edit = replaceMarkdownAutocompleteTrigger(document.text, trigger, suggestion)
+
+    updateActiveDocument({ text: edit.text })
+    setLastCommand(`${suggestion.label} inserted`)
+    setStatus(`Inserted ${suggestion.label}`)
+    setDismissedMarkdownSuggestionKey(null)
+    setMarkdownSuggestionActiveIndex(0)
+    setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+  }, [activeDocument, markdownSuggestionTrigger, setEditorSelection, updateActiveDocument])
+
   const handleSourceKeyDown = useCallback((event: KeyboardEvent) => {
     const canUseSuggestions = templateSuggestionTrigger &&
       templateSuggestionKey !== dismissedTemplateSuggestionKey &&
@@ -845,32 +888,52 @@ export function App() {
       !isConverterDialogOpen &&
       !isLocalAiOpen
 
-    if (!canUseSuggestions) return
+    const canUseMarkdownSuggestions = markdownSuggestionTrigger &&
+      markdownSuggestionKey !== dismissedMarkdownSuggestionKey &&
+      markdownSuggestions.length > 0 &&
+      !isCommandPaletteOpen &&
+      !isQuickInsertOpen &&
+      !isPreferencesOpen &&
+      !isTemplatesHelpOpen &&
+      !isConverterDialogOpen &&
+      !isLocalAiOpen
+
+    if (!canUseSuggestions && !canUseMarkdownSuggestions) return
+    const activeSuggestionCount = canUseSuggestions ? templateSuggestions.length : markdownSuggestions.length
 
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, 1, templateSuggestions.length))
+      if (canUseSuggestions) setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, 1, activeSuggestionCount))
+      else setMarkdownSuggestionActiveIndex(current => nextTemplateIndex(current, 1, activeSuggestionCount))
       return
     }
 
     if (event.key === 'ArrowUp') {
       event.preventDefault()
-      setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, -1, templateSuggestions.length))
+      if (canUseSuggestions) setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, -1, activeSuggestionCount))
+      else setMarkdownSuggestionActiveIndex(current => nextTemplateIndex(current, -1, activeSuggestionCount))
       return
     }
 
     if (event.key === 'Escape') {
       event.preventDefault()
-      setDismissedTemplateSuggestionKey(templateSuggestionKey)
+      if (canUseSuggestions) setDismissedTemplateSuggestionKey(templateSuggestionKey)
+      else setDismissedMarkdownSuggestionKey(markdownSuggestionKey)
       return
     }
 
     if (event.key === 'Enter') {
       event.preventDefault()
-      insertTemplateSuggestion(templateSuggestions[templateSuggestionActiveIndex] ?? templateSuggestions[0])
+      if (canUseSuggestions) {
+        insertTemplateSuggestion(templateSuggestions[templateSuggestionActiveIndex] ?? templateSuggestions[0])
+      } else {
+        insertMarkdownSuggestion(markdownSuggestions[markdownSuggestionActiveIndex] ?? markdownSuggestions[0])
+      }
     }
   }, [
+    dismissedMarkdownSuggestionKey,
     dismissedTemplateSuggestionKey,
+    insertMarkdownSuggestion,
     insertTemplateSuggestion,
     isCommandPaletteOpen,
     isConverterDialogOpen,
@@ -878,6 +941,10 @@ export function App() {
     isPreferencesOpen,
     isQuickInsertOpen,
     isTemplatesHelpOpen,
+    markdownSuggestionActiveIndex,
+    markdownSuggestionKey,
+    markdownSuggestionTrigger,
+    markdownSuggestions,
     templateSuggestionActiveIndex,
     templateSuggestionKey,
     templateSuggestionTrigger,
@@ -1237,7 +1304,7 @@ export function App() {
 
       const editor = sourceEditorRef.current
       const selection = editor?.getSelection()
-      const edit = applyConvertedMarkdown(
+      const edit = applyMarkdownInsertion(
         activeDocument.text,
         markdown,
         {
@@ -1255,7 +1322,7 @@ export function App() {
       setStatus(message)
       recordConverterActivity(
         label,
-        `${labelForConverterInsertMode(request.insertMode)} ${markdown.length} Markdown characters`,
+        `${labelForMarkdownInsertMode(request.insertMode)} ${markdown.length} Markdown characters`,
         result.value.warnings.length > 0 ? 'warning' : 'success'
       )
       closeConverterDialog(false)
@@ -1312,7 +1379,7 @@ export function App() {
     }
   }, [activeDocument, selectedSourceText])
 
-  const insertLocalAiResult = useCallback((text: string, mode: LocalAiInsertMode) => {
+  const insertLocalAiResult = useCallback((text: string, mode: MarkdownInsertMode) => {
     const document = activeDocument
     const editor = sourceEditorRef.current
     const selection = editor?.getSelection()
@@ -1322,7 +1389,7 @@ export function App() {
       return
     }
 
-    const edit = applyLocalAiResult(
+    const edit = applyMarkdownInsertion(
       document.text,
       text,
       {
@@ -1806,6 +1873,20 @@ export function App() {
     !isConverterDialogOpen &&
     !isLocalAiOpen
   )
+  const showMarkdownSuggestions = Boolean(
+    activeDocument &&
+    markdownSuggestionTrigger &&
+    markdownSuggestionKey !== dismissedMarkdownSuggestionKey &&
+    markdownSuggestions.length > 0 &&
+    viewMode !== 'preview' &&
+    !showTemplateSuggestions &&
+    !isCommandPaletteOpen &&
+    !isQuickInsertOpen &&
+    !isPreferencesOpen &&
+    !isTemplatesHelpOpen &&
+    !isConverterDialogOpen &&
+    !isLocalAiOpen
+  )
   const showSelectionOverlay = Boolean(
     activeDocument &&
     sourceSelection.hasFocus &&
@@ -2121,6 +2202,8 @@ export function App() {
             }}
             onChange={value => {
               updateActiveDocument({ text: value })
+              setDismissedMarkdownSuggestionKey(null)
+              setMarkdownSuggestionActiveIndex(0)
               setDismissedTemplateSuggestionKey(null)
               setTemplateSuggestionActiveIndex(0)
             }}
@@ -2151,6 +2234,34 @@ export function App() {
                   <span>{template.category}</span>
                   <strong>{template.title}</strong>
                   <small>{template.description}</small>
+                </button>
+              ))}
+            </div>
+          )}
+          {showMarkdownSuggestions && (
+            <div
+              className="templateSuggestionMenu"
+              role="listbox"
+              aria-label="Markdown suggestions"
+              onMouseDown={event => event.preventDefault()}
+            >
+              <div className="templateSuggestionHint">
+                <TextCursorInput size={14} aria-hidden="true" />
+                <span>{markdownSuggestionTrigger?.query ? `Markdown matching "${markdownSuggestionTrigger.query}"` : 'Markdown suggestions'}</span>
+              </div>
+              {markdownSuggestions.map((suggestion, index) => (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  className={index === markdownSuggestionActiveIndex ? 'active' : ''}
+                  onClick={() => insertMarkdownSuggestion(suggestion)}
+                  onMouseEnter={() => setMarkdownSuggestionActiveIndex(index)}
+                  role="option"
+                  aria-selected={index === markdownSuggestionActiveIndex}
+                >
+                  <span>Markdown</span>
+                  <strong>{suggestion.label}</strong>
+                  <small>{suggestion.description}</small>
                 </button>
               ))}
             </div>

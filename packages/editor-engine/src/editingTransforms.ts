@@ -85,6 +85,18 @@ export function applyLink(source: string, selection: TextSelection): TextEdit {
   })
 }
 
+export function insertImage(source: string, selection: TextSelection): TextEdit {
+  const selected = source.slice(selection.start, selection.end).trim() || 'alt text'
+  const url = 'image.png'
+  const inserted = `![${selected}](${url})`
+  const urlStart = selection.start + selected.length + 4
+
+  return replaceRange(source, selection.start, selection.end, inserted, {
+    start: urlStart,
+    end: urlStart + url.length
+  })
+}
+
 export function applyHeading(source: string, selection: TextSelection, level: 1 | 2 | 3 | 4 | 5 | 6): TextEdit {
   const marker = '#'.repeat(level)
   const range = selectedLineRange(source, selection)
@@ -116,6 +128,22 @@ export function applyLinePrefix(
   })
 }
 
+export function insertTableRowAfter(source: string, selection: TextSelection): TextEdit {
+  const range = selectedLineRange(source, selection)
+  const line = source.slice(range.start, range.end)
+  const columnCount = Math.max(1, line.split('|').length - 2)
+  const row = `| ${Array.from({ length: columnCount }, () => '').join(' | ')} |`
+  const insertAt = range.end
+  const prefix = source[insertAt] === '\n' ? '\n' : ''
+  const inserted = `${prefix}${row}`
+  const cursor = insertAt + inserted.length
+
+  return replaceRange(source, insertAt, insertAt, inserted, {
+    start: cursor,
+    end: cursor
+  })
+}
+
 export function wrapBlock(
   source: string,
   selection: TextSelection,
@@ -132,6 +160,22 @@ export function wrapBlock(
   })
 }
 
+export function deleteSelectionOrLines(source: string, selection: TextSelection): TextEdit {
+  if (selection.start !== selection.end) {
+    return replaceRange(source, selection.start, selection.end, '', {
+      start: selection.start,
+      end: selection.start
+    })
+  }
+
+  const range = selectedLineRangeWithBreak(source, selection)
+
+  return replaceRange(source, range.start, range.end, '', {
+    start: range.start,
+    end: range.start
+  })
+}
+
 export function insertBlock(source: string, selection: TextSelection, block: string): TextEdit {
   const prefix = selection.start > 0 && source[selection.start - 1] !== '\n' ? '\n\n' : ''
   const suffix = selection.end < source.length && source[selection.end] !== '\n' ? '\n\n' : '\n'
@@ -142,6 +186,21 @@ export function insertBlock(source: string, selection: TextSelection, block: str
     start: cursor,
     end: cursor
   })
+}
+
+export function formatMarkdownSource(source: string, selection: TextSelection): TextEdit {
+  const normalized = source
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/([^\n])$/g, '$1\n')
+
+  const cursor = Math.min(selection.end, normalized.length)
+
+  return {
+    text: normalized,
+    selectionStart: cursor,
+    selectionEnd: cursor
+  }
 }
 
 export function duplicateSelectionOrLines(source: string, selection: TextSelection): TextEdit {
@@ -164,6 +223,15 @@ export function duplicateSelectionOrLines(source: string, selection: TextSelecti
     start: insertAt + 1,
     end: insertAt + 1 + line.length
   })
+}
+
+function selectedLineRangeWithBreak(source: string, selection: TextSelection): TextSelection {
+  const range = selectedLineRange(source, selection)
+  const end = source[range.end] === '\n' ? range.end + 1 : range.end
+
+  if (range.start === 0 && end === source.length) return { start: 0, end }
+
+  return { start: range.start, end }
 }
 
 function applyLineTransform(

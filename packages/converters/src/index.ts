@@ -300,7 +300,7 @@ export function createUrlToMarkdownConverter(fetchHtml: UrlHtmlFetcher = default
 }
 
 export function createUnsupportedConverter(
-  format: Exclude<ConversionFormat, 'browser-print' | 'csv-to-markdown-table' | 'html' | 'html-to-markdown' | 'markdown-cleanup' | 'rich-clipboard-to-markdown' | 'url-to-markdown'>,
+  format: Exclude<ConversionFormat, 'csv-to-markdown-table' | 'html' | 'html-to-markdown' | 'markdown-cleanup' | 'rich-clipboard-to-markdown' | 'url-to-markdown'>,
   label: string,
   reason: string
 ): MarkdownConverter {
@@ -322,17 +322,24 @@ export function createUnsupportedConverter(
   }
 }
 
-export function createPhase7AConverters(): MarkdownConverter[] {
+export type ConverterSetOptions = {
+  print?: () => void
+  fetchHtml?: UrlHtmlFetcher
+}
+
+export function createPhase7AConverters(options: ConverterSetOptions = {}): MarkdownConverter[] {
+  const browserPrintConverter = options.print
+    ? createBrowserPrintConverter(options.print)
+    : createUnsupportedConverter('browser-print', 'Browser print', 'Browser print requires an app-provided print adapter.')
+
   return [
     createHtmlConverter(),
-    createBrowserPrintConverter(() => {
-      throw new Error('Browser print requires an app-provided print adapter.')
-    }),
+    browserPrintConverter,
     createHtmlToMarkdownConverter(),
     createCsvToMarkdownTableConverter(),
     createMarkdownCleanupConverter(),
     createRichClipboardToMarkdownConverter(),
-    createUrlToMarkdownConverter(),
+    createUrlToMarkdownConverter(options.fetchHtml),
     createUnsupportedConverter('docx-to-markdown', 'DOCX to Markdown', 'DOCX import needs file parsing and fixture coverage before it can be supported.'),
     createUnsupportedConverter('pdf-to-markdown', 'PDF to Markdown', 'PDF import needs an explicit text/layout extraction strategy and fixtures.'),
     createUnsupportedConverter('ocr-to-markdown', 'Image OCR to Markdown', 'OCR import needs an OCR engine decision and model/runtime packaging plan.')

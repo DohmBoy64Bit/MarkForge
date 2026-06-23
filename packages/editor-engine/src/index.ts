@@ -1,5 +1,8 @@
 export * from './commands'
+export * from './documentInsertion'
 export * from './editingTransforms'
+export * from './markdownAutocomplete'
+export * from './sourceSearch'
 export * from './templateAutocomplete'
 export {
   renderMarkdown as renderEditorMarkdownPreview,

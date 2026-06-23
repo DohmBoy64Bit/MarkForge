@@ -50,24 +50,15 @@ importers:
       '@markforge/llm':
         specifier: workspace:*
         version: link:../../packages/llm
-      '@markforge/markdown-engine':
-        specifier: workspace:*
-        version: link:../../packages/markdown-engine
       '@markforge/platform':
         specifier: workspace:*
         version: link:../../packages/platform
       '@markforge/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@markforge/templates':
-        specifier: workspace:*
-        version: link:../../packages/templates
       '@markforge/theme-engine':
         specifier: workspace:*
         version: link:../../packages/theme-engine
-      '@markforge/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@tauri-apps/api':
         specifier: ^2.11.1
         version: 2.11.1
@@ -117,15 +108,9 @@ importers:
       '@markforge/platform':
         specifier: workspace:*
         version: link:../../packages/platform
-      '@markforge/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@markforge/theme-engine':
         specifier: workspace:*
         version: link:../../packages/theme-engine
-      '@markforge/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@tauri-apps/api':
         specifier: ^2.11.1
         version: 2.11.1

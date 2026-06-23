@@ -3,8 +3,12 @@ import {
   applyInlineWrap,
   applyLinePrefix,
   applyLink,
+  deleteSelectionOrLines,
   duplicateSelectionOrLines,
+  formatMarkdownSource,
+  insertImage,
   insertBlock,
+  insertTableRowAfter,
   wrapBlock,
   type TextEdit,
   type TextSelection
@@ -31,7 +35,11 @@ export type EditorCommandId =
   | 'block.codeFence'
   | 'insert.horizontalRule'
   | 'insert.table'
+  | 'insert.tableRow'
+  | 'insert.image'
+  | 'edit.deleteLine'
   | 'edit.duplicate'
+  | 'edit.formatDocument'
 
 export type EditorCommandIcon =
   | 'bold'
@@ -52,7 +60,11 @@ export type EditorCommandIcon =
   | 'codeFence'
   | 'horizontalRule'
   | 'table'
+  | 'tableRow'
+  | 'image'
+  | 'deleteLine'
   | 'duplicate'
+  | 'formatDocument'
 
 export type EditorCommand = {
   id: EditorCommandId
@@ -196,12 +208,40 @@ export const editorCommands: EditorCommand[] = [
     execute: (source, selection) => insertBlock(source, selection, '| Name | Value |\n| --- | --- |\n| Item | Detail |')
   },
   {
+    id: 'insert.tableRow',
+    label: 'Table row',
+    icon: 'tableRow',
+    group: 'insert',
+    execute: insertTableRowAfter
+  },
+  {
+    id: 'insert.image',
+    label: 'Image',
+    icon: 'image',
+    group: 'insert',
+    execute: insertImage
+  },
+  {
+    id: 'edit.deleteLine',
+    label: 'Delete selection or line',
+    icon: 'deleteLine',
+    group: 'edit',
+    execute: deleteSelectionOrLines
+  },
+  {
     id: 'edit.duplicate',
     label: 'Duplicate selection or line',
     icon: 'duplicate',
     group: 'edit',
     shortcut: 'Ctrl+D',
     execute: duplicateSelectionOrLines
+  },
+  {
+    id: 'edit.formatDocument',
+    label: 'Format Markdown',
+    icon: 'formatDocument',
+    group: 'edit',
+    execute: formatMarkdownSource
   }
 ]
 

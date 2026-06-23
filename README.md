@@ -18,7 +18,7 @@ The initial architecture and parity audit are complete, and implementation has p
 - Phase 10 adds reproducible packaging documentation and validation: Windows NSIS installer commands, release smoke checks, `packaging:check`, and a started Linux smoke plan.
 - Phase 11 adds native open-file watching and editor close-request protection through `packages/platform`, with polling/browser guards preserved as fallback paths.
 - Phase 12A replaces the plain textarea with a CodeMirror 6 Markdown source editor while preserving existing command, template, converter, Local AI, search, dirty-state, and preview workflows.
-- Post-Phase-12A remediation adds editor workspace listing/search/watch, workspace templates, rich clipboard HTML import, URL/article HTML import, basic HTML export settings, safe Mermaid flowchart rendering, Windows shell recent-document updates, and platform spellcheck/updater contracts.
+- Post-Phase-12A remediation adds editor and viewer workspace listing/search/watch, workspace templates, rich clipboard HTML import, URL/article HTML import, basic HTML export settings, safe Mermaid flowchart rendering, general Markdown slash autocomplete, package-owned source search/insertion helpers, source formatting/image/table-row/delete-line commands, Windows shell recent-document updates, converter browser-print API correction, and platform spellcheck/updater contracts.
 - Several package boundaries are still transitional; see [Architecture](docs/architecture.md).
 
 ## Evidence

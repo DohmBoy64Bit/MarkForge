@@ -114,14 +114,14 @@ Code/config/test/build reviewed or searched:
 | Original deferred item | Implementation status | Evidence of implementation | Tests | Documentation | Remaining unsupported capabilities |
 | --- | --- | --- | --- | --- | --- |
 | Platform facade | Partially implemented | `packages/platform/src/index.ts`, app adapters. | Platform tests. | Architecture, package README, Phase 11 docs. | Native spellcheck providers, update publishing, Linux release artifacts, deeper shell smoke. |
-| Native file watching / close interception | Partially implemented | Tauri watch commands/events; editor workspace watch commands/events; editor close-request protection. | Platform tests; Phase 11 validation. | Phase 11 docs/audit. | Viewer workspace browsing and broader cross-platform/network workspace smoke. |
+| Native file watching / close interception | Partially implemented | Tauri watch commands/events; editor/viewer workspace watch commands/events; editor close-request protection. | Platform tests; Phase 11 validation. | Phase 11 docs/audit. | Broader cross-platform/network workspace smoke. |
 | Core state/preferences/session/recent files | Partially implemented | `packages/core/src/index.ts`; editor usage. | Core/editor preference tests. | Core README, architecture. | Custom template/workspace persistence. |
 | Theme engine and built-in themes | Implemented for built-in app themes | `packages/theme-engine/src/index.ts`; editor/viewer theme usage. | Theme/core/editor tests. | Phase 8 docs, theme README. | System/custom/export theme settings. |
 | Converter package/export pipeline | Partially implemented | `packages/converters/src/index.ts`; app export/import/print paths. | Converter/app workflow tests. | Phase 7 docs. | Native PDF/DOCX/OCR and richer export profile UI. |
 | Local LLM package boundary | Implemented for Phase 9 baseline | `packages/llm/src/index.ts`; editor Local AI UI. | LLM/local AI workflow tests. | Phase 9 docs, local LLM setup. | Streaming, profiles, benchmarking, broader AI actions. |
 | Markdown conformance/front matter/diagrams/theme highlighting | Partially implemented | Markdown engine renderer/warnings/tests. | Markdown tests. | Phase 2 docs, parity matrix. | Fixture corpus, full parsers, broader diagram runtime coverage, full code-theme switching. |
 | CodeMirror source surface | Implemented for Phase 12A source mode | `apps/editor/src/ui/SourceEditor.tsx`. | Build/tests; Phase 12 screenshots. | Phase 12 docs/audit. | WYSIWYG/realtime editing and advanced rich tools. |
-| Filesystem/workspace templates / broader autocomplete | Partially implemented | Built-in/custom local/workspace templates plus `/template`/`/tpl`. | Template/autocomplete tests. | Phase 6 docs, parity matrix. | Sync library and broader autocomplete. |
+| Filesystem/workspace templates / autocomplete | Partially implemented | Built-in/custom local/workspace templates plus `/template`/`/tpl` and general Markdown structure suggestions. | Template/autocomplete tests. | Phase 6 docs, parity matrix. | Sync library and path-aware/link-aware autocomplete. |
 | Packaging/Linux/updates/OS integration | Partially implemented | Packaging check, Windows installer/file association/startup loading docs/code, shell recent-document service, updater status contract. | Packaging check; Phase 11 Tauri builds recorded. | Phase 10, release hardening, update strategy. | Linux artifacts, signing, updater publishing, native spellcheck providers. |
 | Bundle tracking/code splitting | Implemented for current budget gate | `scripts/bundle-check.mjs`, Vite manual chunks. | Bundle check/builds. | Phase 12 audit. | Future route-level lazy loading if chunks grow. |
 | Docs validation expansion | Implemented and expanded | `scripts/docs-check.mjs`. | Docs-check. | Developer docs, architecture. | Future release-gate checks as needed. |
@@ -199,7 +199,7 @@ The following are not fake placeholders, but they are real blockers under the st
 
 - WYSIWYG/realtime editing and advanced rich editing tools are not implemented beyond the CodeMirror source surface.
 - Broader Markdown autocomplete is not implemented beyond template triggers.
-- Viewer workspace browsing, larger workspace stress behavior, and network-path smoke evidence remain open.
+- Larger workspace stress behavior and network-path smoke evidence remain open.
 - Native PDF/DOCX/OCR conversion and richer export profile UI are not implemented.
 - Markdown conformance corpus, full structured front matter parsing, broader diagram runtime coverage beyond safe Mermaid flowcharts, and full syntax-highlight theme switching are not implemented.
 - Linux artifacts, updater publishing/signing, native spellcheck providers, and richer shell recent-document smoke evidence are not implemented.

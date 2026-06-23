@@ -18,7 +18,7 @@ No new product features were added in this pass. The fixes were documentation an
 | DW-04 | Deferred Work | Converter package and export pipeline | Partially fixed | Changelog/report | `pnpm test`, builds, Phase 7 docs |
 | DW-05 | Deferred Work | Theme engine and full built-in theme set | Fixed for audited scope | Changelog/report | `pnpm test`, builds, Phase 8 docs |
 | DW-06 | Deferred Work | Local LLM support | Fixed for Phase 9 baseline | Changelog/report | `pnpm test`, `pnpm build:editor`, Phase 9 docs |
-| DW-07 | Deferred Work | Filesystem/workspace templates and broader autocomplete | Partially fixed | `packages/templates`, `packages/editor-engine`, editor workspace loading, changelog/report | Focused template/editor-engine tests |
+| DW-07 | Deferred Work | Filesystem/workspace templates and autocomplete | Partially fixed | `packages/templates`, `packages/editor-engine`, editor workspace loading, general Markdown structure suggestions, changelog/report | Focused template/editor-engine tests |
 | DW-08 | Deferred Work | Documentation validation placeholder | Fixed | `scripts/docs-check.mjs`, changelog/report | `pnpm docs:check` |
 | DW-09 | Deferred Work | Packaging, Linux, associations, updates, OS integration | Partially fixed | Changelog/report | `pnpm packaging:check`, builds, docs-check |
 | AD-01 | Architectural Drift | README-only packages documented as real boundaries | Fixed | Changelog/report | `pnpm docs:check`, `pnpm test` |
@@ -73,17 +73,17 @@ Previously recorded phase validation remains relevant evidence for Phase 11/12:
 ## Remaining Deferred Work
 
 - WYSIWYG/realtime editing.
-- Advanced table tools, image insertion/editing tools, Markdown linting/formatting, broader autocomplete, focus mode, typewriter mode, and distraction-free mode.
+- Advanced table tools, image insertion/editing tools beyond current source helpers, Markdown linting, path-aware autocomplete, focus mode, typewriter mode, and distraction-free mode.
 - CommonMark/GFM fixture corpus, structured YAML/TOML parsing, broader diagram runtime coverage beyond safe Mermaid flowcharts, and full syntax-highlighter theme switching.
-- Viewer workspace browsing, broader workspace/network-path smoke coverage, native spellcheck providers, auto-update publishing/signing, Linux artifacts, and broader OS integration.
+- Broader workspace/network-path smoke coverage, native spellcheck providers, auto-update publishing/signing, Linux artifacts, and broader OS integration.
 - Native PDF/DOCX/OCR conversion and richer export profile UI.
-- Syncable template libraries and broader Markdown autocomplete.
+- Syncable template libraries and path-aware Markdown autocomplete.
 - Custom/system theme support and export theme settings UI.
 
 ## Blocked or No-Change Items
 
 - DW-03 remains deferred because the audit and current docs call for fixture-backed parser/diagram decisions before implementation.
-- DW-07 is partially fixed by workspace template loading from `.markforge/templates/*.md`; broader autocomplete and syncable template libraries remain deferred.
+- DW-07 is partially fixed by workspace template loading from `.markforge/templates/*.md` and general Markdown structure suggestions; path-aware autocomplete and syncable template libraries remain deferred.
 - Remaining OS/release work under DW-09 is deferred until signing, updater, Linux, native spellcheck providers, and release smoke contracts are selected and testable.
 - No change was made to working source code in this pass because current source evidence already implements the package/feature slices that could safely be fixed by later phases.
 

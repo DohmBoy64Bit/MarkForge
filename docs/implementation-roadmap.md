@@ -49,8 +49,8 @@ Exit criteria:
 
 Current status:
 
-- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, native file watching with package polling fallback, front matter/warnings display, generated TOC, search-match list, copy source/rendered text, print, native menu wiring, and package-backed built-in app theme controls.
-- Rendered search highlighting, copy code buttons, workspace/folder browsing in the viewer, and broader export workflows remain open.
+- Initial standalone viewer package is implemented with local file open/reload, sanitized rendering through `packages/markdown-engine`, native opened-file and workspace watching with package polling fallback, front matter/warnings display, generated TOC, search-match list, workspace file indexing/filtering/search/opening, copy source/rendered text, print, native menu wiring, HTML export, and package-backed built-in app theme controls.
+- Rendered search highlighting, copy code buttons, fuzzy quick-open, and broader export workflows remain open.
 
 Exit criteria:
 
@@ -73,7 +73,7 @@ Current status:
 - Phase 6A added a compact templates/help dialog, a preference-backed Templates and Help shortcut, and template insertion through the existing source document update path.
 - Phase 6B added template variable metadata/editing, local custom templates in editor `localStorage`, and a bounded `/template`/`/tpl` source suggestion surface.
 - Phase 12A replaces the plain textarea source surface with a CodeMirror 6 Markdown editor while preserving the existing command, template, converter, Local AI, search, selection, dirty-state, and preview workflows.
-- Full preferences schema, non-format command remapping, rendered-preview search highlighting, syncable template libraries, viewer workspace browsing, and rich/WYSIWYG editing beyond CodeMirror source mode remain open.
+- Full preferences schema, non-format command remapping, rendered-preview search highlighting, syncable template libraries, fuzzy quick-open, and rich/WYSIWYG editing beyond CodeMirror source mode remain open.
 
 Exit criteria:
 
@@ -93,8 +93,9 @@ Current status:
 - Phase 5E added unsaved-work protection and external-change reconciliation around the existing metadata polling foundation; Phase 11 routes the same workflow through native Tauri close-request/file-watch events with polling fallback support.
 - Phase 5F added toggle-aware Markdown transforms, H4-H6, strikethrough, duplicate selection/current-line, and shared search/replace matching for literal, case-sensitive, whole-word, and regex modes.
 - Phase 5G added a compact quick insert surface for block/insert commands and a floating selection overlay for common inline formatting in source mode.
+- Post-Phase-12A remediation adds package-owned image insertion, table-row insertion, selection/current-line deletion, Markdown source formatting, source search/replace helpers, shared converter/Local AI insertion helpers, and general slash autocomplete for headings, links, images, tables, front matter, code fences, task lists, and blockquotes.
 - Phase 12A adds the CodeMirror 6 source editor foundation with Markdown syntax highlighting, line numbers, history, line wrapping, active-line highlighting, and app command compatibility.
-- WYSIWYG/realtime editing, advanced table tools, image workflows, broader autocomplete beyond template triggers, linting, formatter integration, non-format command remapping, full settings schema, viewer workspace browsing, and focus/typewriter modes remain open.
+- WYSIWYG/realtime editing, advanced table manipulation beyond the current row/scaffold helpers, image asset picking/path-aware autocomplete beyond Markdown syntax insertion, linting, formatter integration beyond the current source formatter, non-format command remapping, full settings schema, fuzzy quick-open, and focus/typewriter modes remain open.
 
 Exit criteria:
 
@@ -111,7 +112,7 @@ Current status:
 - Phase 6A activates `packages/templates` with a typed starter catalog, search/filter helpers, simple variable application, and package tests.
 - Phase 6B adds typed variable metadata/helpers, guided variable editing in the dialog, local custom templates with create/delete/reset behavior, and a first source suggestion surface for `/template` and `/tpl`.
 - The editor exposes a compact toolbar/shortcut dialog for built-in/custom template search, live resolved preview, insertion, and a concise Markdown reference.
-- Workspace template loading from `.markforge/templates/*.md` is implemented in the editor. General Markdown autocomplete, syncable user template libraries, and a docs website remain open.
+- Workspace template loading from `.markforge/templates/*.md` is implemented in the editor. General line-leading Markdown structure autocomplete is implemented; path-aware/link-aware completion, syncable user template libraries, and a docs website remain open.
 
 Exit criteria:
 
@@ -207,7 +208,7 @@ Current status:
 
 - Editor and viewer Tauri shells use the Rust `notify` crate to watch opened Markdown/text files and emit `markforge://file-watch` events.
 - `packages/platform` prefers native file-watch adapters and keeps the polling implementation as a fallback.
-- The editor Tauri shell also exposes workspace listing, workspace search, and recursive workspace watch commands for supported Markdown/text files.
+- The editor and viewer Tauri shells expose workspace listing, workspace search, and recursive workspace watch commands for supported Markdown/text files.
 - The editor registers Tauri `onCloseRequested` protection through `packages/platform` and walks every dirty document through the existing Save/Discard/Cancel dialog before force-destroying the window.
 - Linux artifact smoke remains blocked by missing native Linux prerequisites on the current WSL host.
 

@@ -5,7 +5,16 @@ import {
   defaultHtmlExportPath
 } from '@markforge/converters'
 import { renderMarkdown, type FrontMatterData, type RenderedMarkdown } from '@markforge/markdown-engine'
-import { createNativeFileWatcher, createPlatformServices, type FileInfo, type NativeFileWatchPayload } from '@markforge/platform'
+import {
+  createNativeFileWatcher,
+  createNativeWorkspaceWatcher,
+  createPlatformServices,
+  type FileInfo,
+  type NativeFileWatchPayload,
+  type NativeWorkspaceWatchPayload,
+  type WorkspaceFileEntry,
+  type WorkspaceSearchMatch
+} from '@markforge/platform'
 import { appVisibleThemes, getTheme, themeToAppCssVariables, type ThemeId } from '@markforge/theme-engine'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
@@ -18,6 +27,8 @@ import {
   FileCode,
   FileInput,
   FileSearch,
+  FileText,
+  FolderOpen,
   ListTree,
   Moon,
   Printer,
@@ -36,18 +47,35 @@ type SearchMatch = {
   text: string
 }
 
+const nativeFileWatcher = createNativeFileWatcher({
+  listen: async (eventName, handler) => listen<NativeFileWatchPayload>(eventName, event => handler(event.payload)),
+  onError: error => console.warn(error),
+  start: path => invoke<void>('watch_text_file', { path }),
+  stop: path => invoke<void>('unwatch_text_file', { path })
+})!
+
 const platform = createPlatformServices({
   filesystem: {
     getFileInfo: path => invoke<FileInfo>('get_file_info', { path }),
+    listWorkspaceFiles: root => invoke<WorkspaceFileEntry[]>('list_workspace_files', { root }),
     readTextFile: path => invoke<string>('read_text_file', { path }),
+    searchWorkspace: (root, options) => invoke<WorkspaceSearchMatch[]>('search_workspace', {
+      root,
+      query: options.query,
+      caseSensitive: options.caseSensitive,
+      limit: options.limit
+    }),
     writeTextFile: (path, contents) => invoke<void>('write_text_file', { path, contents })
   },
-  fileWatcher: createNativeFileWatcher({
-    listen: async (eventName, handler) => listen<NativeFileWatchPayload>(eventName, event => handler(event.payload)),
-    onError: error => console.warn(error),
-    start: path => invoke<void>('watch_text_file', { path }),
-    stop: path => invoke<void>('unwatch_text_file', { path })
-  }),
+  fileWatcher: {
+    watchFile: nativeFileWatcher.watchFile,
+    watchWorkspace: createNativeWorkspaceWatcher({
+      listen: async (eventName, handler) => listen<NativeWorkspaceWatchPayload>(eventName, event => handler(event.payload)),
+      onError: error => console.warn(error),
+      start: root => invoke<void>('watch_workspace', { root }),
+      stop: root => invoke<void>('unwatch_workspace', { root })
+    })
+  },
   dialogs: {
     open,
     save
@@ -99,6 +127,13 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [theme, setTheme] = useState<ThemeId>('light')
   const [selectedMatch, setSelectedMatch] = useState(0)
+  const [workspaceRoot, setWorkspaceRoot] = useState<string | null>(null)
+  const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFileEntry[]>([])
+  const [workspaceFileFilter, setWorkspaceFileFilter] = useState('')
+  const [workspaceSearchQuery, setWorkspaceSearchQuery] = useState('')
+  const [workspaceSearchMatches, setWorkspaceSearchMatches] = useState<WorkspaceSearchMatch[]>([])
+  const [workspaceStatus, setWorkspaceStatus] = useState('No workspace open')
+  const [isWorkspaceRefreshing, setIsWorkspaceRefreshing] = useState(false)
   const articleRef = useRef<HTMLElement | null>(null)
   const startupFileLoadedRef = useRef(false)
 
@@ -112,10 +147,18 @@ export function App() {
   const frontMatterRows = useMemo(() => frontMatterEntries(rendered.frontMatter?.data), [rendered.frontMatter])
   const activeTheme = useMemo(() => getTheme(theme), [theme])
   const themeVariables = useMemo(() => themeToAppCssVariables(activeTheme) as CSSProperties, [activeTheme])
+  const filteredWorkspaceFiles = useMemo(() => {
+    const query = workspaceFileFilter.trim().toLowerCase()
+    if (!query) return workspaceFiles.slice(0, 80)
 
-  const openDocument = useCallback(async () => {
+    return workspaceFiles
+      .filter(file => file.relativePath.toLowerCase().includes(query))
+      .slice(0, 80)
+  }, [workspaceFileFilter, workspaceFiles])
+
+  const openDocument = useCallback(async (path?: string) => {
     try {
-      const selected = await selectOpenPathFromPlatform()
+      const selected = path ?? await selectOpenPathFromPlatform()
 
       if (typeof selected !== 'string') return
 
@@ -124,6 +167,63 @@ export function App() {
       setStatus(messageFromError(error))
     }
   }, [])
+
+  const refreshWorkspaceFiles = useCallback(async (root = workspaceRoot) => {
+    if (!root) {
+      setWorkspaceStatus('Open a workspace before refreshing')
+      return
+    }
+
+    setIsWorkspaceRefreshing(true)
+    const result = await platform.filesystem.listWorkspaceFiles(root)
+    setIsWorkspaceRefreshing(false)
+
+    if (!result.ok) {
+      setWorkspaceStatus(result.error.message)
+      return
+    }
+
+    setWorkspaceFiles(result.value)
+    setWorkspaceStatus(`${result.value.length} Markdown and text files indexed`)
+  }, [workspaceRoot])
+
+  const openWorkspace = useCallback(async () => {
+    const selected = await platform.dialogs.openWorkspaceDirectory()
+
+    if (!selected.ok) {
+      setWorkspaceStatus(selected.error.message)
+      return
+    }
+
+    if (!selected.value) return
+
+    setWorkspaceRoot(selected.value)
+    setWorkspaceFiles([])
+    setWorkspaceFileFilter('')
+    setWorkspaceSearchMatches([])
+    setWorkspaceStatus('Indexing workspace')
+    await refreshWorkspaceFiles(selected.value)
+  }, [refreshWorkspaceFiles])
+
+  const runWorkspaceSearch = useCallback(async (query = workspaceSearchQuery) => {
+    if (!workspaceRoot || !query.trim()) {
+      setWorkspaceSearchMatches([])
+      return
+    }
+
+    const result = await platform.filesystem.searchWorkspace(workspaceRoot, {
+      limit: 80,
+      query
+    })
+
+    if (!result.ok) {
+      setWorkspaceStatus(result.error.message)
+      return
+    }
+
+    setWorkspaceSearchMatches(result.value)
+    setWorkspaceStatus(`${result.value.length} workspace matches`)
+  }, [workspaceRoot, workspaceSearchQuery])
 
   const reloadDocument = useCallback(async () => {
     if (!filePath) {
@@ -218,6 +318,7 @@ export function App() {
     void listen<string>('markforge://viewer-menu', event => {
       const id = event.payload
       if (id === 'file.open') void openDocument()
+      if (id === 'file.openWorkspace') void openWorkspace()
       if (id === 'file.reload') void reloadDocument()
       if (id === 'file.exportHtml') void exportHtml()
       if (id === 'file.copySource') void copySource()
@@ -232,7 +333,7 @@ export function App() {
     return () => {
       unlisten?.()
     }
-  }, [copyRendered, copySource, exportHtml, openDocument, printDocument, reloadDocument])
+  }, [copyRendered, copySource, exportHtml, openDocument, openWorkspace, printDocument, reloadDocument])
 
   useEffect(() => {
     if (!filePath || !lastKnownFileInfo?.modifiedMs) return
@@ -256,6 +357,36 @@ export function App() {
   useEffect(() => {
     setSelectedMatch(0)
   }, [searchQuery])
+
+  useEffect(() => {
+    if (!workspaceRoot) return
+
+    const watcher = platform.watchWorkspace({ root: workspaceRoot }, event => {
+      setWorkspaceStatus(`${event.relativePath} ${event.type}`)
+      void refreshWorkspaceFiles(workspaceRoot)
+      if (workspaceSearchQuery.trim()) void runWorkspaceSearch(workspaceSearchQuery)
+    })
+
+    if (!watcher.ok) {
+      setWorkspaceStatus(watcher.error.message)
+      return
+    }
+
+    return () => watcher.value.dispose()
+  }, [refreshWorkspaceFiles, runWorkspaceSearch, workspaceRoot, workspaceSearchQuery])
+
+  useEffect(() => {
+    if (!workspaceRoot || !workspaceSearchQuery.trim()) {
+      setWorkspaceSearchMatches([])
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      void runWorkspaceSearch(workspaceSearchQuery)
+    }, 250)
+
+    return () => window.clearTimeout(timer)
+  }, [runWorkspaceSearch, workspaceRoot, workspaceSearchQuery])
 
   async function loadDocument(path: string, verb: 'Opened' | 'Reloaded') {
     const { contents, info } = await readDocumentFromPlatform(path)
@@ -284,6 +415,9 @@ export function App() {
         <nav className="toolbar" aria-label="File actions">
           <button type="button" onClick={() => void openDocument()} title="Open file" aria-label="Open file">
             <FileInput size={18} />
+          </button>
+          <button type="button" onClick={() => void openWorkspace()} title="Open workspace" aria-label="Open workspace">
+            <FolderOpen size={18} />
           </button>
           <button type="button" onClick={() => void reloadDocument()} title="Reload file" aria-label="Reload file">
             <RefreshCcw size={18} />
@@ -354,6 +488,82 @@ export function App() {
         </section>
 
         <aside className="inspector" aria-label="Document inspector">
+          <section>
+            <div className="panelTitle">
+              <FolderOpen size={16} />
+              <h2>Workspace</h2>
+            </div>
+            <div className="workspaceActions">
+              <button type="button" onClick={() => void openWorkspace()} title="Open folder">
+                <FolderOpen size={15} aria-hidden="true" />
+                <span>Open</span>
+              </button>
+              <button
+                type="button"
+                disabled={!workspaceRoot || isWorkspaceRefreshing}
+                onClick={() => void refreshWorkspaceFiles()}
+                title="Refresh workspace"
+              >
+                <RefreshCcw size={15} aria-hidden="true" />
+                <span>Refresh</span>
+              </button>
+            </div>
+            <p className="workspaceStatus" title={workspaceRoot ?? workspaceStatus}>
+              {workspaceRoot ?? workspaceStatus}
+            </p>
+            {workspaceRoot && (
+              <>
+                <label className="workspaceInput">
+                  <Search size={14} aria-hidden="true" />
+                  <input
+                    value={workspaceFileFilter}
+                    onChange={event => setWorkspaceFileFilter(event.target.value)}
+                    placeholder="Filter files"
+                    aria-label="Filter workspace files"
+                  />
+                </label>
+                {filteredWorkspaceFiles.length > 0 ? (
+                  <ol className="workspaceFiles">
+                    {filteredWorkspaceFiles.map(file => (
+                      <li key={file.path}>
+                        <button type="button" onClick={() => void openDocument(file.path)} title={file.path}>
+                          <FileText size={14} aria-hidden="true" />
+                          <span>{file.relativePath}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="emptyLine">{workspaceFiles.length === 0 ? 'No Markdown or text files' : 'No filtered files'}</p>
+                )}
+                <label className="workspaceInput">
+                  <FileSearch size={14} aria-hidden="true" />
+                  <input
+                    value={workspaceSearchQuery}
+                    onChange={event => setWorkspaceSearchQuery(event.target.value)}
+                    placeholder="Search workspace"
+                    aria-label="Search workspace"
+                  />
+                </label>
+                {workspaceSearchMatches.length > 0 ? (
+                  <ol className="workspaceMatches">
+                    {workspaceSearchMatches.map(match => (
+                      <li key={`${match.path}-${match.line}-${match.column}`}>
+                        <button type="button" onClick={() => void openDocument(match.path)} title={match.path}>
+                          <span>{match.relativePath}:{match.line}</span>
+                          <mark>{match.preview || '(blank line)'}</mark>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                ) : workspaceSearchQuery.trim() ? (
+                  <p className="emptyLine">No workspace matches</p>
+                ) : null}
+                <p className="selectionHint">{workspaceStatus}</p>
+              </>
+            )}
+          </section>
+
           <section>
             <div className="panelTitle">
               <ShieldCheck size={16} />

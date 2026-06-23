@@ -4,8 +4,12 @@ import {
   applyInlineWrap,
   applyLinePrefix,
   applyLink,
+  deleteSelectionOrLines,
   duplicateSelectionOrLines,
+  formatMarkdownSource,
+  insertImage,
   insertBlock,
+  insertTableRowAfter,
   wrapBlock
 } from './editingTransforms'
 
@@ -57,6 +61,13 @@ describe('editingTransforms', () => {
     expect(edit.text.slice(edit.selectionStart, edit.selectionEnd)).toBe('https://example.com')
   })
 
+  it('inserts image Markdown and selects the image path', () => {
+    const edit = insertImage('Logo', { start: 0, end: 4 })
+
+    expect(edit.text).toBe('![Logo](image.png)')
+    expect(edit.text.slice(edit.selectionStart, edit.selectionEnd)).toBe('image.png')
+  })
+
   it('applies heading markers to the selected line range', () => {
     const edit = applyHeading('Intro\nOld heading\nTail', { start: 8, end: 12 }, 2)
 
@@ -103,6 +114,19 @@ describe('editingTransforms', () => {
     expect(edit.selectionEnd).toBe(14)
   })
 
+  it('inserts a table row matching the selected table line width', () => {
+    const edit = insertTableRowAfter('| A | B | C |\n| --- | --- | --- |', { start: 2, end: 2 })
+
+    expect(edit.text).toBe('| A | B | C |\n|  |  |  |\n| --- | --- | --- |')
+  })
+
+  it('deletes the current line when the selection is empty', () => {
+    const edit = deleteSelectionOrLines('alpha\nbeta\ngamma', { start: 7, end: 7 })
+
+    expect(edit.text).toBe('alpha\ngamma')
+    expect(edit.selectionStart).toBe(6)
+  })
+
   it('duplicates the selected text after the current selection', () => {
     const edit = duplicateSelectionOrLines('alpha beta', { start: 6, end: 10 })
 
@@ -117,5 +141,11 @@ describe('editingTransforms', () => {
     expect(edit.text).toBe('alpha\nalpha\nbeta')
     expect(edit.selectionStart).toBe(6)
     expect(edit.selectionEnd).toBe(11)
+  })
+
+  it('formats Markdown by trimming trailing spaces and compacting blank runs', () => {
+    const edit = formatMarkdownSource('alpha  \n\n\nbeta', { start: 0, end: 0 })
+
+    expect(edit.text).toBe('alpha\n\nbeta\n')
   })
 })

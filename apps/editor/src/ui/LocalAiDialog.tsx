@@ -1,3 +1,4 @@
+import { labelForMarkdownInsertMode, type MarkdownInsertMode } from '@markforge/editor-engine'
 import { localLlmActions, type LocalLlmActionId, type LocalLlmProviderKind } from '@markforge/llm'
 import {
   AlertTriangle,
@@ -16,10 +17,8 @@ import {
   buildLocalAiPromptPreview,
   defaultEndpointForLocalAiProvider,
   editorLocalAiProviderKinds,
-  labelForLocalAiInsertMode,
   labelForLocalAiProvider,
-  type EditorLocalAiProviderKind,
-  type LocalAiInsertMode
+  type EditorLocalAiProviderKind
 } from './localAiWorkflow'
 
 export type LocalAiRunRequest = {
@@ -37,14 +36,14 @@ export type LocalAiRunResult =
 type LocalAiDialogProps = {
   documentText: string
   isRunning: boolean
-  onInsertResult: (text: string, mode: LocalAiInsertMode) => void
+  onInsertResult: (text: string, mode: MarkdownInsertMode) => void
   onRequestClose: () => void
   onRun: (request: LocalAiRunRequest) => Promise<LocalAiRunResult>
   selectionLength: number
   selectionText: string
 }
 
-const insertModes: LocalAiInsertMode[] = ['replace-selection', 'insert-at-cursor', 'append-to-document']
+const insertModes: MarkdownInsertMode[] = ['replace-selection', 'insert-at-cursor', 'append-to-document']
 
 export function LocalAiDialog({
   documentText,
@@ -291,11 +290,11 @@ export function LocalAiDialog({
                   key={mode}
                   type="button"
                   onClick={() => onInsertResult(resultText, mode)}
-                  title={`${labelForLocalAiInsertMode(mode)} Local AI result`}
-                  aria-label={`${labelForLocalAiInsertMode(mode)} Local AI result`}
+                  title={`${labelForMarkdownInsertMode(mode)} Local AI result`}
+                  aria-label={`${labelForMarkdownInsertMode(mode)} Local AI result`}
                 >
                   <ClipboardCopy size={15} />
-                  <span>{labelForLocalAiInsertMode(mode)}</span>
+                  <span>{labelForMarkdownInsertMode(mode)}</span>
                 </button>
               ))}
             </div>
