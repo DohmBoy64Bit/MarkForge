@@ -80,16 +80,17 @@ Latest smoke evidence:
 
 - [Windows installer smoke - 2026-06-22](audits/windows-installer-smoke-2026-06-22.md)
 - [Windows shell integration smoke - 2026-06-22](audits/windows-shell-integration-smoke-2026-06-22.md)
+- [Linux smoke - 2026-06-22](audits/linux-smoke-2026-06-22.md)
 
 ## Linux Smoke Plan
 
-Linux packaging is started as a documented smoke plan, not a completed release channel.
+Linux packaging is guarded by a repeatable smoke script, not a completed release channel.
 
 Target order:
 
-1. Run `pnpm docs:check`, `pnpm test`, `pnpm build:editor`, and `pnpm build:viewer` on Ubuntu LTS.
-2. Run `cargo check` in both `apps/editor/src-tauri` and `apps/viewer/src-tauri`.
-3. Verify Tauri prerequisites for WebKitGTK and bundling.
+1. Run `pnpm linux:smoke` on Ubuntu LTS with native Linux Node.js, pnpm/Corepack, Rust, and WebKitGTK prerequisites installed.
+2. The script runs docs, tests, editor/viewer builds, bundle checks, packaging checks, and both Tauri `cargo check` commands.
+3. Set `MARKFORGE_LINUX_BUNDLE=1 pnpm linux:smoke` when the host is ready to build Linux Tauri artifacts.
 4. Trial AppImage first because it is the broadest single-file smoke artifact.
 5. Evaluate deb or rpm only after the AppImage smoke path launches cleanly.
 6. Confirm local file dialogs, file read/write, clipboard text, browser print, and theme rendering.

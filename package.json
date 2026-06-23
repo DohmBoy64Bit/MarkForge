@@ -23,7 +23,8 @@
     "test:watch": "vitest",
     "browser:install": "playwright install chromium",
     "bundle:check": "node scripts/bundle-check.mjs",
-    "packaging:check": "node scripts/packaging-check.mjs"
+    "packaging:check": "node scripts/packaging-check.mjs",
+    "linux:smoke": "bash scripts/linux-smoke.sh"
   },
   "devDependencies": {
     "@types/node": "^26.0.0",

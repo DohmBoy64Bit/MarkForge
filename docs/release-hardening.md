@@ -54,7 +54,25 @@ Deferred until real release infrastructure exists:
 - Release channel endpoints and static update JSON.
 - Signed artifact validation in CI.
 
+## Milestone 4: Linux Smoke Pass
+
+Status: complete for repeatable smoke wiring and current WSL prerequisite audit; Linux release artifacts remain blocked by host prerequisites.
+
+Evidence:
+
+- [Linux smoke - 2026-06-22](audits/linux-smoke-2026-06-22.md)
+
+Implemented:
+
+- Added `pnpm linux:smoke`, backed by `scripts/linux-smoke.sh`.
+- The smoke script validates Linux host prerequisites before running repository checks.
+- The script runs docs, tests, editor/viewer builds, bundle checks, packaging checks, and both Tauri `cargo check` commands once prerequisites are present.
+- Optional Linux artifact bundling is guarded behind `MARKFORGE_LINUX_BUNDLE=1`.
+
+Current blocker:
+
+- The available WSL Ubuntu host is missing native Linux Node.js, Rust/Cargo, WebKitGTK, and JavaScriptCoreGTK packages. Sudo requires interactive authentication, so those prerequisites could not be installed non-interactively in this pass.
+
 ## Remaining Milestones
 
-- Milestone 4: Linux smoke pass.
 - Milestone 5: deferred feature implementation and final drift/debt audit.
