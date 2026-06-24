@@ -10,7 +10,8 @@ Scope: current remediation record for every confirmed issue in `docs/audits/docu
 ### Added
 
 - Added `scripts/e2e-editor-ui.mjs`, a reusable Playwright browser audit that starts the built editor preview, exercises the labelled editor UI surface, checks desktop/mobile overflow, verifies dialog workflows, captures screenshot evidence, and fails on browser console errors.
-- Added root script `pnpm test:e2e:editor`.
+- Expanded `scripts/e2e-editor-ui.mjs` to cover both editor and viewer browser-safe UI surfaces, cleanly regenerate screenshot evidence, enumerate visible controls, and record browser-automation limits.
+- Added root scripts `pnpm test:e2e:editor` and `pnpm test:e2e:ui`.
 - Added `docs/audits/editor-e2e-ui-audit-2026-06-24.md` and documented the command in `tests/README.md`.
 
 ### Fixed
@@ -19,7 +20,7 @@ Scope: current remediation record for every confirmed issue in `docs/audits/docu
 
 ### Evidence
 
-- Screenshot evidence is written to `docs/audits/screenshots/e2e-editor-ui/` when `pnpm test:e2e:editor` runs.
+- Screenshot evidence is regenerated under `docs/audits/screenshots/e2e-editor-ui/` when `pnpm test:e2e:ui` runs.
 
 ## Verification Summary
 
