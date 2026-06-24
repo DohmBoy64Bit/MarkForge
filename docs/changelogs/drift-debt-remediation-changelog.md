@@ -5,6 +5,22 @@ Latest evidence-mode verification: 2026-06-24
 
 Scope: current remediation record for every confirmed issue in `docs/audits/documentation-code-drift-debt-audit.md`. The original audit captured a Phase 6B-era baseline. Later implementation phases resolved or reduced several findings, so this changelog records the current evidence-backed status after Phase 12A rather than preserving stale Phase 6-only conclusions.
 
+## 2026-06-24 E2E UI Audit Addendum
+
+### Added
+
+- Added `scripts/e2e-editor-ui.mjs`, a reusable Playwright browser audit that starts the built editor preview, exercises the labelled editor UI surface, checks desktop/mobile overflow, verifies dialog workflows, captures screenshot evidence, and fails on browser console errors.
+- Added root script `pnpm test:e2e:editor`.
+- Added `docs/audits/editor-e2e-ui-audit-2026-06-24.md` and documented the command in `tests/README.md`.
+
+### Fixed
+
+- Fixed a CodeMirror-to-React source editor update loop exposed by the new E2E run. `SourceEditor` now coalesces user edits outside CodeMirror's synchronous transaction callback and suppresses prop-sync echo updates; `App` now de-duplicates identical source selection state.
+
+### Evidence
+
+- Screenshot evidence is written to `docs/audits/screenshots/e2e-editor-ui/` when `pnpm test:e2e:editor` runs.
+
 ## Verification Summary
 
 - Pass 1, audit to code/docs: read the full audit, architecture, roadmap, current phase docs, remediation reports, package READMEs, package inventory, app manifests, and representative source evidence for platform, core, converters, theme, LLM, CodeMirror, and persistence behavior.

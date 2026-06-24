@@ -665,15 +665,27 @@ export function App() {
     )
   }, [activeId])
 
+  const updateSourceSelection = useCallback((next: SourceSelectionState) => {
+    setSourceSelection(current =>
+      current.start === next.start && current.end === next.end && current.hasFocus === next.hasFocus
+        ? current
+        : next
+    )
+  }, [])
+
+  const updateSourceFocus = useCallback((hasFocus: boolean) => {
+    setSourceSelection(current => current.hasFocus === hasFocus ? current : { ...current, hasFocus })
+  }, [])
+
   const setEditorSelection = useCallback((start: number, end: number, scrollTop?: number) => {
     window.requestAnimationFrame(() => {
       const editor = sourceEditorRef.current
       if (!editor) return
 
       editor.setSelection(start, end, scrollTop)
-      setSourceSelection({ start, end, hasFocus: true })
+      updateSourceSelection({ start, end, hasFocus: true })
     })
-  }, [])
+  }, [updateSourceSelection])
 
   const getActiveMarkdownSelection = useCallback((document: EditorDocument) => {
     if (viewMode === 'rich') {
@@ -693,12 +705,12 @@ export function App() {
   const restoreActiveEditorSelection = useCallback((start: number, end: number, scrollTop?: number) => {
     if (viewMode === 'rich') {
       window.requestAnimationFrame(() => richEditorRef.current?.focus())
-      setSourceSelection({ start, end, hasFocus: true })
+      updateSourceSelection({ start, end, hasFocus: true })
       return
     }
 
     setEditorSelection(start, end, scrollTop)
-  }, [setEditorSelection, viewMode])
+  }, [setEditorSelection, updateSourceSelection, viewMode])
 
   const applyEditorCommand = useCallback((commandId: EditorCommandId) => {
     const document = activeDocument
@@ -2558,7 +2570,7 @@ export function App() {
             value={activeDocument?.text ?? ''}
             spellCheck
             onFocusChange={hasFocus => {
-              if (!hasFocus) setSourceSelection(current => ({ ...current, hasFocus: false }))
+              if (!hasFocus) updateSourceFocus(false)
             }}
             onChange={value => {
               updateActiveDocument({ text: value })
@@ -2570,7 +2582,7 @@ export function App() {
               setPathSuggestionActiveIndex(0)
             }}
             onKeyDown={handleSourceKeyDown}
-            onSelectionChange={setSourceSelection}
+            onSelectionChange={updateSourceSelection}
           />
           {showTemplateSuggestions && (
             <div
@@ -2691,7 +2703,7 @@ export function App() {
             value={activeDocument?.text ?? ''}
             spellCheck
             onFocusChange={hasFocus => {
-              if (!hasFocus) setSourceSelection(current => ({ ...current, hasFocus: false }))
+              if (!hasFocus) updateSourceFocus(false)
             }}
             onChange={value => {
               updateActiveDocument({ text: value })
@@ -2702,7 +2714,7 @@ export function App() {
               setDismissedPathSuggestionKey(null)
               setPathSuggestionActiveIndex(0)
             }}
-            onSelectionChange={setSourceSelection}
+            onSelectionChange={updateSourceSelection}
           />
         </section>
 

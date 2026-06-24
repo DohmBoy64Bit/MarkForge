@@ -115,6 +115,9 @@ export const SourceEditor = forwardRef<SourceEditorHandle, SourceEditorProps>(fu
   const hostRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
   const valueRef = useRef(value)
+  const isApplyingExternalValueRef = useRef(false)
+  const pendingChangeRef = useRef<string | null>(null)
+  const changeFrameRef = useRef<number | null>(null)
   const onChangeRef = useRef(onChange)
   const onFocusChangeRef = useRef(onFocusChange)
   const onKeyDownRef = useRef(onKeyDown)
@@ -166,7 +169,7 @@ export const SourceEditor = forwardRef<SourceEditorHandle, SourceEditorProps>(fu
       if (update.docChanged) {
         const nextValue = update.state.doc.toString()
         valueRef.current = nextValue
-        onChangeRef.current(nextValue)
+        if (!isApplyingExternalValueRef.current) scheduleOnChange(nextValue)
       }
 
       if (update.selectionSet || update.docChanged || update.focusChanged) {
@@ -192,6 +195,10 @@ export const SourceEditor = forwardRef<SourceEditorHandle, SourceEditorProps>(fu
     reportSelection(view, view.hasFocus, onSelectionChangeRef.current)
 
     return () => {
+      if (changeFrameRef.current !== null) {
+        window.cancelAnimationFrame(changeFrameRef.current)
+        changeFrameRef.current = null
+      }
       view.destroy()
       viewRef.current = null
     }
@@ -209,11 +216,16 @@ export const SourceEditor = forwardRef<SourceEditorHandle, SourceEditorProps>(fu
     const anchor = Math.min(selection.anchor, nextLength)
     const head = Math.min(selection.head, nextLength)
 
-    view.dispatch({
-      changes: { from: 0, to: currentValue.length, insert: value },
-      selection: EditorSelection.range(anchor, head),
-      annotations: Transaction.addToHistory.of(false)
-    })
+    isApplyingExternalValueRef.current = true
+    try {
+      view.dispatch({
+        changes: { from: 0, to: currentValue.length, insert: value },
+        selection: EditorSelection.range(anchor, head),
+        annotations: Transaction.addToHistory.of(false)
+      })
+    } finally {
+      isApplyingExternalValueRef.current = false
+    }
   }, [value])
 
   useImperativeHandle(ref, () => ({
@@ -261,6 +273,19 @@ export const SourceEditor = forwardRef<SourceEditorHandle, SourceEditorProps>(fu
   }), [])
 
   return <div ref={hostRef} className="sourceEditor" />
+
+  function scheduleOnChange(nextValue: string): void {
+    pendingChangeRef.current = nextValue
+    if (changeFrameRef.current !== null) return
+
+    changeFrameRef.current = window.requestAnimationFrame(() => {
+      changeFrameRef.current = null
+      const pendingValue = pendingChangeRef.current
+      pendingChangeRef.current = null
+
+      if (pendingValue !== null) onChangeRef.current(pendingValue)
+    })
+  }
 })
 
 function reportSelection(

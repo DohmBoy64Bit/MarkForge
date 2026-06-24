@@ -21,6 +21,7 @@
     "tauri:viewer:build": "pnpm --filter @markforge/viewer tauri build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e:editor": "pnpm build:editor && node scripts/e2e-editor-ui.mjs",
     "browser:install": "playwright install chromium",
     "bundle:check": "node scripts/bundle-check.mjs",
     "packaging:check": "node scripts/packaging-check.mjs",
