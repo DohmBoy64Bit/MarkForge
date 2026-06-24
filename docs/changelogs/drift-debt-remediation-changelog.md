@@ -1,6 +1,7 @@
 # Drift / Debt Remediation Changelog
 
 Date: 2026-06-23
+Latest evidence-mode verification: 2026-06-24
 
 Scope: current remediation record for every confirmed issue in `docs/audits/documentation-code-drift-debt-audit.md`. The original audit captured a Phase 6B-era baseline. Later implementation phases resolved or reduced several findings, so this changelog records the current evidence-backed status after Phase 12A rather than preserving stale Phase 6-only conclusions.
 
@@ -33,7 +34,7 @@ Scope: current remediation record for every confirmed issue in `docs/audits/docu
 | TD-01 | Transitional Debt | Metadata polling is the temporary file-change mechanism | High | Partially fixed | Phase 11 added native open-file watching and kept polling as fallback through `packages/platform`. Follow-up remediation added editor and viewer workspace recursive native watch events. | Audit TD-01. | `packages/platform/src/index.ts`, editor/viewer native watch adapters, Rust watch commands. | `docs/phase-11-native-platform-hardening.md`, `packages/platform/README.md`, `docs/marktext-parity-matrix.md`. | `docs/marktext-parity-matrix.md`, changelog/report. | Focused tests, builds, Rust checks. | Add broader smoke coverage if required. |
 | TD-02 | Transitional Debt | LocalStorage persists session, preferences, recent files, and custom templates | Medium | Partially fixed | `packages/core` owns preference/session/recent-file schemas and storage helpers. Local custom templates still use app-local localStorage helpers, which remains documented deferred work. | Audit TD-02. | `packages/core/src/index.ts`, `apps/editor/src/ui/editorPreferences.ts`, `customTemplates.ts`. | `docs/architecture.md`, `packages/core/README.md`, `docs/phase-6-templates-help.md`. | Changelog/report only. | `pnpm test`. | Move custom template/workspace persistence when ownership is defined. |
 | TD-03 | Transitional Debt | `pnpm docs:check` is a placeholder release gate | High | Fixed | Same as DW-08; the real docs check now validates required docs, links, stale markers, and package coverage. | Audit TD-03. | `scripts/docs-check.mjs`, `package.json`. | `docs/developer-documentation.md`, `docs/architecture.md`. | `scripts/docs-check.mjs`, changelog/report. | `pnpm docs:check`. | Keep expanding checks with release criteria. |
-| TD-04 | Transitional Debt | Print/export remains a browser print foundation | Medium | Partially fixed | Browser print is now a converter-backed handoff and HTML export/import/cleanup paths exist. Native PDF/export settings remain deferred. | Audit TD-04. | `packages/converters/src/index.ts`, editor/viewer print/export call sites. | `docs/phase-7-converters.md`, `docs/marktext-parity-matrix.md`, `packages/converters/README.md`. | Changelog/report only. | `pnpm test`, builds. | Implement native PDF/settings only with fixture-backed requirements. |
+| TD-04 | Transitional Debt | Print/export remains a browser print foundation | Medium | Partially fixed | Browser print is now a converter-backed handoff, HTML export/import/cleanup paths exist, and Markdown-to-PDF/DOCX export plus DOCX/PDF/OCR import are wired through package converters and editor binary file I/O. Full-fidelity PDF/page settings and release packaging validation remain deferred. | Audit TD-04. | `packages/converters/src/index.ts`, editor/viewer print/export call sites, editor binary import/export UI. | `docs/phase-7-converters.md`, `docs/marktext-parity-matrix.md`, `packages/converters/README.md`, `apps/editor/README.md`. | Changelog/report only. | `pnpm test`, builds, screenshot validation. | Expand full-fidelity PDF/page settings only with fixture-backed requirements. |
 | TD-05 | Transitional Debt | Vite chunk-size warning is accepted debt | Medium | Fixed for audited warning | Bundle checking and manual chunks are now in place. Phase 12A keeps CodeMirror/Lezer below the 500 KiB budget with `pnpm bundle:check`. | Audit TD-05. | `scripts/bundle-check.mjs`, app Vite configs, Phase 12 bundle evidence. | `docs/phase-12-rich-editor-surface.md`, `docs/audits/phase-12-rich-editor-surface-2026-06-23.md`. | Changelog/report only. | `pnpm build:editor`, `pnpm build:viewer`, `pnpm bundle:check`. | Consider route-level lazy loading if future assets grow. |
 
 ## Evidence Ledger
@@ -118,11 +119,11 @@ Scope: current remediation record for every confirmed issue in `docs/audits/docu
 
 ## Remaining Deferred Work
 
-- WYSIWYG/realtime editing, advanced table/image tools beyond current source helpers, linting beyond current formatting, path-aware autocomplete, and focus/typewriter modes.
+- Broader rich-editing fixture coverage, linting beyond current formatting, image asset management beyond current insertion/update helpers, and focus/typewriter modes.
 - Markdown conformance fixture corpus, structured front matter parser upgrade, broader diagram runtime coverage, and full syntax-highlighter theme switching.
 - Broader workspace/network smoke coverage, native spellcheck providers, auto-update publishing/signing, Linux artifacts, and broader OS smoke coverage.
-- Native PDF/DOCX/OCR conversion and richer export profile UI.
-- Path-aware Markdown autocomplete and syncable template libraries.
+- Full-fidelity PDF/DOCX/OCR fixture coverage, richer page/export settings, and release packaging validation for conversion runtimes.
+- Syncable template libraries.
 - Custom/system theme support and export theme settings UI.
 
 ## Final Self-Audit

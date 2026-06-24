@@ -31,7 +31,7 @@ No new product features were added in this pass. The fixes were documentation an
 | TD-01 | Transitional Debt | Metadata polling temporary file-change detection | Partially fixed | `docs/marktext-parity-matrix.md`, changelog/report | `pnpm test`, builds, Phase 11 docs |
 | TD-02 | Transitional Debt | LocalStorage persistence for session/preferences/recent/templates | Partially fixed | `docs/marktext-parity-matrix.md`, changelog/report | `pnpm test` |
 | TD-03 | Transitional Debt | Placeholder `pnpm docs:check` | Fixed | `scripts/docs-check.mjs`, changelog/report | `pnpm docs:check` |
-| TD-04 | Transitional Debt | Browser print/export foundation | Partially fixed | Changelog/report | `pnpm test`, builds |
+| TD-04 | Transitional Debt | Browser print/export foundation | Partially fixed | Changelog/report | `pnpm test`, builds, screenshot validation |
 | TD-05 | Transitional Debt | Vite chunk-size warning accepted as debt | Fixed for audited warning | Changelog/report | `pnpm build:editor`, `pnpm build:viewer`, `pnpm bundle:check` |
 
 ## Architecture Compliance Summary
@@ -73,17 +73,18 @@ Previously recorded phase validation remains relevant evidence for Phase 11/12:
 ## Remaining Deferred Work
 
 - WYSIWYG/realtime editing.
-- Advanced table tools, image insertion/editing tools beyond current source helpers, Markdown linting, path-aware autocomplete, focus mode, typewriter mode, and distraction-free mode.
+- Broader rich-editing fixture coverage, Markdown linting, image asset management beyond current insertion/update helpers, focus mode, typewriter mode, and distraction-free mode.
 - CommonMark/GFM fixture corpus, structured YAML/TOML parsing, broader diagram runtime coverage beyond safe Mermaid flowcharts, and full syntax-highlighter theme switching.
 - Broader workspace/network-path smoke coverage, native spellcheck providers, auto-update publishing/signing, Linux artifacts, and broader OS integration.
-- Native PDF/DOCX/OCR conversion and richer export profile UI.
-- Syncable template libraries and path-aware Markdown autocomplete.
+- Full-fidelity PDF/DOCX/OCR fixture coverage, richer page/export settings, and release packaging validation for conversion runtimes.
+- Syncable template libraries.
 - Custom/system theme support and export theme settings UI.
 
 ## Blocked or No-Change Items
 
 - DW-03 remains deferred because the audit and current docs call for fixture-backed parser/diagram decisions before implementation.
 - DW-07 is partially fixed by workspace template loading from `.markforge/templates/*.md`, general Markdown structure suggestions, and workspace-backed link/image path autocomplete; syncable template libraries remain deferred.
+- TD-04 is partially fixed by converter-backed browser print, HTML export/import, Markdown-to-PDF/DOCX export, and DOCX/PDF/OCR import; full-fidelity conversion fixtures and richer page/export settings remain deferred.
 - Remaining OS/release work under DW-09 is deferred until signing, updater, Linux, native spellcheck providers, and release smoke contracts are selected and testable.
 - No change was made to working source code in this pass because current source evidence already implements the package/feature slices that could safely be fixed by later phases.
 
