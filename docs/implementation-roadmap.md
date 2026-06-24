@@ -73,7 +73,7 @@ Current status:
 - Phase 6A added a compact templates/help dialog, a preference-backed Templates and Help shortcut, and template insertion through the existing source document update path.
 - Phase 6B added template variable metadata/editing, local custom templates in editor `localStorage`, and a bounded `/template`/`/tpl` source suggestion surface.
 - Phase 12A replaces the plain textarea source surface with a CodeMirror 6 Markdown editor while preserving the existing command, template, converter, Local AI, search, selection, dirty-state, and preview workflows.
-- Full preferences schema, non-format command remapping, rendered-preview search highlighting, syncable template libraries, fuzzy quick-open, and rich/WYSIWYG editing beyond CodeMirror source mode remain open.
+- Full preferences schema, non-format command remapping, rendered-preview search highlighting, syncable template libraries, fuzzy quick-open, focus/typewriter modes, and broader rich-editing fixture coverage remain open.
 
 Exit criteria:
 
@@ -93,9 +93,9 @@ Current status:
 - Phase 5E added unsaved-work protection and external-change reconciliation around the existing metadata polling foundation; Phase 11 routes the same workflow through native Tauri close-request/file-watch events with polling fallback support.
 - Phase 5F added toggle-aware Markdown transforms, H4-H6, strikethrough, duplicate selection/current-line, and shared search/replace matching for literal, case-sensitive, whole-word, and regex modes.
 - Phase 5G added a compact quick insert surface for block/insert commands and a floating selection overlay for common inline formatting in source mode.
-- Post-Phase-12A remediation adds package-owned image insertion, table-row insertion, selection/current-line deletion, Markdown source formatting, source search/replace helpers, shared converter/Local AI insertion helpers, and general slash autocomplete for headings, links, images, tables, front matter, code fences, task lists, and blockquotes.
+- Post-Phase-12A remediation adds package-owned image insertion/update, table row/column insertion, table alignment, selection/current-line deletion, Markdown source formatting, source search/replace helpers, shared converter/Local AI insertion helpers, general slash autocomplete for headings, links, images, tables, front matter, code fences, task lists, blockquotes, and workspace-backed link/image path autocomplete.
 - Phase 12A adds the CodeMirror 6 source editor foundation with Markdown syntax highlighting, line numbers, history, line wrapping, active-line highlighting, and app command compatibility.
-- WYSIWYG/realtime editing, advanced table manipulation beyond the current row/scaffold helpers, image asset picking/path-aware autocomplete beyond Markdown syntax insertion, linting, formatter integration beyond the current source formatter, non-format command remapping, full settings schema, fuzzy quick-open, and focus/typewriter modes remain open.
+- A ProseMirror-backed rich Markdown mode is implemented for Markdown parse/serialize editing. Rich-editing fixture coverage, image asset picking, linting, formatter integration beyond the current source formatter, non-format command remapping, full settings schema, fuzzy quick-open, and focus/typewriter modes remain open.
 
 Exit criteria:
 
@@ -112,7 +112,7 @@ Current status:
 - Phase 6A activates `packages/templates` with a typed starter catalog, search/filter helpers, simple variable application, and package tests.
 - Phase 6B adds typed variable metadata/helpers, guided variable editing in the dialog, local custom templates with create/delete/reset behavior, and a first source suggestion surface for `/template` and `/tpl`.
 - The editor exposes a compact toolbar/shortcut dialog for built-in/custom template search, live resolved preview, insertion, and a concise Markdown reference.
-- Workspace template loading from `.markforge/templates/*.md` is implemented in the editor. General line-leading Markdown structure autocomplete is implemented; path-aware/link-aware completion, syncable user template libraries, and a docs website remain open.
+- Workspace template loading from `.markforge/templates/*.md` is implemented in the editor. General line-leading Markdown structure autocomplete and workspace-backed Markdown link/image path completion are implemented; syncable user template libraries and hosted docs publishing remain open.
 
 Exit criteria:
 
@@ -131,8 +131,8 @@ Current status:
 - Phase 7D adds converter activity history for supported editor conversion actions.
 - Phase 7E polishes the converter import workflow with responsive segmented controls, disabled/converting states, and stable dialog layout.
 - Phase 7F updates converter documentation, validation, and screenshot evidence.
-- The current converter set also supports rich clipboard HTML import, URL/article HTML import through a validated fetch path, and basic HTML export settings for generated metadata/TOC.
-- DOCX, native PDF import/export, and OCR are exposed as explicit unsupported converter boundaries until file parsing, runtime, and fixture requirements are defined.
+- The current converter set also supports rich clipboard HTML import, URL/article HTML import through a validated fetch path, DOCX import/export, PDF text import, Markdown-to-PDF export, OCR image import, and basic HTML export settings for generated metadata/TOC.
+- DOCX, PDF, and OCR conversion are implemented through packaged JavaScript runtimes and require broader fixtures before being treated as complete document-fidelity parity.
 
 Exit criteria:
 
@@ -228,8 +228,8 @@ Current status:
 
 - Phase 12A is implemented for CodeMirror 6 source editing in `apps/editor`.
 - The source editor now supports line numbers, history, Markdown syntax highlighting, bracket matching, active-line highlighting, line wrapping, and app-theme-compatible styling.
-- Existing formatting commands, command palette, quick insert, template insertion/suggestions, converter insertion, Local AI insertion, search jumps, replace actions, source/split/preview modes, and selection overlay operate through the CodeMirror selection bridge.
-- WYSIWYG/realtime editing remains deferred beyond this source editor foundation.
+- Existing formatting commands, command palette, quick insert, template insertion/suggestions, converter insertion, Local AI insertion, search jumps, replace actions, source/rich/split/preview modes, and selection overlay operate through shared Markdown document state.
+- A ProseMirror-backed rich Markdown mode is implemented; broader rich editing fixture coverage and parity-specific behavior remain hardening work.
 
 Exit criteria:
 

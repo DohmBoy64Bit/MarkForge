@@ -9,6 +9,11 @@
   "dependencies": {
     "@markforge/markdown-engine": "workspace:*",
     "@markforge/shared": "workspace:*",
+    "docx": "^9.7.1",
+    "jspdf": "^4.2.1",
+    "mammoth": "^1.12.0",
+    "pdfjs-dist": "^6.0.227",
+    "tesseract.js": "^7.0.0",
     "turndown": "^7.2.4"
   },
   "devDependencies": {

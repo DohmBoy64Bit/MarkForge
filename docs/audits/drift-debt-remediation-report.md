@@ -83,7 +83,7 @@ Previously recorded phase validation remains relevant evidence for Phase 11/12:
 ## Blocked or No-Change Items
 
 - DW-03 remains deferred because the audit and current docs call for fixture-backed parser/diagram decisions before implementation.
-- DW-07 is partially fixed by workspace template loading from `.markforge/templates/*.md` and general Markdown structure suggestions; path-aware autocomplete and syncable template libraries remain deferred.
+- DW-07 is partially fixed by workspace template loading from `.markforge/templates/*.md`, general Markdown structure suggestions, and workspace-backed link/image path autocomplete; syncable template libraries remain deferred.
 - Remaining OS/release work under DW-09 is deferred until signing, updater, Linux, native spellcheck providers, and release smoke contracts are selected and testable.
 - No change was made to working source code in this pass because current source evidence already implements the package/feature slices that could safely be fixed by later phases.
 

@@ -5,10 +5,16 @@ import {
   createOllamaProvider,
   createOpenAiCompatibleLocalProvider,
   createUnsupportedLocalProvider,
+  defaultLocalLlmProviderProfiles,
   ensureExplicitUserInvocation,
   isLocalEndpoint,
+  localLlmActions,
+  normalizeLocalLlmProviderProfile,
+  restoreLocalLlmProviderProfiles,
   runLlmAction,
-  renderPromptTemplate
+  renderPromptTemplate,
+  serializeLocalLlmProviderProfiles,
+  streamLlmAction
 } from './index'
 
 describe('@markforge/llm', () => {
@@ -122,6 +128,100 @@ describe('@markforge/llm', () => {
     })
   })
 
+  it('exposes broader Markdown actions without changing privacy guards', () => {
+    expect(localLlmActions.map(action => action.id)).toEqual([
+      'summarize-document',
+      'improve-clarity',
+      'create-outline',
+      'explain-markdown',
+      'fix-formatting',
+      'generate-markdown-draft',
+      'generate-markdown-table',
+      'suggest-headings'
+    ])
+  })
+
+  it('streams actions through providers that support token callbacks', async () => {
+    const provider = createMockLlmProvider('streamed text')
+    const tokens: string[] = []
+
+    await expect(streamLlmAction(provider, {
+      actionId: 'fix-formatting',
+      document: '# Title',
+      invokedByUser: true,
+      onToken: chunk => tokens.push(chunk.text)
+    })).resolves.toEqual({
+      ok: true,
+      value: { provider: 'mock', text: 'streamed text' }
+    })
+    expect(tokens).toEqual(['streamed text'])
+  })
+
+  it('parses Ollama and OpenAI-compatible streaming responses', async () => {
+    const ollamaFetch = viTextFetch('{"response":"one "}\n{"response":"two"}\n')
+    const ollamaTokens: string[] = []
+    await expect(createOllamaProvider({
+      endpoint: 'http://127.0.0.1:11434',
+      fetch: ollamaFetch,
+      model: 'llama3.2'
+    }).streamPrompt?.({
+      prompt: 'hello',
+      onToken: chunk => ollamaTokens.push(chunk.text)
+    })).resolves.toEqual({
+      ok: true,
+      value: { provider: 'ollama', text: 'one two' }
+    })
+    expect(ollamaTokens).toEqual(['one ', 'two'])
+
+    const openAiFetch = viTextFetch('data: {"choices":[{"delta":{"content":"hi "}}]}\n\ndata: {"choices":[{"delta":{"content":"there"}}]}\n\ndata: [DONE]\n')
+    const openAiTokens: string[] = []
+    await expect(createOpenAiCompatibleLocalProvider('lm-studio', {
+      endpoint: 'http://localhost:1234/v1',
+      fetch: openAiFetch,
+      model: 'local-model'
+    }).streamPrompt?.({
+      prompt: 'hello',
+      onToken: chunk => openAiTokens.push(chunk.text)
+    })).resolves.toEqual({
+      ok: true,
+      value: { provider: 'lm-studio', text: 'hi there' }
+    })
+    expect(openAiTokens).toEqual(['hi ', 'there'])
+  })
+
+  it('normalizes and serializes local provider profiles', () => {
+    expect(defaultLocalLlmProviderProfiles).toHaveLength(3)
+    expect(normalizeLocalLlmProviderProfile({
+      endpoint: 'http://127.0.0.1:11434',
+      kind: 'ollama',
+      label: 'Workstation',
+      model: 'llama3.2'
+    })).toMatchObject({
+      ok: true,
+      value: {
+        endpoint: 'http://127.0.0.1:11434',
+        kind: 'ollama',
+        label: 'Workstation',
+        model: 'llama3.2'
+      }
+    })
+    expect(normalizeLocalLlmProviderProfile({
+      endpoint: 'https://api.example.com',
+      kind: 'ollama',
+      model: 'nope'
+    })).toMatchObject({
+      ok: false,
+      error: { code: 'validation-error' }
+    })
+
+    const profiles = restoreLocalLlmProviderProfiles([
+      { id: 'a', endpoint: 'http://127.0.0.1:11434', kind: 'ollama', label: 'A', model: 'm' },
+      { id: 'a', endpoint: 'http://127.0.0.1:11434', kind: 'ollama', label: 'A duplicate', model: 'm' }
+    ])
+    expect(profiles).toHaveLength(1)
+    expect(JSON.parse(serializeLocalLlmProviderProfiles(profiles))).toHaveLength(1)
+  })
+
   it('recognizes loopback endpoints only', () => {
     expect(isLocalEndpoint('http://127.0.0.1:11434')).toBe(true)
     expect(isLocalEndpoint('http://localhost:1234/v1')).toBe(true)
@@ -135,5 +235,13 @@ function viFetch(body: unknown) {
     ok: true,
     status: 200,
     json: async () => body
+  } as Response))
+}
+
+function viTextFetch(body: string) {
+  return vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    text: async () => body
   } as Response))
 }

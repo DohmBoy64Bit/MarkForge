@@ -5,7 +5,11 @@ export type LocalLlmProviderKind = 'llama.cpp' | 'lm-studio' | 'mock' | 'ollama'
 export type LocalLlmActionId =
   | 'create-outline'
   | 'explain-markdown'
+  | 'fix-formatting'
+  | 'generate-markdown-table'
+  | 'generate-markdown-draft'
   | 'improve-clarity'
+  | 'suggest-headings'
   | 'summarize-document'
 
 export type PromptTemplate = {
@@ -16,10 +20,16 @@ export type PromptTemplate = {
 }
 
 export type LlmPromptRequest = CancellableOptions & {
+  onToken?: (chunk: LlmPromptStreamChunk) => void
   prompt: string
 }
 
 export type LlmPromptResponse = {
+  provider: LocalLlmProviderKind
+  text: string
+}
+
+export type LlmPromptStreamChunk = {
   provider: LocalLlmProviderKind
   text: string
 }
@@ -29,6 +39,7 @@ export type LocalLlmProvider = {
   kind: LocalLlmProviderKind
   label: string
   runPrompt(request: LlmPromptRequest): Promise<Result<LlmPromptResponse>>
+  streamPrompt?(request: LlmPromptRequest): Promise<Result<LlmPromptResponse>>
 }
 
 export type LocalProviderAdapterConfig = {
@@ -42,6 +53,14 @@ export type LocalLlmAction = {
   id: LocalLlmActionId
   label: string
   template: PromptTemplate
+}
+
+export type LocalLlmProviderProfile = {
+  endpoint: string
+  id: string
+  kind: Exclude<LocalLlmProviderKind, 'mock'>
+  label: string
+  model: string
 }
 
 export type RunLlmActionRequest = CancellableOptions & {
@@ -75,6 +94,30 @@ export const defaultPromptTemplates: PromptTemplate[] = [
     label: 'Explain Markdown',
     variables: ['content'],
     body: 'Explain the Markdown syntax and structure used in the following content. Keep the explanation practical and concise.\n\n{{content}}'
+  },
+  {
+    id: 'fix-formatting',
+    label: 'Fix Formatting',
+    variables: ['content'],
+    body: 'Clean up the following Markdown formatting. Preserve meaning, links, code fences, front matter, and headings. Return only Markdown.\n\n{{content}}'
+  },
+  {
+    id: 'generate-markdown-draft',
+    label: 'Draft Markdown',
+    variables: ['content'],
+    body: 'Turn the following notes into a polished Markdown draft with useful headings, lists, and concise prose. Return only Markdown.\n\n{{content}}'
+  },
+  {
+    id: 'generate-markdown-table',
+    label: 'Generate Table',
+    variables: ['content'],
+    body: 'Convert the following content into a clean GitHub Flavored Markdown table when appropriate. Return only Markdown.\n\n{{content}}'
+  },
+  {
+    id: 'suggest-headings',
+    label: 'Suggest Headings',
+    variables: ['content'],
+    body: 'Suggest an improved Markdown heading structure for the following content. Return a concise outline using Markdown headings and bullets.\n\n{{content}}'
   }
 ]
 
@@ -102,6 +145,54 @@ export const localLlmActions: LocalLlmAction[] = [
     label: 'Explain',
     description: 'Explain the Markdown syntax in the current text.',
     template: defaultPromptTemplates[3]
+  },
+  {
+    id: 'fix-formatting',
+    label: 'Format',
+    description: 'Fix Markdown formatting while preserving meaning.',
+    template: defaultPromptTemplates[4]
+  },
+  {
+    id: 'generate-markdown-draft',
+    label: 'Draft',
+    description: 'Convert rough notes into a structured Markdown draft.',
+    template: defaultPromptTemplates[5]
+  },
+  {
+    id: 'generate-markdown-table',
+    label: 'Table',
+    description: 'Generate a Markdown table from selected or document text.',
+    template: defaultPromptTemplates[6]
+  },
+  {
+    id: 'suggest-headings',
+    label: 'Headings',
+    description: 'Suggest a clearer heading structure.',
+    template: defaultPromptTemplates[7]
+  }
+]
+
+export const defaultLocalLlmProviderProfiles: LocalLlmProviderProfile[] = [
+  {
+    id: 'ollama-default',
+    kind: 'ollama',
+    label: 'Ollama local',
+    endpoint: 'http://127.0.0.1:11434',
+    model: ''
+  },
+  {
+    id: 'lm-studio-default',
+    kind: 'lm-studio',
+    label: 'LM Studio local',
+    endpoint: 'http://127.0.0.1:1234/v1',
+    model: ''
+  },
+  {
+    id: 'llama-cpp-default',
+    kind: 'llama.cpp',
+    label: 'llama.cpp local',
+    endpoint: 'http://127.0.0.1:8080/v1',
+    model: ''
   }
 ]
 
@@ -128,6 +219,16 @@ export function createMockLlmProvider(responseText: string): LocalLlmProvider {
       const cancelled = assertNotCancelled(request.signal)
       if (!cancelled.ok) return cancelled
 
+      return ok({
+        provider: 'mock',
+        text: responseText
+      })
+    },
+    async streamPrompt(request) {
+      const cancelled = assertNotCancelled(request.signal)
+      if (!cancelled.ok) return cancelled
+
+      request.onToken?.({ provider: 'mock', text: responseText })
       return ok({
         provider: 'mock',
         text: responseText
@@ -182,6 +283,33 @@ export function createOllamaProvider(config: LocalProviderAdapterConfig = {}): L
         const markForgeError = toError(error, 'Ollama request failed.')
         return { ok: false, error: markForgeError }
       }
+    },
+    async streamPrompt(request) {
+      const ready = validateLocalAdapterRequest(endpoint, config.model, request.signal)
+      if (!ready.ok) return ready
+
+      try {
+        const response = await resolveFetch(config.fetch)(`${trimTrailingSlash(endpoint)}/api/generate`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            model: config.model,
+            prompt: request.prompt,
+            stream: true
+          }),
+          signal: request.signal
+        })
+
+        if (!response.ok) {
+          return err('provider-error', `Ollama returned HTTP ${response.status}.`)
+        }
+
+        const text = await collectOllamaStream(response, 'ollama', request.onToken)
+        return ok({ provider: 'ollama', text })
+      } catch (error) {
+        const markForgeError = toError(error, 'Ollama streaming request failed.')
+        return { ok: false, error: markForgeError }
+      }
     }
   }
 }
@@ -228,6 +356,33 @@ export function createOpenAiCompatibleLocalProvider(
         return ok({ provider: kind, text })
       } catch (error) {
         const markForgeError = toError(error, `${label} request failed.`)
+        return { ok: false, error: markForgeError }
+      }
+    },
+    async streamPrompt(request) {
+      const ready = validateLocalAdapterRequest(endpoint, config.model, request.signal)
+      if (!ready.ok) return ready
+
+      try {
+        const response = await resolveFetch(config.fetch)(`${trimTrailingSlash(endpoint)}/chat/completions`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            model: config.model,
+            messages: [{ role: 'user', content: request.prompt }],
+            stream: true
+          }),
+          signal: request.signal
+        })
+
+        if (!response.ok) {
+          return err('provider-error', `${label} returned HTTP ${response.status}.`)
+        }
+
+        const text = await collectOpenAiCompatibleStream(response, kind, request.onToken)
+        return ok({ provider: kind, text })
+      } catch (error) {
+        const markForgeError = toError(error, `${label} streaming request failed.`)
         return { ok: false, error: markForgeError }
       }
     }
@@ -279,6 +434,74 @@ export async function runLlmAction(
   return provider.runPrompt({ prompt: rendered.value, signal: request.signal })
 }
 
+export async function streamLlmAction(
+  provider: LocalLlmProvider,
+  request: RunLlmActionRequest & { onToken?: (chunk: LlmPromptStreamChunk) => void }
+): Promise<Result<LlmPromptResponse>> {
+  const explicit = ensureExplicitUserInvocation(request)
+  if (!explicit.ok) return explicit
+
+  const action = localLlmActions.find(item => item.id === request.actionId)
+  if (!action) return err('validation-error', 'Unknown local LLM action.', { actionId: request.actionId })
+
+  const content = request.selection?.trim() || request.document.trim()
+  if (!content) return err('invalid-input', 'Local LLM actions require document or selection text.')
+
+  const rendered = renderPromptTemplate(action.template, { content })
+  if (!rendered.ok) return rendered
+
+  if (provider.streamPrompt) {
+    return provider.streamPrompt({ prompt: rendered.value, signal: request.signal, onToken: request.onToken })
+  }
+
+  const result = await provider.runPrompt({ prompt: rendered.value, signal: request.signal })
+  if (result.ok) request.onToken?.({ provider: result.value.provider, text: result.value.text })
+  return result
+}
+
+export function normalizeLocalLlmProviderProfile(value: unknown): Result<LocalLlmProviderProfile> {
+  if (typeof value !== 'object' || value === null) {
+    return err('validation-error', 'Provider profile must be an object.')
+  }
+
+  const record = value as Record<string, unknown>
+  const kind = record.kind
+  const endpoint = typeof record.endpoint === 'string' ? record.endpoint.trim() : ''
+  const model = typeof record.model === 'string' ? record.model.trim() : ''
+  const label = typeof record.label === 'string' && record.label.trim()
+    ? record.label.trim()
+    : typeof kind === 'string'
+      ? providerLabel(kind as Exclude<LocalLlmProviderKind, 'mock'>)
+      : 'Local provider'
+  const id = typeof record.id === 'string' && record.id.trim()
+    ? record.id.trim()
+    : stableProfileId(kind, endpoint, model)
+
+  if (kind !== 'ollama' && kind !== 'lm-studio' && kind !== 'llama.cpp') {
+    return err('validation-error', 'Provider profile kind is not supported.', { kind })
+  }
+  if (!isLocalEndpoint(endpoint)) {
+    return err('validation-error', 'Provider profile endpoint must be a loopback HTTP endpoint.', { endpoint })
+  }
+
+  return ok({ id, kind, label, endpoint, model })
+}
+
+export function restoreLocalLlmProviderProfiles(value: unknown): LocalLlmProviderProfile[] {
+  if (!Array.isArray(value)) return defaultLocalLlmProviderProfiles.slice()
+
+  const profiles = value
+    .map(item => normalizeLocalLlmProviderProfile(item))
+    .filter((result): result is { ok: true; value: LocalLlmProviderProfile } => result.ok)
+    .map(result => result.value)
+
+  return profiles.length > 0 ? dedupeProfiles(profiles) : defaultLocalLlmProviderProfiles.slice()
+}
+
+export function serializeLocalLlmProviderProfiles(profiles: LocalLlmProviderProfile[]): string {
+  return JSON.stringify(dedupeProfiles(profiles))
+}
+
 export function isLocalEndpoint(endpoint: string): boolean {
   try {
     const url = new URL(endpoint)
@@ -316,6 +539,79 @@ function resolveFetch(fetchImpl: typeof fetch | undefined): typeof fetch {
   if (fetchImpl) return fetchImpl
   if (typeof fetch === 'function') return fetch
   throw new TypeError('Fetch is not available in this runtime.')
+}
+
+async function collectOllamaStream(
+  response: Response,
+  provider: LocalLlmProviderKind,
+  onToken: ((chunk: LlmPromptStreamChunk) => void) | undefined
+): Promise<string> {
+  let output = ''
+  const text = await readResponseText(response)
+
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim()) continue
+    const parsed = JSON.parse(line) as { response?: unknown }
+    if (typeof parsed.response !== 'string') continue
+    output += parsed.response
+    onToken?.({ provider, text: parsed.response })
+  }
+
+  return output
+}
+
+async function collectOpenAiCompatibleStream(
+  response: Response,
+  provider: LocalLlmProviderKind,
+  onToken: ((chunk: LlmPromptStreamChunk) => void) | undefined
+): Promise<string> {
+  let output = ''
+  const text = await readResponseText(response)
+
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed.startsWith('data:')) continue
+    const payload = trimmed.slice(5).trim()
+    if (!payload || payload === '[DONE]') continue
+    const parsed = JSON.parse(payload) as { choices?: Array<{ delta?: { content?: unknown }; text?: unknown }> }
+    const token = parsed.choices?.[0]?.delta?.content ?? parsed.choices?.[0]?.text
+    if (typeof token !== 'string') continue
+    output += token
+    onToken?.({ provider, text: token })
+  }
+
+  return output
+}
+
+async function readResponseText(response: Response): Promise<string> {
+  if (typeof response.text === 'function') return response.text()
+  if (!response.body) return ''
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let text = ''
+
+  while (true) {
+    const chunk = await reader.read()
+    if (chunk.done) break
+    text += decoder.decode(chunk.value, { stream: true })
+  }
+
+  text += decoder.decode()
+  return text
+}
+
+function stableProfileId(kind: unknown, endpoint: string, model: string): string {
+  return `${String(kind || 'local')}:${endpoint}:${model}`.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'local-profile'
+}
+
+function dedupeProfiles(profiles: LocalLlmProviderProfile[]): LocalLlmProviderProfile[] {
+  const seen = new Set<string>()
+  return profiles.filter(profile => {
+    if (seen.has(profile.id)) return false
+    seen.add(profile.id)
+    return true
+  })
 }
 
 function trimTrailingSlash(value: string): string {

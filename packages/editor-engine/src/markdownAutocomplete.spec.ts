@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   filterMarkdownAutocompleteSuggestions,
+  filterMarkdownPathSuggestions,
   findMarkdownAutocompleteTrigger,
+  findMarkdownPathAutocompleteTrigger,
+  replaceMarkdownPathTrigger,
   replaceMarkdownAutocompleteTrigger
 } from './markdownAutocomplete'
 
@@ -29,6 +32,50 @@ describe('markdownAutocomplete', () => {
       selectionStart: 7,
       selectionEnd: 29,
       text: 'Before\n![alt text](image.png)'
+    })
+  })
+
+  it('detects Markdown link and image path triggers', () => {
+    expect(findMarkdownPathAutocompleteTrigger('See [docs](gui', 14)).toEqual({
+      start: 11,
+      end: 14,
+      query: 'gui',
+      isImage: false
+    })
+    expect(findMarkdownPathAutocompleteTrigger('![alt](assets/im', 16)).toEqual({
+      start: 7,
+      end: 16,
+      query: 'assets/im',
+      isImage: true
+    })
+    expect(findMarkdownPathAutocompleteTrigger('[web](https://example.com', 26)).toBeNull()
+  })
+
+  it('filters path suggestions and keeps image triggers image-focused', () => {
+    const trigger = findMarkdownPathAutocompleteTrigger('![alt](assets/', 14)!
+    const suggestions = filterMarkdownPathSuggestions(trigger, [
+      { path: 'C:\\project\\assets\\photo.png', relativePath: 'assets/photo.png' },
+      { path: 'C:\\project\\docs\\guide.md', relativePath: 'docs/guide.md' },
+      { path: 'C:\\project\\assets\\icons\\', relativePath: 'assets/icons/', isDirectory: true }
+    ])
+
+    expect(suggestions.map(suggestion => suggestion.insertText)).toEqual([
+      'assets/icons/',
+      'assets/photo.png'
+    ])
+  })
+
+  it('replaces a path trigger with a workspace path', () => {
+    const source = 'See [guide](doc)'
+    const trigger = findMarkdownPathAutocompleteTrigger(source, source.length - 1)!
+    expect(replaceMarkdownPathTrigger(source, trigger, {
+      id: 'docs/guide.md',
+      label: 'docs/guide.md',
+      insertText: 'docs/guide.md'
+    })).toEqual({
+      text: 'See [guide](docs/guide.md)',
+      selectionStart: 25,
+      selectionEnd: 25
     })
   })
 })

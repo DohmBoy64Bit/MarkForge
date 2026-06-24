@@ -24,11 +24,11 @@ Phase 7 starts the MarkForge conversion track as a package-owned capability, not
 - Rich clipboard HTML conversion is implemented through the same sanitized HTML-to-Markdown path with clipboard-specific lossiness warnings.
 - URL/article conversion validates HTTP(S) URLs, fetches HTML through an injected/global fetch path, and reports trust/lossiness warnings.
 - Markdown cleanup normalizes line endings, trailing whitespace, excessive blank lines, and final newline behavior.
-- DOCX, native PDF import/export, and OCR remain explicit unsupported converter boundaries.
+- DOCX import/export, PDF text import, Markdown-to-PDF export, and OCR image import are implemented through packaged converter runtimes and app binary file I/O. Broader fidelity fixtures remain required before claiming full native document parity.
 
 ## Design Notes
 
-The converter UI exposes capabilities that have package-owned implementation and tests: Markdown-to-HTML export, HTML-to-Markdown import, CSV-to-Markdown table import, rich clipboard HTML import, URL/article import, Markdown cleanup in the editor, and browser-print handoff. DOCX, native PDF, and OCR remain unsupported because they need dedicated runtimes and fixtures.
+The converter UI exposes capabilities that have package-owned implementation and tests: Markdown-to-HTML/PDF/DOCX export, HTML-to-Markdown import, CSV-to-Markdown table import, rich clipboard HTML import, URL/article import, DOCX import, PDF text import, OCR image import, Markdown cleanup in the editor, and browser-print handoff. Full document fidelity remains fixture-driven follow-up work.
 
 Unsupported converters are not placeholders presented as complete. They exist so callers can query or call a documented boundary and receive a clear `not-supported` result with a reason.
 

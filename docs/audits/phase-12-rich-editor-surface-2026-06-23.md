@@ -56,4 +56,4 @@ Observed bundle result:
 
 ## Final Assessment
 
-Phase 12A completes the planned CodeMirror source editor foundation while preserving the current MarkForge workbench and command workflows. The app remains visually distinct from MarkText; parity work for WYSIWYG/realtime editing remains explicit future scope.
+Phase 12A completed the planned CodeMirror source editor foundation while preserving the current MarkForge workbench and command workflows. Subsequent implementation added a ProseMirror-backed rich Markdown mode; the app remains visually distinct from MarkText, and broader rich-editing fixture coverage remains explicit future scope.

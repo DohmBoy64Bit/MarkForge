@@ -94,17 +94,20 @@ button {
 .searchOptions,
 .themeSwitch,
 .viewSwitch {
+  min-width: 0;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
+.toolbar,
 .themeSwitch {
-  max-width: 100%;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
+.toolbar::-webkit-scrollbar,
 .themeSwitch::-webkit-scrollbar {
   display: none;
 }
@@ -174,11 +177,14 @@ button {
   .converterModeGroup button:focus-visible,
   .converterSource textarea:focus-visible,
   .converterFooter button:focus-visible,
+  .exportProfile input:focus-visible,
+  .exportProfileActions button:focus-visible,
   .localAiHeader button:focus-visible,
   .localAiStatusRow:focus-visible,
   .localAiEnable:focus-within,
   .localAiField input:focus-visible,
   .localAiField select:focus-visible,
+  .localAiProfileActions button:focus-visible,
   .localAiModeGroup button:focus-visible,
   .localAiPrompt textarea:focus-visible,
   .localAiFooter button:focus-visible,
@@ -501,6 +507,7 @@ button {
 }
 
 .sourcePane,
+.richPane,
 .previewPane,
 .inspector {
   min-width: 0;
@@ -508,6 +515,7 @@ button {
 }
 
 .sourcePane,
+.richPane,
 .previewPane {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -519,17 +527,24 @@ button {
   background: var(--source);
 }
 
+.richPane {
+  border-right: 1px solid var(--panel-border);
+  background: var(--source);
+}
+
 .previewPane {
   border-right: 1px solid var(--panel-border);
   background: var(--app-bg);
 }
 
 .sourcePane.isHidden,
+.richPane.isHidden,
 .previewPane.isHidden {
   display: none;
 }
 
 .editorWorkspace.source .sourcePane,
+.editorWorkspace.rich .richPane,
 .editorWorkspace.preview .previewPane {
   grid-column: 1 / 3;
 }
@@ -584,6 +599,102 @@ button {
 
 .sourceEditor .cm-content {
   overflow-wrap: anywhere;
+}
+
+.richMarkdownEditor {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--panel-border), transparent 70%) 1px, transparent 1px),
+    var(--source);
+  background-size: 64px 64px;
+}
+
+.richMarkdownEditor .ProseMirror {
+  width: min(100%, 900px);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 24px clamp(18px, 3vw, 42px);
+  outline: 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.72;
+  overflow-wrap: anywhere;
+}
+
+.richMarkdownEditor .ProseMirror-focused {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.richMarkdownEditor .ProseMirror > *:first-child {
+  margin-top: 0;
+}
+
+.richMarkdownEditor .ProseMirror > *:last-child {
+  margin-bottom: 0;
+}
+
+.richMarkdownEditor h1,
+.richMarkdownEditor h2,
+.richMarkdownEditor h3,
+.richMarkdownEditor h4 {
+  color: var(--text);
+  line-height: 1.22;
+}
+
+.richMarkdownEditor h1 {
+  margin: 0 0 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--panel-border);
+  font-size: 32px;
+  letter-spacing: 0;
+}
+
+.richMarkdownEditor h2 {
+  margin-top: 30px;
+  font-size: 23px;
+}
+
+.richMarkdownEditor h3 {
+  margin-top: 24px;
+  font-size: 18px;
+}
+
+.richMarkdownEditor p,
+.richMarkdownEditor li {
+  color: color-mix(in srgb, var(--text), var(--muted) 12%);
+}
+
+.richMarkdownEditor blockquote {
+  margin: 20px 0;
+  padding: 4px 0 4px 16px;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+}
+
+.richMarkdownEditor code {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent-soft), transparent 24%);
+  color: color-mix(in srgb, var(--text), var(--accent-strong) 24%);
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.richMarkdownEditor pre {
+  overflow: auto;
+  padding: 16px;
+  border-radius: 7px;
+  background: var(--code-bg);
+  color: var(--code-text);
+}
+
+.richMarkdownEditor pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
 }
 
 .selectionOverlay {
@@ -1319,6 +1430,62 @@ button {
   overflow-wrap: anywhere;
 }
 
+.exportProfile {
+  display: grid;
+  gap: 9px;
+}
+
+.exportProfile label {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.exportProfile input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
+.exportProfileActions {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 7px;
+}
+
+.exportProfileActions button {
+  min-width: 0;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: var(--page);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.exportProfileActions button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent), var(--panel-border) 42%);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.exportProfileActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .toc a {
   display: block;
   overflow: hidden;
@@ -1808,7 +1975,7 @@ button {
 .localAiProviderGrid {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(150px, 0.8fr) minmax(220px, 1.25fr) minmax(160px, 1fr);
+  grid-template-columns: minmax(150px, 0.75fr) minmax(150px, 0.8fr) minmax(160px, 0.8fr) minmax(220px, 1.15fr) minmax(160px, 0.9fr);
   gap: 8px;
 }
 
@@ -1854,6 +2021,43 @@ button {
   background: var(--page);
   color: var(--text);
   font-size: 12px;
+}
+
+.localAiProfileActions {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--rail-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--panel), var(--rail) 44%);
+}
+
+.localAiProfileActions button {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  border: 1px solid var(--rail-border);
+  border-radius: 6px;
+  background: var(--page);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.localAiProfileActions button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.localAiProfileActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .localAiControls {
@@ -3683,6 +3887,11 @@ button {
     grid-row: 1;
   }
 
+  .richPane {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+
   .previewPane {
     grid-column: 1;
     grid-row: 2;
@@ -3694,6 +3903,7 @@ button {
   }
 
   .editorWorkspace.source .sourcePane,
+  .editorWorkspace.rich .richPane,
   .editorWorkspace.preview .previewPane {
     grid-column: 1;
     grid-row: 1 / 3;
@@ -3758,6 +3968,7 @@ button {
   }
 
   .sourcePane,
+  .richPane,
   .previewPane {
     border-right: 0;
   }
@@ -3767,12 +3978,18 @@ button {
     grid-row: 1;
   }
 
+  .richPane {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+
   .previewPane {
     grid-column: 1;
     grid-row: 2;
   }
 
   .editorWorkspace.source .sourcePane,
+  .editorWorkspace.rich .richPane,
   .editorWorkspace.preview .previewPane {
     grid-column: 1;
     grid-row: 1 / 3;

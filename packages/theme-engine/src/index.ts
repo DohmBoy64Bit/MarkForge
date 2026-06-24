@@ -1,6 +1,7 @@
 import { err, ok, type Result } from '@markforge/shared'
 
 export type ThemeId = 'dark' | 'github' | 'high-contrast' | 'light' | 'modern-neutral' | 'sepia'
+export type ThemePreference = ThemeId | 'system'
 
 export type AppThemeTokens = {
   accent: string
@@ -39,7 +40,7 @@ export type ThemeTokens = {
 }
 
 export type MarkForgeTheme = {
-  id: ThemeId
+  id: string
   label: string
   mode: 'dark' | 'light'
   tokens: ThemeTokens
@@ -152,8 +153,38 @@ export const builtInThemes: MarkForgeTheme[] = [
 
 export const appVisibleThemes: MarkForgeTheme[] = builtInThemes
 
-export function getTheme(id: ThemeId): MarkForgeTheme {
+export function getTheme(id: ThemeId | string): MarkForgeTheme {
   return builtInThemes.find(theme => theme.id === id) ?? builtInThemes[0]
+}
+
+export function resolveThemePreference(
+  preference: ThemePreference,
+  systemMode: 'dark' | 'light'
+): MarkForgeTheme {
+  if (preference !== 'system') return getTheme(preference)
+  return systemMode === 'dark' ? getTheme('dark') : getTheme('light')
+}
+
+export function createCustomTheme(input: {
+  id: string
+  label: string
+  mode: 'dark' | 'light'
+  tokens: Partial<ThemeTokens>
+}, baseTheme: MarkForgeTheme = getTheme('light')): Result<MarkForgeTheme> {
+  const id = input.id.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-|-$/g, '')
+  if (!id) return err('validation-error', 'Custom theme id is required.')
+
+  const theme: MarkForgeTheme = {
+    id,
+    label: input.label.trim() || id,
+    mode: input.mode,
+    tokens: {
+      ...baseTheme.tokens,
+      ...input.tokens
+    }
+  }
+
+  return validateTheme(theme)
 }
 
 export function validateTheme(theme: MarkForgeTheme): Result<MarkForgeTheme> {
@@ -181,7 +212,7 @@ export function themeToCssVariables(theme: MarkForgeTheme): Record<string, strin
 }
 
 export function themeToAppTokens(theme: MarkForgeTheme): AppThemeTokens {
-  return appTokensByTheme[theme.id] ?? appTokensByTheme.light
+  return appTokensByTheme[theme.id as ThemeId] ?? deriveAppTokens(theme)
 }
 
 export function themeToAppCssVariables(theme: MarkForgeTheme): Record<string, string> {
@@ -217,6 +248,31 @@ export function themeToCssText(theme: MarkForgeTheme): string {
     .join('\n')
 }
 
+export function themeToExportCss(theme: MarkForgeTheme): string {
+  const exportTokens = exportThemeForTheme(theme)
+
+  return [
+    ':root {',
+    `  color: ${exportTokens.exportForeground};`,
+    `  background: ${exportTokens.exportBackground};`,
+    `  --mf-code-background: ${theme.tokens.codeBackground};`,
+    `  --mf-accent: ${theme.tokens.accent};`,
+    '}',
+    'body {',
+    '  margin: 2rem auto;',
+    '  max-width: 72ch;',
+    '  line-height: 1.65;',
+    '  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;',
+    '}',
+    'pre, code {',
+    '  background: var(--mf-code-background);',
+    '}',
+    'a {',
+    '  color: var(--mf-accent);',
+    '}'
+  ].join('\n')
+}
+
 export function codeThemeForTheme(theme: MarkForgeTheme): ThemeTokens['codeTheme'] {
   return theme.tokens.codeTheme
 }
@@ -225,6 +281,31 @@ export function exportThemeForTheme(theme: MarkForgeTheme): Pick<ThemeTokens, 'e
   return {
     exportBackground: theme.tokens.exportBackground,
     exportForeground: theme.tokens.exportForeground
+  }
+}
+
+function deriveAppTokens(theme: MarkForgeTheme): AppThemeTokens {
+  return {
+    appBg: theme.tokens.background,
+    rail: theme.tokens.panel,
+    railBorder: theme.tokens.border,
+    panel: theme.tokens.panel,
+    panelBorder: theme.tokens.border,
+    source: theme.tokens.panel,
+    page: theme.tokens.exportBackground,
+    text: theme.tokens.foreground,
+    muted: theme.tokens.muted,
+    faint: theme.tokens.muted,
+    accent: theme.tokens.accent,
+    accentStrong: theme.tokens.accent,
+    accentSoft: theme.tokens.border,
+    warning: theme.mode === 'dark' ? '#f3c46d' : '#965f00',
+    warningSoft: theme.tokens.codeBackground,
+    danger: theme.mode === 'dark' ? '#ff9f94' : '#ad3328',
+    dangerSoft: theme.tokens.codeBackground,
+    codeBg: theme.tokens.codeBackground,
+    codeText: theme.tokens.foreground,
+    gridLine: theme.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)'
   }
 }
 

@@ -50,7 +50,7 @@ Observed test result:
 | Native close interception | Completed by Phase 11 for editor dirty documents. | Tauri `onCloseRequested` routes through the existing Save/Discard/Cancel flow; browser `beforeunload` remains a fallback. |
 | CodeMirror/WYSIWYG editor surface | CodeMirror source surface completed by Phase 12A; WYSIWYG remains deferred. | Editor uses a CodeMirror-backed source surface with package-backed source transforms. |
 | Diagram rendering and conformance corpus | Partially supported after post-Phase-12A remediation. | Safe Mermaid graph/flowchart rendering exists; broader diagram runtimes and conformance fixtures remain open. |
-| Full native conversion/export stack | Partially supported after post-Phase-12A remediation. | Current implementation supports browser print, sanitized HTML export/import/cleanup paths, rich clipboard HTML, URL/article import, and CSV table import; native PDF/DOCX/OCR remain unsupported. |
+| Full native conversion/export stack | Partially supported after post-Phase-12A remediation. | Current implementation supports browser print, sanitized HTML export/import/cleanup paths, rich clipboard HTML, URL/article import, CSV table import, DOCX import/export, PDF text import/export, and OCR image import; full-fidelity fixture coverage remains open. |
 | Filesystem/workspace templates | Partially supported after post-Phase-12A remediation. | Built-in, local custom, and workspace templates under `.markforge/templates/*.md` are implemented; syncable libraries remain open. |
 | Linux artifact smoke | Blocked by host prerequisites. | See [Linux smoke - 2026-06-22](linux-smoke-2026-06-22.md). |
 

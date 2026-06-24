@@ -48,7 +48,7 @@ Implementation has progressed through Phase 12A rich editor surface work:
 - Phase 10 packaging/documentation baseline for reproducible Windows NSIS installer builds, release smoke checks, `packaging:check`, and an initial Linux smoke plan.
 - Phase 11 native platform hardening for open-file watch events, editor Tauri close-request protection, and platform-owned polling/browser fallbacks.
 - Phase 12A CodeMirror 6 source editor foundation with existing command, template, converter, Local AI, search/replace, dirty-state, and preview workflows preserved.
-- Post-Phase-12A remediation for editor workspace listing/search/watch, workspace templates, rich clipboard HTML import, URL/article HTML import, basic HTML export settings, safe Mermaid flowchart rendering, Windows shell recent-document updates, and platform spellcheck/updater contracts.
+- Post-Phase-12A remediation for editor workspace listing/search/watch, workspace templates, rich clipboard HTML import, URL/article HTML import, DOCX/PDF/OCR conversion, basic HTML/PDF/DOCX export settings, safe Mermaid/PlantUML/Vega-style diagram rendering, Windows shell recent-document updates, Local AI streaming/profile helpers, path-aware source autocomplete, and platform spellcheck/updater contracts.
 
 The architecture remains the target contract. App shells still own React orchestration, workflow dialogs, and Tauri adapter wiring, while package APIs own the domain behavior.
 

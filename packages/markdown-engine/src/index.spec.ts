@@ -109,8 +109,30 @@ describe('renderMarkdown', () => {
     expect(rendered.warnings).toEqual([])
   })
 
+  it('renders supported PlantUML sequence fences as sanitized diagrams', () => {
+    const rendered = renderMarkdown('```plantuml\n@startuml\nAlice -> Bob: hello\nBob --> Alice: done\n@enduml\n```')
+
+    expect(rendered.html).toContain('mf-diagram-plantuml')
+    expect(rendered.html).toContain('PlantUML sequence')
+    expect(rendered.html).toContain('hello')
+    expect(rendered.warnings).toEqual([])
+  })
+
+  it('renders supported Vega-Lite bar specs as sanitized diagrams', () => {
+    const rendered = renderMarkdown([
+      '```vega-lite',
+      '{"mark":"bar","data":{"values":[{"name":"A","count":2},{"name":"B","count":4}]},"encoding":{"x":{"field":"name"},"y":{"field":"count"}}}',
+      '```'
+    ].join('\n'))
+
+    expect(rendered.html).toContain('mf-diagram-vega')
+    expect(rendered.html).toContain('Vega-Lite bar chart')
+    expect(rendered.html).toContain('B')
+    expect(rendered.warnings).toEqual([])
+  })
+
   it('warns when diagram syntax is outside the built-in safe renderer', () => {
-    const rendered = renderMarkdown('```plantuml\nAlice -> Bob\n```')
+    const rendered = renderMarkdown('```plantuml\nskinparam shadowing false\n```')
 
     expect(rendered.html).toContain('mf-diagram-source')
     expect(rendered.warnings).toContainEqual({

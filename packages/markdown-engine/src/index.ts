@@ -393,6 +393,16 @@ function renderDiagramFence(language: string, source: string, warnings: Markdown
     if (rendered) return rendered
   }
 
+  if (language === 'plantuml') {
+    const rendered = renderPlantUmlSequence(source)
+    if (rendered) return rendered
+  }
+
+  if (language === 'vega' || language === 'vega-lite') {
+    const rendered = renderJsonBarChart(language, source)
+    if (rendered) return rendered
+  }
+
   warnings.push({
     code: 'diagram-rendering-limited',
     message: `${language} diagram syntax is outside the built-in safe renderer and is shown as source.`,
@@ -405,6 +415,136 @@ function renderDiagramFence(language: string, source: string, warnings: Markdown
     `<pre><code>${escapeHtml(source)}</code></pre>`,
     '</figure>'
   ].join('')
+}
+
+function renderPlantUmlSequence(source: string): string | null {
+  const lines = source
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => line && !line.startsWith('@start') && !line.startsWith('@end') && !line.startsWith("'"))
+  const messages = lines.map(line => /^([A-Za-z0-9_. -]+)\s*(-+>|--+>)\s*([A-Za-z0-9_. -]+)(?::\s*(.+))?$/.exec(line))
+
+  if (messages.length === 0 || messages.some(match => !match)) return null
+
+  const actors = Array.from(new Set(messages.flatMap(match => [match?.[1].trim() ?? '', match?.[3].trim() ?? '']).filter(Boolean)))
+  if (actors.length < 2) return null
+
+  const width = Math.max(360, actors.length * 160)
+  const rowHeight = 58
+  const height = 74 + messages.length * rowHeight
+  const actorX = new Map(actors.map((actor, index) => [actor, 70 + index * ((width - 140) / Math.max(1, actors.length - 1))]))
+  const actorNodes = actors.map(actor => {
+    const x = actorX.get(actor) ?? 0
+    return [
+      `<g class="mf-diagram-node" transform="translate(${x - 48} 18)">`,
+      '<rect width="96" height="34" rx="7"></rect>',
+      `<text x="48" y="22" text-anchor="middle">${escapeHtml(actor)}</text>`,
+      '</g>',
+      `<line class="mf-diagram-lifeline" x1="${x}" y1="52" x2="${x}" y2="${height - 18}"></line>`
+    ].join('')
+  }).join('')
+  const messageNodes = messages.map((match, index) => {
+    const from = match?.[1].trim() ?? ''
+    const to = match?.[3].trim() ?? ''
+    const label = match?.[4]?.trim() ?? ''
+    const fromX = actorX.get(from) ?? 0
+    const toX = actorX.get(to) ?? 0
+    const y = 86 + index * rowHeight
+    const labelX = (fromX + toX) / 2
+    const labelY = y - 8
+
+    return [
+      `<line class="mf-diagram-edge" x1="${fromX}" y1="${y}" x2="${toX}" y2="${y}" marker-end="url(#mf-arrow)"></line>`,
+      label ? `<text class="mf-diagram-label" x="${labelX}" y="${labelY}" text-anchor="middle">${escapeHtml(label)}</text>` : ''
+    ].join('')
+  }).join('')
+
+  return [
+    '<figure class="mf-diagram mf-diagram-plantuml" data-diagram-language="plantuml">',
+    '<figcaption>PlantUML sequence</figcaption>',
+    `<svg role="img" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`,
+    '<defs><marker id="mf-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z"></path></marker></defs>',
+    actorNodes,
+    messageNodes,
+    '</svg>',
+    '</figure>'
+  ].join('')
+}
+
+function renderJsonBarChart(language: string, source: string): string | null {
+  const spec = parseDiagramJson(source)
+  if (!isRecord(spec)) return null
+
+  const mark = typeof spec.mark === 'string'
+    ? spec.mark
+    : isRecord(spec.mark) && typeof spec.mark.type === 'string'
+      ? spec.mark.type
+      : null
+  if (mark !== 'bar') return null
+
+  const values = isRecord(spec.data) && Array.isArray(spec.data.values) ? spec.data.values : null
+  const xField = fieldFromEncoding(spec.encoding, 'x')
+  const yField = fieldFromEncoding(spec.encoding, 'y')
+  if (!values || !xField || !yField) return null
+
+  const rows = values
+    .filter(isRecord)
+    .map(row => ({
+      label: String(row[xField] ?? ''),
+      value: Number(row[yField] ?? 0)
+    }))
+    .filter(row => row.label && Number.isFinite(row.value))
+  if (rows.length === 0) return null
+
+  const width = 360
+  const height = 220
+  const padding = 34
+  const plotWidth = width - padding * 2
+  const plotHeight = height - padding * 2
+  const max = Math.max(1, ...rows.map(row => row.value))
+  const gap = 8
+  const barWidth = Math.max(16, (plotWidth - gap * (rows.length - 1)) / rows.length)
+  const bars = rows.map((row, index) => {
+    const barHeight = (row.value / max) * plotHeight
+    const x = padding + index * (barWidth + gap)
+    const y = padding + plotHeight - barHeight
+
+    return [
+      `<rect class="mf-diagram-bar" x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="4"></rect>`,
+      `<text class="mf-diagram-label" x="${x + barWidth / 2}" y="${height - 12}" text-anchor="middle">${escapeHtml(row.label)}</text>`,
+      `<text class="mf-diagram-label" x="${x + barWidth / 2}" y="${Math.max(16, y - 6)}" text-anchor="middle">${escapeHtml(String(row.value))}</text>`
+    ].join('')
+  }).join('')
+
+  return [
+    `<figure class="mf-diagram mf-diagram-vega" data-diagram-language="${escapeHtml(language)}">`,
+    `<figcaption>${language === 'vega-lite' ? 'Vega-Lite' : 'Vega'} bar chart</figcaption>`,
+    `<svg role="img" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">`,
+    `<line class="mf-diagram-axis" x1="${padding}" y1="${padding + plotHeight}" x2="${width - padding}" y2="${padding + plotHeight}"></line>`,
+    `<line class="mf-diagram-axis" x1="${padding}" y1="${padding}" x2="${padding}" y2="${padding + plotHeight}"></line>`,
+    bars,
+    '</svg>',
+    '</figure>'
+  ].join('')
+}
+
+function parseDiagramJson(source: string): unknown {
+  try {
+    return JSON.parse(source)
+  } catch {
+    return null
+  }
+}
+
+function fieldFromEncoding(encoding: unknown, channel: 'x' | 'y'): string | null {
+  if (!isRecord(encoding)) return null
+  const definition = encoding[channel]
+  if (!isRecord(definition) || typeof definition.field !== 'string') return null
+  return definition.field
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function renderMermaidFlowchart(source: string): string | null {

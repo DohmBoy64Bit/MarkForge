@@ -88,18 +88,18 @@ This section is not empty, so the project is not ready under the strict zero-def
 
 ### HB-03: Workspace Templates / Broader Autocomplete
 
-- Exact blocker now: Workspace templates and general Markdown structure autocomplete are implemented; path-aware/link-aware autocomplete remains open.
+- Exact blocker now: Workspace templates, general Markdown structure autocomplete, and workspace-backed link/image path autocomplete are implemented; syncable template libraries remain open.
 - Evidence: `packages/templates/src/index.ts`, `packages/templates/src/index.spec.ts`, `packages/editor-engine/src/templateAutocomplete.ts`, `packages/editor-engine/src/templateAutocomplete.spec.ts`, `apps/editor/src/ui/App.tsx`, `docs/phase-6-templates-help.md`, `docs/marktext-parity-matrix.md`.
 - Implemented in follow-up: Workspace templates under `.markforge/templates/*.md` are normalized by `@markforge/templates`, exported through `@markforge/editor-engine`, and loaded into editor template search/insertion/autocomplete when a workspace is open.
-- Decision/input required: Define path-aware/link-aware autocomplete scope and syncable template-library model.
+- Decision/input required: Define syncable template-library model.
 - Readiness impact: Not ready under zero-deferred standard.
 
 ### HB-04: Heavy Converters / Export Settings
 
-- Exact blocker now: DOCX, native PDF import/export, and OCR remain unsupported. Rich clipboard HTML import, URL/article HTML import, and basic HTML export settings are implemented.
+- Exact blocker now: DOCX import/export, PDF text import, Markdown-to-PDF export, OCR image import, rich clipboard HTML import, URL/article HTML import, and basic HTML export settings are implemented. Broader document-fidelity fixtures remain open.
 - Evidence: `docs/phase-7-converters.md`, `docs/marktext-parity-matrix.md`, `packages/converters/README.md`, `packages/converters/src/index.ts`.
-- Implemented in follow-up: Rich clipboard converter, URL converter with HTTP(S) validation and injected/global fetch support, export settings for generated metadata/TOC, editor Import Conversion modes, and converter tests.
-- Decision/input required: Define native PDF/DOCX/OCR runtimes, trust prompts, fixtures, and native export profile UI.
+- Implemented in follow-up: Rich clipboard converter, URL converter with HTTP(S) validation and injected/global fetch support, export settings for generated metadata/TOC, editor Import Conversion modes, DOCX/PDF/OCR converter adapters, binary file I/O, and converter tests.
+- Decision/input required: Define full-fidelity PDF/DOCX/OCR fixture corpus, trust prompts, and release packaging validation.
 - Readiness impact: Not ready under zero-deferred standard.
 
 ### HB-05: Markdown Conformance / Diagrams / Highlighting

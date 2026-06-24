@@ -9,12 +9,12 @@ This pass implemented the safest high-value architecture slice from the drift/de
 | Issue ID | Original Status | Final Status | Implementation Summary | Evidence | Tests |
 | --- | --- | --- | --- | --- | --- |
 | DW-01 | Deferred | Partial | Platform facade implemented for current filesystem/dialog/clipboard/print/polling behavior. | Report, architecture, app source. | Platform tests including read-only file metadata, builds. |
-| DW-02 | Deferred | Deferred | Advanced editor surface not implemented. | Editor docs/source lack safe UX contract. | Existing tests preserved. |
+| DW-02 | Deferred | Partial | CodeMirror source mode, ProseMirror rich mode, table/image source tools, Markdown slash autocomplete, and path autocomplete are implemented. Focus/typewriter modes and richer fixture coverage remain open. | Editor docs/source and current app implementation. | Focused editor-engine tests and editor build. |
 | DW-03 | Deferred | Deferred | Markdown conformance/diagram expansion not implemented. | Markdown docs/source. | Existing tests preserved. |
-| DW-04 | Deferred | Partial | Converter contract, HTML converter, browser-print converter implemented. | Converter README/report/app print source. | Converter tests. |
+| DW-04 | Deferred | Partial | Converter contract, HTML converter, browser-print converter, DOCX import/export, PDF text import/export, OCR image import, and editor binary conversion UI are implemented. Full-fidelity fixtures remain open. | Converter README/report/app print source. | Converter tests. |
 | DW-05 | Deferred | Partial | Theme engine registry/tokens/mapping implemented. | Architecture/theme docs. | Theme tests. |
-| DW-06 | Deferred | Partial | LLM provider boundary, prompt templates, mock provider, privacy guard implemented. | LLM docs/architecture. | LLM tests. |
-| DW-07 | Deferred | Partial | Workspace templates are implemented for `.markforge/templates/*.md`; general Markdown structure suggestions are implemented; path-aware autocomplete and syncable libraries remain open. | Template/editor-engine/app source and docs. | Template/editor-engine tests. |
+| DW-06 | Deferred | Partial | LLM provider boundary, prompt templates, mock provider, privacy guard, streaming actions, persisted profiles, and broader actions are implemented. | LLM docs/architecture. | LLM tests. |
+| DW-07 | Deferred | Partial | Workspace templates are implemented for `.markforge/templates/*.md`; general Markdown structure suggestions and workspace-backed path autocomplete are implemented; syncable libraries remain open. | Template/editor-engine/app source and docs. | Template/editor-engine tests. |
 | DW-08 | Fixed | Fixed expanded | Docs-check expanded for package structure. | Script/package inventory. | Docs-check. |
 | DW-09 | Deferred | Deferred | Packaging work not implemented. | Tauri configs/docs. | Builds. |
 | AD-01 | Partial | Complete | All required packages now real. | Package inventory. | Package tests/docs-check. |
@@ -90,8 +90,8 @@ Updated package READMEs for `core`, `platform`, `ui`, `shared`, `converters`, `t
 - Native file watching and native close interception: Phase 11 implements open-file native watch events and editor dirty-document Tauri close-request interception; browser `beforeunload` and polling remain fallback behavior.
 - Full native PDF/DOCX/OCR conversion: current app supports browser print, sanitized HTML conversion/export, CSV table import, rich clipboard HTML import, URL/article HTML import, and basic HTML export settings.
 - Local AI streaming, persisted provider profiles, model benchmarking guidance, and broader AI actions remain future work; Ollama and OpenAI-compatible local adapters for LM Studio/llama.cpp-style servers are implemented for the Phase 9 baseline.
-- CodeMirror 6 and WYSIWYG/realtime editing: Phase 12A replaces the textarea source surface with CodeMirror 6; WYSIWYG/realtime editing remains deferred.
-- Workspace templates: current behavior includes built-in, local custom, and workspace templates under `.markforge/templates/*.md`; syncable libraries and path-aware autocomplete remain open.
+- CodeMirror 6 and rich editing: Phase 12A replaces the textarea source surface with CodeMirror 6, and the current editor also includes a ProseMirror-backed rich Markdown mode. Broader rich fixture coverage remains open.
+- Workspace templates: current behavior includes built-in, local custom, and workspace templates under `.markforge/templates/*.md`; workspace-backed path autocomplete is implemented and syncable libraries remain open.
 - Linux packaging/updates/signing/native spellcheck: Tauri release contracts need a dedicated packaging pass.
 - Code splitting: release hardening Milestone 5 split renderer chunks and tightened the JavaScript asset budget to 500 KiB. Route-level lazy loading can still be considered if future feature work grows app chunks.
 

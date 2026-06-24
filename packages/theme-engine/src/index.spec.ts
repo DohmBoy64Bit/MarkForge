@@ -3,11 +3,14 @@ import {
   appVisibleThemes,
   builtInThemes,
   codeThemeForTheme,
+  createCustomTheme,
   exportThemeForTheme,
   getTheme,
+  resolveThemePreference,
   themeToAppCssVariables,
   themeToAppTokens,
   themeToCssVariables,
+  themeToExportCss,
   validateTheme
 } from './index'
 
@@ -54,5 +57,36 @@ describe('@markforge/theme-engine', () => {
       '--accent-strong': '#4f5639',
       '--grid-line': 'rgba(78, 68, 52, 0.08)'
     })
+  })
+
+  it('resolves system theme preferences without app-local token logic', () => {
+    expect(resolveThemePreference('system', 'dark').id).toBe('dark')
+    expect(resolveThemePreference('system', 'light').id).toBe('light')
+    expect(resolveThemePreference('github', 'dark').id).toBe('github')
+  })
+
+  it('creates validated custom themes from partial token overrides', () => {
+    const custom = createCustomTheme({
+      id: 'Writer Theme!',
+      label: 'Writer Theme',
+      mode: 'light',
+      tokens: {
+        accent: '#123456',
+        exportBackground: '#fefefe'
+      }
+    })
+
+    expect(custom.ok).toBe(true)
+    expect(custom.ok && custom.value.id).toBe('writer-theme')
+    expect(custom.ok && custom.value.tokens.accent).toBe('#123456')
+    expect(custom.ok && themeToAppTokens(custom.value)).toMatchObject({
+      accent: '#123456',
+      page: '#fefefe'
+    })
+  })
+
+  it('generates export CSS from package-owned theme tokens', () => {
+    expect(themeToExportCss(getTheme('modern-neutral'))).toContain('--mf-accent: #0f766e;')
+    expect(themeToExportCss(getTheme('modern-neutral'))).toContain('max-width: 72ch;')
   })
 })

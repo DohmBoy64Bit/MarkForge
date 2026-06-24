@@ -73,7 +73,7 @@ Current converter baseline:
 - The viewer exposes Export HTML for the currently rendered Markdown/text document.
 - HTML-to-Markdown reports lossy conversion because styling/layout are not preserved.
 - URL/article conversion validates HTTP(S) input and uses the converter fetch path with trust/lossiness warnings.
-- DOCX, native PDF import/export, and OCR return explicit unsupported capability results until their parsing/runtime/trust requirements are defined.
+- DOCX import/export, PDF text import, Markdown-to-PDF export, and OCR image import are supported through packaged converter adapters. Full-fidelity conversion parity requires broader fixture coverage and release packaging validation.
 
 ## Local LLM Requirements
 

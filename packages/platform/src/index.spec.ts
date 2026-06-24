@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createNativeFileWatcher, createNativeWorkspaceWatcher, createPlatformServices } from './index'
+import {
+  createDictionarySpellcheckAdapter,
+  createNativeFileWatcher,
+  createNativeWorkspaceWatcher,
+  createPlatformServices
+} from './index'
 
 describe('@markforge/platform', () => {
   it('wraps filesystem, dialog, clipboard, and print adapters in typed results', async () => {
@@ -45,6 +50,40 @@ describe('@markforge/platform', () => {
     expect(save).toHaveBeenCalledWith({
       defaultPath: 'draft.html',
       filters: [{ name: 'HTML document', extensions: ['html', 'htm'] }]
+    })
+  })
+
+  it('offers binary import and export dialog filters for converter files', async () => {
+    const open = vi.fn(async () => 'input.pdf')
+    const save = vi.fn(async () => 'output.pdf')
+    const services = createPlatformServices({
+      dialogs: { open, save }
+    })
+
+    await expect(services.dialogs.openPdfFile()).resolves.toEqual({ ok: true, value: 'input.pdf' })
+    await expect(services.dialogs.openDocxFile()).resolves.toEqual({ ok: true, value: 'input.pdf' })
+    await expect(services.dialogs.openImageFile()).resolves.toEqual({ ok: true, value: 'input.pdf' })
+    await expect(services.dialogs.savePdfFile('draft.pdf')).resolves.toEqual({ ok: true, value: 'output.pdf' })
+    await expect(services.dialogs.saveDocxFile('draft.docx')).resolves.toEqual({ ok: true, value: 'output.pdf' })
+    expect(open).toHaveBeenNthCalledWith(1, {
+      multiple: false,
+      filters: [{ name: 'PDF document', extensions: ['pdf'] }]
+    })
+    expect(open).toHaveBeenNthCalledWith(2, {
+      multiple: false,
+      filters: [{ name: 'Word document', extensions: ['docx'] }]
+    })
+    expect(open).toHaveBeenNthCalledWith(3, {
+      multiple: false,
+      filters: [{ name: 'Image', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tif', 'tiff'] }]
+    })
+    expect(save).toHaveBeenNthCalledWith(1, {
+      defaultPath: 'draft.pdf',
+      filters: [{ name: 'PDF document', extensions: ['pdf'] }]
+    })
+    expect(save).toHaveBeenNthCalledWith(2, {
+      defaultPath: 'draft.docx',
+      filters: [{ name: 'Word document', extensions: ['docx'] }]
     })
   })
 
@@ -175,6 +214,25 @@ describe('@markforge/platform', () => {
     })
   })
 
+  it('wraps binary filesystem reads and writes', async () => {
+    const bytes = new Uint8Array([1, 2, 3])
+    const readBinaryFile = vi.fn(async () => bytes)
+    const writeBinaryFile = vi.fn(async () => undefined)
+    const services = createPlatformServices({
+      filesystem: {
+        getFileInfo: async () => ({ exists: true, modifiedMs: 42, len: 3 }),
+        readBinaryFile,
+        readTextFile: async () => 'text',
+        writeBinaryFile
+      }
+    })
+
+    await expect(services.filesystem.readBinaryFile('input.pdf')).resolves.toEqual({ ok: true, value: bytes })
+    await expect(services.filesystem.writeBinaryFile('output.pdf', bytes)).resolves.toEqual({ ok: true, value: undefined })
+    expect(readBinaryFile).toHaveBeenCalledWith('input.pdf')
+    expect(writeBinaryFile).toHaveBeenCalledWith('output.pdf', bytes)
+  })
+
   it('supports read-only filesystem adapters for viewer-style file metadata checks', async () => {
     const services = createPlatformServices({
       filesystem: {
@@ -230,6 +288,22 @@ describe('@markforge/platform', () => {
     await expect(services.spellcheck.checkText('teh')).resolves.toMatchObject({
       ok: false,
       error: { code: 'not-supported' }
+    })
+  })
+
+  it('provides a package-owned dictionary spellcheck adapter', async () => {
+    const services = createPlatformServices({
+      spellcheck: createDictionarySpellcheckAdapter({
+        dictionary: ['the', 'document', 'is', 'ready'],
+        suggestions: { teh: 'the' }
+      })
+    })
+
+    await expect(services.spellcheck.checkText('teh document is ready', {
+      ignoredWords: ['ready']
+    })).resolves.toEqual({
+      ok: true,
+      value: [{ start: 0, end: 3, word: 'teh', suggestion: 'the' }]
     })
   })
 

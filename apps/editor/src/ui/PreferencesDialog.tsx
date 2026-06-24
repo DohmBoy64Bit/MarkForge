@@ -160,14 +160,15 @@ export function PreferencesDialog({
                   </div>
                   <div className="preferenceSegment themeSegment" aria-label="Theme preference">
                     {appVisibleThemes.map(option => {
-                      const Icon = iconForTheme(option.id)
+                      const themeId = option.id as Theme
+                      const Icon = iconForTheme(themeId)
 
                       return (
                         <button
                           key={option.id}
                           type="button"
-                          className={preferences.theme === option.id ? 'active' : ''}
-                          onClick={() => updateTheme(option.id)}
+                          className={preferences.theme === themeId ? 'active' : ''}
+                          onClick={() => updateTheme(themeId)}
                         >
                           <Icon size={15} />
                           <span>{option.label}</span>
@@ -183,7 +184,7 @@ export function PreferencesDialog({
                     <p>Restored on next launch</p>
                   </div>
                   <div className="preferenceSegment viewModeSegment" aria-label="Default view mode preference">
-                    {(['source', 'split', 'preview'] as const).map(mode => (
+                    {(['source', 'rich', 'split', 'preview'] as const).map(mode => (
                       <button
                         key={mode}
                         type="button"

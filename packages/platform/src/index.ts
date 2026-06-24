@@ -34,8 +34,10 @@ export type PlatformAdapters = {
   filesystem?: {
     getFileInfo(path: string): Promise<FileInfo>
     listWorkspaceFiles?(root: string): Promise<WorkspaceFileEntry[]>
+    readBinaryFile?(path: string): Promise<Uint8Array>
     readTextFile(path: string): Promise<string>
     searchWorkspace?(root: string, options: WorkspaceSearchOptions): Promise<WorkspaceSearchMatch[]>
+    writeBinaryFile?(path: string, contents: Uint8Array): Promise<void>
     writeTextFile?(path: string, contents: string): Promise<void>
   }
   fileWatcher?: {
@@ -91,17 +93,24 @@ export type ClipboardService = {
 }
 
 export type DialogService = {
+  openDocxFile(options?: CancellableOptions): Promise<Result<string | null>>
+  openImageFile(options?: CancellableOptions): Promise<Result<string | null>>
   openMarkdownFile(options?: CancellableOptions): Promise<Result<string | null>>
+  openPdfFile(options?: CancellableOptions): Promise<Result<string | null>>
+  saveDocxFile(defaultPath?: string, options?: CancellableOptions): Promise<Result<string | null>>
   openWorkspaceDirectory(options?: CancellableOptions): Promise<Result<string | null>>
   saveHtmlFile(defaultPath?: string, options?: CancellableOptions): Promise<Result<string | null>>
   saveMarkdownFile(defaultPath?: string, options?: CancellableOptions): Promise<Result<string | null>>
+  savePdfFile(defaultPath?: string, options?: CancellableOptions): Promise<Result<string | null>>
 }
 
 export type FilesystemService = {
   getFileInfo(path: string, options?: CancellableOptions): Promise<Result<FileInfo>>
   listWorkspaceFiles(root: string, options?: CancellableOptions): Promise<Result<WorkspaceFileEntry[]>>
+  readBinaryFile(path: string, options?: CancellableOptions): Promise<Result<Uint8Array>>
   readTextFile(path: string, options?: CancellableOptions): Promise<Result<string>>
   searchWorkspace(root: string, searchOptions: WorkspaceSearchOptions, options?: CancellableOptions): Promise<Result<WorkspaceSearchMatch[]>>
+  writeBinaryFile(path: string, contents: Uint8Array, options?: CancellableOptions): Promise<Result<void>>
   writeTextFile(path: string, contents: string, options?: CancellableOptions): Promise<Result<void>>
 }
 
@@ -127,6 +136,11 @@ export type SpellcheckOptions = {
 
 export type SpellcheckService = {
   checkText(text: string, options?: SpellcheckOptions & CancellableOptions): Promise<Result<SpellcheckIssue[]>>
+}
+
+export type DictionarySpellcheckOptions = {
+  dictionary: Iterable<string>
+  suggestions?: Record<string, string>
 }
 
 export type UpdateStatus =
@@ -215,6 +229,50 @@ export const htmlFileFilters: FileDialogFilter[] = [
   { name: 'HTML document', extensions: ['html', 'htm'] }
 ]
 
+export const docxFileFilters: FileDialogFilter[] = [
+  { name: 'Word document', extensions: ['docx'] }
+]
+
+export const pdfFileFilters: FileDialogFilter[] = [
+  { name: 'PDF document', extensions: ['pdf'] }
+]
+
+export const imageFileFilters: FileDialogFilter[] = [
+  { name: 'Image', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tif', 'tiff'] }
+]
+
+export function createDictionarySpellcheckAdapter(options: DictionarySpellcheckOptions): NonNullable<PlatformAdapters['spellcheck']> {
+  const dictionary = new Set(Array.from(options.dictionary, word => normalizeSpellcheckWord(word)).filter(Boolean))
+  const suggestions = new Map(Object.entries(options.suggestions ?? {}).map(([word, suggestion]) => [
+    normalizeSpellcheckWord(word),
+    suggestion
+  ]))
+
+  return {
+    async checkText(text, checkOptions) {
+      const ignored = new Set((checkOptions?.ignoredWords ?? []).map(normalizeSpellcheckWord))
+      const issues: SpellcheckIssue[] = []
+      const wordPattern = /[A-Za-z][A-Za-z'-]*/g
+      let match: RegExpExecArray | null
+
+      while ((match = wordPattern.exec(text))) {
+        const word = match[0]
+        const normalized = normalizeSpellcheckWord(word)
+        if (!normalized || ignored.has(normalized) || dictionary.has(normalized)) continue
+
+        issues.push({
+          start: match.index,
+          end: match.index + word.length,
+          word,
+          suggestion: suggestions.get(normalized)
+        })
+      }
+
+      return issues
+    }
+  }
+}
+
 export function createPlatformServices(adapters: PlatformAdapters): PlatformServices {
   const filesystem: FilesystemService = {
     async getFileInfo(path, options) {
@@ -237,6 +295,18 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
         return ok(await adapters.filesystem.readTextFile(path))
       } catch (error) {
         return { ok: false, error: toError(error, 'File read failed.') }
+      }
+    },
+    async readBinaryFile(path, options) {
+      const cancelled = assertNotCancelled(options?.signal)
+      if (!cancelled.ok) return cancelled
+      const readBinaryFile = adapters.filesystem?.readBinaryFile
+      if (!readBinaryFile) return err('not-supported', 'Binary file read adapter is not available.')
+
+      try {
+        return ok(await readBinaryFile(path))
+      } catch (error) {
+        return { ok: false, error: toError(error, 'Binary file read failed.') }
       }
     },
     async listWorkspaceFiles(root, options) {
@@ -279,12 +349,31 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
       } catch (error) {
         return { ok: false, error: toError(error, 'File write failed.') }
       }
+    },
+    async writeBinaryFile(path, contents, options) {
+      const cancelled = assertNotCancelled(options?.signal)
+      if (!cancelled.ok) return cancelled
+      const writeBinaryFile = adapters.filesystem?.writeBinaryFile
+      if (!writeBinaryFile) return err('not-supported', 'Binary file write adapter is not available.')
+
+      try {
+        await writeBinaryFile(path, contents)
+        return ok(undefined)
+      } catch (error) {
+        return { ok: false, error: toError(error, 'Binary file write failed.') }
+      }
     }
   }
 
   return {
     filesystem,
     dialogs: {
+      async openDocxFile(options) {
+        return openSingleFileDialog(adapters, docxFileFilters, 'DOCX open dialog failed.', options)
+      },
+      async openImageFile(options) {
+        return openSingleFileDialog(adapters, imageFileFilters, 'Image open dialog failed.', options)
+      },
       async openMarkdownFile(options) {
         const cancelled = assertNotCancelled(options?.signal)
         if (!cancelled.ok) return cancelled
@@ -296,6 +385,9 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
         } catch (error) {
           return { ok: false, error: toError(error, 'Open dialog failed.') }
         }
+      },
+      async openPdfFile(options) {
+        return openSingleFileDialog(adapters, pdfFileFilters, 'PDF open dialog failed.', options)
       },
       async openWorkspaceDirectory(options) {
         const cancelled = assertNotCancelled(options?.signal)
@@ -320,6 +412,9 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
           return { ok: false, error: toError(error, 'Save dialog failed.') }
         }
       },
+      async saveDocxFile(defaultPath, options) {
+        return saveSingleFileDialog(adapters, docxFileFilters, defaultPath, 'DOCX save dialog failed.', options)
+      },
       async saveMarkdownFile(defaultPath, options) {
         const cancelled = assertNotCancelled(options?.signal)
         if (!cancelled.ok) return cancelled
@@ -330,6 +425,9 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
         } catch (error) {
           return { ok: false, error: toError(error, 'Save dialog failed.') }
         }
+      },
+      async savePdfFile(defaultPath, options) {
+        return saveSingleFileDialog(adapters, pdfFileFilters, defaultPath, 'PDF save dialog failed.', options)
       }
     },
     clipboard: {
@@ -543,6 +641,42 @@ export function createPlatformServices(adapters: PlatformAdapters): PlatformServ
   }
 }
 
+async function openSingleFileDialog(
+  adapters: PlatformAdapters,
+  filters: FileDialogFilter[],
+  failureMessage: string,
+  options?: CancellableOptions
+): Promise<Result<string | null>> {
+  const cancelled = assertNotCancelled(options?.signal)
+  if (!cancelled.ok) return cancelled
+  if (!adapters.dialogs) return err('not-supported', 'Open dialog adapter is not available.')
+
+  try {
+    const selected = await adapters.dialogs.open({ multiple: false, filters })
+    return ok(typeof selected === 'string' ? selected : null)
+  } catch (error) {
+    return { ok: false, error: toError(error, failureMessage) }
+  }
+}
+
+async function saveSingleFileDialog(
+  adapters: PlatformAdapters,
+  filters: FileDialogFilter[],
+  defaultPath: string | undefined,
+  failureMessage: string,
+  options?: CancellableOptions
+): Promise<Result<string | null>> {
+  const cancelled = assertNotCancelled(options?.signal)
+  if (!cancelled.ok) return cancelled
+  if (!adapters.dialogs?.save) return err('not-supported', 'Save dialog adapter is not available.')
+
+  try {
+    return ok(await adapters.dialogs.save({ defaultPath, filters }))
+  } catch (error) {
+    return { ok: false, error: toError(error, failureMessage) }
+  }
+}
+
 export function createNativeFileWatcher(adapters: NativeFileWatcherAdapters): PlatformAdapters['fileWatcher'] {
   return {
     watchFile(options, onEvent) {
@@ -618,6 +752,10 @@ function normalizeWorkspaceSearchLimit(limit: number | undefined): number {
 
 function sortWorkspaceEntries(entries: WorkspaceFileEntry[]): WorkspaceFileEntry[] {
   return [...entries].sort((a, b) => a.relativePath.localeCompare(b.relativePath))
+}
+
+function normalizeSpellcheckWord(word: string): string {
+  return word.trim().toLowerCase()
 }
 
 function workspaceEntryMap(entries: WorkspaceFileEntry[]): Map<string, WorkspaceFileEntry> {

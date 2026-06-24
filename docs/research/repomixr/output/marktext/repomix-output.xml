@@ -380,6 +380,7 @@ packages/desktop/src/renderer/src/util/listToTree.ts
 packages/desktop/src/renderer/src/util/markdownToHtml.ts
 packages/desktop/src/renderer/src/util/pdf.ts
 packages/desktop/src/renderer/src/util/resolveImageSrc.ts
+packages/desktop/src/renderer/src/util/sourceModeToc.ts
 packages/desktop/src/renderer/src/util/theme.ts
 packages/desktop/src/renderer/src/util/themeColor.ts
 packages/desktop/src/renderer/src/util/tocNavigation.ts
@@ -445,6 +446,7 @@ packages/desktop/test/e2e/image-viewer.spec.ts
 packages/desktop/test/e2e/inline-format.spec.ts
 packages/desktop/test/e2e/issue-2800.spec.ts
 packages/desktop/test/e2e/issue-4346.spec.ts
+packages/desktop/test/e2e/issue-4356.spec.ts
 packages/desktop/test/e2e/issue-4374.spec.ts
 packages/desktop/test/e2e/launch.spec.ts
 packages/desktop/test/e2e/layout-toggles.spec.ts
@@ -461,6 +463,7 @@ packages/desktop/test/e2e/quick-insert-accelerators.spec.ts
 packages/desktop/test/e2e/ripgrep-search.spec.ts
 packages/desktop/test/e2e/search-prefill-from-selection.spec.ts
 packages/desktop/test/e2e/source-math.spec.ts
+packages/desktop/test/e2e/source-toc-scroll.spec.ts
 packages/desktop/test/e2e/strong-cjk.spec.ts
 packages/desktop/test/e2e/tab-switch-cursor.spec.ts
 packages/desktop/test/e2e/tabs.spec.ts
@@ -496,20 +499,25 @@ packages/desktop/test/unit/specs/format-menu-state.spec.ts
 packages/desktop/test/unit/specs/i18n.spec.ts
 packages/desktop/test/unit/specs/image-deletion-url.spec.ts
 packages/desktop/test/unit/specs/image-path-autocomplete.spec.ts
+packages/desktop/test/unit/specs/keybinding-reload.spec.ts
 packages/desktop/test/unit/specs/listen-for-main.spec.ts
 packages/desktop/test/unit/specs/match-electron-accelerator.spec.ts
 packages/desktop/test/unit/specs/move-image-to-folder.spec.ts
 packages/desktop/test/unit/specs/native-theme.spec.ts
 packages/desktop/test/unit/specs/pdf.spec.ts
 packages/desktop/test/unit/specs/printService-image.spec.ts
+packages/desktop/test/unit/specs/search-prefill.spec.ts
 packages/desktop/test/unit/specs/selection-menus.spec.ts
 packages/desktop/test/unit/specs/source-code-image-action.spec.ts
+packages/desktop/test/unit/specs/source-mode-dirty.spec.ts
+packages/desktop/test/unit/specs/sourceModeToc.spec.ts
 packages/desktop/test/unit/specs/spellchecker-language-command.spec.ts
 packages/desktop/test/unit/specs/spellchecker-switch-language.spec.ts
 packages/desktop/test/unit/specs/synthetic-history.spec.ts
 packages/desktop/test/unit/specs/theme-emoji-patch.spec.ts
 packages/desktop/test/unit/specs/toc-navigation.spec.ts
 packages/desktop/test/unit/specs/upload-image.spec.ts
+packages/desktop/test/unit/specs/write-file-missing-dir.spec.ts
 packages/desktop/tsconfig.base.json
 packages/desktop/tsconfig.json
 packages/desktop/vitest.config.ts
@@ -529,14 +537,21 @@ packages/muya/e2e/package.json
 packages/muya/e2e/playwright.config.ts
 packages/muya/e2e/README.md
 packages/muya/e2e/tests/a11y/host-scan.spec.ts
+packages/muya/e2e/tests/blocks/codeblock-scroll-3191.spec.ts
+packages/muya/e2e/tests/blocks/diagram-fence-2177.spec.ts
 packages/muya/e2e/tests/blocks/footnote-scenarios.spec.ts
 packages/muya/e2e/tests/blocks/frontmatter.spec.ts
 packages/muya/e2e/tests/blocks/html-block-link-3836.spec.ts
 packages/muya/e2e/tests/blocks/html-inline.spec.ts
+packages/muya/e2e/tests/blocks/inline-math-align.spec.ts
+packages/muya/e2e/tests/blocks/inline-math-overflow-4339.spec.ts
+packages/muya/e2e/tests/blocks/list-nav-4644.spec.ts
+packages/muya/e2e/tests/blocks/math-error-nowrap-4100.spec.ts
 packages/muya/e2e/tests/blocks/reference-link-image.spec.ts
 packages/muya/e2e/tests/diagrams/flowchart.spec.ts
 packages/muya/e2e/tests/diagrams/mermaid.spec.ts
 packages/muya/e2e/tests/diagrams/plantuml.spec.ts
+packages/muya/e2e/tests/diagrams/sequence-overflow-3560.spec.ts
 packages/muya/e2e/tests/diagrams/sequence.spec.ts
 packages/muya/e2e/tests/diagrams/vega-lite.spec.ts
 packages/muya/e2e/tests/drag/image-resize.spec.ts
@@ -546,6 +561,8 @@ packages/muya/e2e/tests/drag/table-drag-bar.spec.ts
 packages/muya/e2e/tests/drag/table-row-column-menu.spec.ts
 packages/muya/e2e/tests/edges/empty-and-tiny.spec.ts
 packages/muya/e2e/tests/editing/clipboard.spec.ts
+packages/muya/e2e/tests/editing/nbsp-editing.spec.ts
+packages/muya/e2e/tests/editing/nbsp-nowrap.spec.ts
 packages/muya/e2e/tests/editing/paste-as-plain-text.spec.ts
 packages/muya/e2e/tests/editing/search-replace.spec.ts
 packages/muya/e2e/tests/editing/selection-setcursor.spec.ts
@@ -615,6 +632,7 @@ packages/muya/src/__tests__/imageSrcEscapeParity.spec.ts
 packages/muya/src/__tests__/invalidateImageCache.spec.ts
 packages/muya/src/__tests__/localeCompleteness.spec.ts
 packages/muya/src/__tests__/localeRefresh.spec.ts
+packages/muya/src/__tests__/muyaDestroyPlugins.spec.ts
 packages/muya/src/__tests__/parityHeadingCopyLink.spec.ts
 packages/muya/src/__tests__/parityInsertParagraphNested.spec.ts
 packages/muya/src/__tests__/replaceContent.spec.ts
@@ -636,6 +654,7 @@ packages/muya/src/block/base/__tests__/arrowNavigation.spec.ts
 packages/muya/src/block/base/__tests__/autoPair.spec.ts
 packages/muya/src/block/base/__tests__/backspaceImage.spec.ts
 packages/muya/src/block/base/__tests__/blurHandlerNullCursor.spec.ts
+packages/muya/src/block/base/__tests__/convertToListAfterStrong.spec.ts
 packages/muya/src/block/base/__tests__/crossBlockFormat.spec.ts
 packages/muya/src/block/base/__tests__/formatBackspace.spec.ts
 packages/muya/src/block/base/__tests__/formatClickCursor.spec.ts
@@ -683,9 +702,11 @@ packages/muya/src/block/content/paragraphContent/__tests__/backspaceUnwrap.spec.
 packages/muya/src/block/content/paragraphContent/__tests__/deleteMerge.spec.ts
 packages/muya/src/block/content/paragraphContent/__tests__/enterConvert.spec.ts
 packages/muya/src/block/content/paragraphContent/__tests__/enterHandler.spec.ts
+packages/muya/src/block/content/paragraphContent/__tests__/enterListItemEmptyFirst.spec.ts
 packages/muya/src/block/content/paragraphContent/__tests__/insertTabAndIndent.spec.ts
 packages/muya/src/block/content/paragraphContent/__tests__/tabHandler.spec.ts
 packages/muya/src/block/content/paragraphContent/__tests__/tableConversion.spec.ts
+packages/muya/src/block/content/paragraphContent/__tests__/unindentReplacement.spec.ts
 packages/muya/src/block/content/paragraphContent/index.ts
 packages/muya/src/block/content/setextHeadingContent/index.ts
 packages/muya/src/block/content/tableCell/__tests__/arrowHandler.spec.ts
@@ -694,6 +715,7 @@ packages/muya/src/block/content/tableCell/__tests__/composeHandler.spec.ts
 packages/muya/src/block/content/tableCell/__tests__/enterHandler.spec.ts
 packages/muya/src/block/content/tableCell/__tests__/tabHandler.spec.ts
 packages/muya/src/block/content/tableCell/index.ts
+packages/muya/src/block/content/thematicBreakContent/__tests__/handlers.spec.ts
 packages/muya/src/block/content/thematicBreakContent/index.ts
 packages/muya/src/block/extra/diagram/__tests__/diagramPreview.spec.ts
 packages/muya/src/block/extra/diagram/diagramContainer.ts
@@ -702,6 +724,7 @@ packages/muya/src/block/extra/diagram/index.ts
 packages/muya/src/block/extra/footnote/__tests__/footnote.spec.ts
 packages/muya/src/block/extra/footnote/index.ts
 packages/muya/src/block/extra/frontmatter/index.ts
+packages/muya/src/block/extra/math/__tests__/mhchem.spec.ts
 packages/muya/src/block/extra/math/index.ts
 packages/muya/src/block/extra/math/mathContainer.ts
 packages/muya/src/block/extra/math/mathPreview.ts
@@ -729,6 +752,7 @@ packages/muya/src/clipboard/__tests__/copyCrossBlockQuote.spec.ts
 packages/muya/src/clipboard/__tests__/copyFootnote.spec.ts
 packages/muya/src/clipboard/__tests__/copyHandler.spec.ts
 packages/muya/src/clipboard/__tests__/copyWithinContainer.spec.ts
+packages/muya/src/clipboard/__tests__/crossBlockCutGuard.spec.ts
 packages/muya/src/clipboard/__tests__/cutBlockConvert.spec.ts
 packages/muya/src/clipboard/__tests__/cutLanguageInput918.spec.ts
 packages/muya/src/clipboard/__tests__/cutSelectedImage.spec.ts
@@ -755,6 +779,7 @@ packages/muya/src/clipboard/mergePasteIntoHeading.ts
 packages/muya/src/clipboard/paste.ts
 packages/muya/src/clipboard/pasteImage.ts
 packages/muya/src/clipboard/types.ts
+packages/muya/src/config/__tests__/escapeCharacter.spec.ts
 packages/muya/src/config/emojis.ts
 packages/muya/src/config/emptyStates.ts
 packages/muya/src/config/escapeCharacter.ts
@@ -770,11 +795,15 @@ packages/muya/src/event/__tests__/eventCenter.spec.ts
 packages/muya/src/event/__tests__/focusBlur.spec.ts
 packages/muya/src/event/index.ts
 packages/muya/src/event/types.ts
+packages/muya/src/history/__tests__/undoGrouping.spec.ts
+packages/muya/src/history/__tests__/undoRedoCoalescedListRoundTrip.spec.ts
 packages/muya/src/history/index.ts
 packages/muya/src/i18n/index.ts
 packages/muya/src/i18n/types.ts
 packages/muya/src/index.ts
+packages/muya/src/inlineRenderer/__tests__/autoLinkTrailingPunct.spec.ts
 packages/muya/src/inlineRenderer/__tests__/commonmarkExamples.spec.ts
+packages/muya/src/inlineRenderer/__tests__/inlineMathEscape.spec.ts
 packages/muya/src/inlineRenderer/index.ts
 packages/muya/src/inlineRenderer/lexer.ts
 packages/muya/src/inlineRenderer/renderer/__tests__/image.spec.ts
@@ -831,6 +860,7 @@ packages/muya/src/search/index.ts
 packages/muya/src/search/types.ts
 packages/muya/src/selection/__tests__/duplicateImageResize.spec.ts
 packages/muya/src/selection/__tests__/facade.spec.ts
+packages/muya/src/selection/__tests__/offsetClamp.spec.ts
 packages/muya/src/selection/__tests__/parityPreviewImage.spec.ts
 packages/muya/src/selection/__tests__/paritySelectionChange.spec.ts
 packages/muya/src/selection/__tests__/selectAll.spec.ts
@@ -848,6 +878,7 @@ packages/muya/src/selection/TextSelection.ts
 packages/muya/src/selection/types.ts
 packages/muya/src/state/__tests__/blockSerialization.spec.ts
 packages/muya/src/state/__tests__/diagramFlowchartSequence.spec.ts
+packages/muya/src/state/__tests__/flushPendingOps.spec.ts
 packages/muya/src/state/__tests__/footnoteExportHtml.spec.ts
 packages/muya/src/state/__tests__/footnoteHtml.spec.ts
 packages/muya/src/state/__tests__/gitlabMath.spec.ts
@@ -855,10 +886,12 @@ packages/muya/src/state/__tests__/gitlabMathToggle.spec.ts
 packages/muya/src/state/__tests__/listMarkerOption.spec.ts
 packages/muya/src/state/__tests__/listSerialization.spec.ts
 packages/muya/src/state/__tests__/markdownToState.spec.ts
+packages/muya/src/state/__tests__/mathTrailingSpace.spec.ts
 packages/muya/src/state/__tests__/nestedMixedLists.spec.ts
 packages/muya/src/state/__tests__/parityExportHtml.spec.ts
 packages/muya/src/state/__tests__/referenceLink.spec.ts
 packages/muya/src/state/__tests__/renderToStaticHTML.spec.ts
+packages/muya/src/state/__tests__/setContentClearsOpCache.spec.ts
 packages/muya/src/state/__tests__/stateToMarkdown.spec.ts
 packages/muya/src/state/__tests__/strongCjkFlanking.spec.ts
 packages/muya/src/state/getTOC.ts
@@ -952,6 +985,7 @@ packages/muya/src/utils/__tests__/normalizePastedHtml.spec.ts
 packages/muya/src/utils/__tests__/sanitizeHyperlink.spec.ts
 packages/muya/src/utils/__tests__/search.spec.ts
 packages/muya/src/utils/__tests__/standaloneTableGuard.spec.ts
+packages/muya/src/utils/__tests__/stringWidth.spec.ts
 packages/muya/src/utils/__tests__/wordCount.spec.ts
 packages/muya/src/utils/codeBlockLineNumbers.ts
 packages/muya/src/utils/diagram/index.ts
@@ -992,6 +1026,7 @@ packages/muya/src/utils/prism/walkToken.ts
 packages/muya/src/utils/search.ts
 packages/muya/src/utils/slug.ts
 packages/muya/src/utils/snabbdom.ts
+packages/muya/src/utils/stringWidth.ts
 packages/muya/src/utils/turndownService/index.ts
 packages/muya/src/utils/types.ts
 packages/muya/src/utils/url.ts
@@ -2353,16 +2388,25 @@ jobs:
             echo '```'
           } > release_body.md
 
-      - name: Publish release
+      # Immutable-release repos forbid adding assets to an already-published
+      # release, and action-gh-release publishes before uploading the assets.
+      # Create the release as a draft (assets allowed), then promote it to a
+      # published release in the next step.
+      - name: Create draft release with assets
         uses: softprops/action-gh-release@v2.6.2
         with:
-          draft: false
+          draft: true
           prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
           name: ${{ github.ref_name }}
           body_path: release_body.md
           fail_on_unmatched_files: true
           files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Promote draft to published release
+        run: gh release edit "${GITHUB_REF_NAME}" --draft=false --repo "${GITHUB_REPOSITORY}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 </file>
@@ -5798,6 +5842,7 @@ linux:
 
 <file path="packages/desktop/electron.vite.config.ts">
 import { resolve, dirname } from 'path'
+import type { PluginOption } from 'vite'
 import { defineConfig } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
 import svgLoader from 'vite-svg-loader'
@@ -5833,6 +5878,11 @@ import { fileURLToPath } from 'url'
 // Node-only `global` at module load — undefined in a sandboxed renderer.
 // Substitute it with `globalThis` at build time so the imports don't
 // throw before Vue mounts.
+⋮----
+// Electron ships Chromium, which supports CSS logical properties
+// natively. Leave them untouched so `padding-inline-start` /
+// `inset-inline-start` mirror correctly under `dir="rtl"` instead
+// of being down-compiled to hard-coded LTR physical props (#4673).
 </file>
 
 <file path="packages/desktop/package.json">
@@ -7261,6 +7311,10 @@ export const writeFile = (
   extension?: string,
   options: WriteFileOptions | undefined = 'utf-8'
 ): Promise<void> =>
+⋮----
+// `outputFile` creates any missing parent directories before writing, so a
+// save whose folder was moved/deleted recreates it and still succeeds —
+// matching VS Code, and keeping (auto)save from ever silently failing (#3509).
 </file>
 
 <file path="packages/desktop/src/main/filesystem/markdown.ts">
@@ -8069,8 +8123,16 @@ getUserKeybindings(): Map<string, string>
    * @param userKeybindings New user key bindings.
    */
 async setUserKeybindings(
-    userKeybindings: Map<string, string> | Iterable<readonly [string, string]>
+    userKeybindings: Map<string, string> | Iterable<readonly [string, string]>,
+    windows: BrowserWindow[] = []
 ): Promise<boolean>
+⋮----
+/**
+   * Rebuilds the active key map from the defaults plus the persisted user
+   * keybindings and re-registers shortcuts on the given windows, so a change
+   * takes effect without restarting the application.
+   */
+_reloadKeybindings(windows: BrowserWindow[]): void
 ⋮----
 // --- private --------------------------------
 ⋮----
@@ -9026,15 +9088,21 @@ import { type MenuItemConstructorOptions } from 'electron'
 import { t } from '../../i18n'
 import type Preference from '../../preferences'
 ⋮----
+// [i18nLabelKey, themeId] for each selectable theme. The menu label is
+// `menu.theme.<labelKey>`; `themeId` is both the menu item id and the value
+// passed to `selectTheme` / compared against the saved theme. (A few light
+// themes keep historical ids, e.g. cadmiumLight -> 'light'.)
+⋮----
+const themeRadio = ([labelKey, id]: readonly [string, string]): MenuItemConstructorOptions => (
+⋮----
+click()
+⋮----
 // Follow System Theme
 ⋮----
 click(menuItem)
 ⋮----
-// Light Themes (alphabetical)
-⋮----
-click()
-⋮----
-// Dark Themes (alphabetical)
+// Group themes into nested submenus so the top-level Theme menu stays short
+// instead of expanding to the full window height with 30+ flat items (#4534).
 </file>
 
 <file path="packages/desktop/src/main/menu/templates/view.ts">
@@ -15406,9 +15474,12 @@ watch(
 )
 
 // Methods
-const jumpClick = (linkInfo: { href: string }) => {
+// muya types the callback as (linkInfo: ILinkInfo | null) and href itself can
+// be null when the rendered link has no usable href (see issue #4356).
+const jumpClick = (linkInfo: { href?: string | null } | null) => {
+  if (!linkInfo) return
   const { href } = linkInfo
-  editorStore.FORMAT_LINK_CLICK({ data: { href }, dirname: window.DIRNAME })
+  editorStore.FORMAT_LINK_CLICK({ data: { href: href ?? null }, dirname: window.DIRNAME })
 }
 
 interface ImagePathSuggestion {
@@ -15796,6 +15867,12 @@ const scrollToHeader = (slug: unknown) => {
   scrollElementIntoView(resolveTocHeadingElement(container, editorStore.listToc, slug))
 }
 
+// Scrolls to a non-heading in-document anchor target (e.g. a custom
+// `<a id="...">`) resolved by `FORMAT_LINK_CLICK` via `getElementById`.
+const scrollToAnchorElement = (element: unknown) => {
+  if (element instanceof Element) scrollElementIntoView(element)
+}
+
 const scrollToElement = (selector: string) => {
   // Scroll to search highlight word
   scrollElementIntoView(document.querySelector(selector))
@@ -16156,6 +16233,10 @@ const blurEditor = () => {
   editor.value?.blur(false, true)
 }
 
+const flushActiveEditor = () => {
+  editor.value?.flush()
+}
+
 const focusEditor = () => {
   editor.value?.focus()
 }
@@ -16362,6 +16443,7 @@ onMounted(() => {
   bus.on('insert-image', insertImage)
   bus.on('image-uploaded', handleUploadedImage)
   bus.on('file-changed', handleFileChange)
+  bus.on('flush-active-editor', flushActiveEditor)
   bus.on('editor-blur', blurEditor)
   bus.on('editor-focus', focusEditor)
   bus.on('copyAsRich', handleCopyPaste)
@@ -16372,6 +16454,7 @@ onMounted(() => {
   bus.on('deleteParagraph', handleParagraph)
   bus.on('insertParagraph', handleInsertParagraph)
   bus.on('scroll-to-header', scrollToHeader)
+  bus.on('scroll-to-anchor-element', scrollToAnchorElement)
   bus.on('screenshot-captured', handleScreenShot)
   bus.on('show-command-palette', handleModalOpening)
   bus.on('switch-spellchecker-language', switchSpellcheckLanguage)
@@ -16510,6 +16593,7 @@ onBeforeUnmount(() => {
   bus.off('insert-image', insertImage)
   bus.off('image-uploaded', handleUploadedImage)
   bus.off('file-changed', handleFileChange)
+  bus.off('flush-active-editor', flushActiveEditor)
   bus.off('editor-blur', blurEditor)
   bus.off('editor-focus', focusEditor)
   bus.off('copyAsRich', handleCopyPaste)
@@ -16520,6 +16604,7 @@ onBeforeUnmount(() => {
   bus.off('deleteParagraph', handleParagraph)
   bus.off('insertParagraph', handleInsertParagraph)
   bus.off('scroll-to-header', scrollToHeader)
+  bus.off('scroll-to-anchor-element', scrollToAnchorElement)
   bus.off('screenshot-captured', handleScreenShot)
   bus.off('show-command-palette', handleModalOpening)
   bus.off('switch-spellchecker-language', switchSpellcheckLanguage)
@@ -16556,6 +16641,10 @@ onBeforeUnmount(() => {
 .editor-wrapper {
   height: 100%;
   position: relative;
+  /* Contain the editor's z-indexed children (e.g. the math/diagram preview
+     popups at z-index 10000) in their own stacking context so they cannot
+     paint above modal dialogs rendered outside the editor. */
+  isolation: isolate;
   flex: 1;
   color: var(--editorColor);
 }
@@ -16853,6 +16942,7 @@ const handleClick = (status: boolean) => {
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useEditorStore } from '@/store/editor'
 import { usePreferencesStore } from '@/store/preferences'
+import { findMarkdownHeadingLine, scrollSourceEditorToLine } from '@/util/sourceModeToc'
 import { storeToRefs } from 'pinia'
 import codeMirror, { setCursorAtFirstLine, setTextDirection } from '../../codeMirror'
 import { wordCount as getWordCount } from '@muyajs/core'
@@ -17130,6 +17220,20 @@ const listenChange = () => {
   })
 }
 
+// #3580: in Source Code mode the WYSIWYG container is hidden, so the
+// `scroll-to-header` bus event (emitted when a TOC entry is clicked) must scroll
+// CodeMirror instead. Resolve the TOC entry to its heading line in the source.
+const handleScrollToHeader = (slug: unknown) => {
+  if (!editor.value) return
+  const index = editorStore.listToc.findIndex(item => item.slug === slug)
+  if (index < 0) return
+  const line = findMarkdownHeadingLine(editor.value.getValue(), index)
+  if (line < 0) return
+  // `.source-code` is the scroll container (CodeMirror renders full-height with
+  // viewportMargin: Infinity, so its own scroller never scrolls).
+  scrollSourceEditorToLine(editor.value, line, sourceCodeContainer.value)
+}
+
 onMounted(() => {
   if (!currentTab.value) return
   const { id } = currentTab.value
@@ -17170,6 +17274,7 @@ onMounted(() => {
   bus.on('file-changed', handleFileChange)
   bus.on('selectAll', handleSelectAll)
   bus.on('image-action', handleImageAction)
+  bus.on('scroll-to-header', handleScrollToHeader)
 
   // For some reason, code mirror does not seem to play well with Vue's refs if we reference editor.value directly.
   // See https://github.com/codemirror/codemirror5/issues/6886 - hence, we need to use a local variable first.
@@ -17207,6 +17312,7 @@ onBeforeUnmount(() => {
   bus.off('file-changed', handleFileChange)
   bus.off('selectAll', handleSelectAll)
   bus.off('image-action', handleImageAction)
+  bus.off('scroll-to-header', handleScrollToHeader)
 
   const { cursor, markdown: newMarkdown } = getMarkdownAndCursor(editor.value)
   bus.emit('file-changed', {
@@ -18987,12 +19093,27 @@ watch(searchValue, () => {
 })
 
 watch(searchMatches, (newValue, oldValue) => {
+  // Once the search bar is open it owns the query. Ignore editor
+  // selection-changes while open — notably the spurious selection-change the
+  // engine emits when the bar steals editor focus, which would otherwise
+  // clobber the just-prefilled value (e.g. leaving a stale single character).
+  if (showSearch.value) return
   if (!newValue || !oldValue) return
   const { value } = newValue
   if (value !== oldValue.value) {
     searchValue.value = value
   }
 })
+
+// Seed the find input from the current selection synchronously, before the bar
+// opens and steals focus. Relying on the reactive `searchMatches` watch alone
+// races with the focus-steal selection-change and can drop the prefill.
+const prefillFromSelection = () => {
+  const selected = searchMatches.value?.value
+  if (selected) {
+    searchValue.value = selected
+  }
+}
 
 const highlightIndex = computed(() => {
   if (searchMatches.value) {
@@ -19046,6 +19167,7 @@ const toggleCtrl = (ctrl: 'isCaseSensitive' | 'isWholeWord' | 'isRegexp') => {
 }
 
 const listenFind = () => {
+  prefillFromSelection()
   showSearch.value = true
   type.value = 'search'
   nextTick(() => {
@@ -19057,6 +19179,7 @@ const listenFind = () => {
 }
 
 const listenReplace = () => {
+  prefillFromSelection()
   showSearch.value = true
   type.value = 'replace'
 }
@@ -29105,9 +29228,14 @@ interface FileChangePayload {
 }
 ⋮----
 interface FormatLinkClickPayload {
-  data: { href: string; [key: string]: unknown }
+  // muya's getLinkInfo yields `href: null` when the rendered link carries no
+  // usable href (e.g. an unsupported protocol stripped by sanitizeHyperlink).
+  data: { href: string | null; [key: string]: unknown }
   dirname: string
 }
+⋮----
+// muya's getLinkInfo yields `href: null` when the rendered link carries no
+// usable href (e.g. an unsupported protocol stripped by sanitizeHyperlink).
 ⋮----
 interface ExportPayload {
   type: string
@@ -29239,6 +29367,9 @@ FORMAT_LINK_CLICK(
 ⋮----
 // Scroll to the corresponding element that matches this github-slug
 ⋮----
+// Fall back to a non-heading target: a custom `<a id="...">` (or any
+// element with a matching id) rendered in the document.
+⋮----
 LISTEN_SCREEN_SHOT(): void
 ⋮----
 // image path auto complement
@@ -29310,6 +29441,9 @@ RENAME_IF_NEEDED(
 // folder until the user switches tabs.
 ⋮----
 UPDATE_CURRENT_FILE(currentFile: IFileState): void
+⋮----
+// Must run while `currentFile` still points at the outgoing tab, so its
+// flushed edit is attributed to that tab and not lost on switch (#2938).
 ⋮----
 // This events are only used during window creation.
 LISTEN_FOR_BOOTSTRAP_WINDOW(): void
@@ -30648,6 +30782,57 @@ export function resolveLocalImageSrc(src: string): string
 // Absolute local image path (POSIX / UNC / Windows drive) → file://.
 ⋮----
 // Relative local image path — resolve against the document directory.
+</file>
+
+<file path="packages/desktop/src/renderer/src/util/sourceModeToc.ts">
+/** Minimal CodeMirror surface `scrollSourceEditorToLine` needs. */
+interface ISourceEditor {
+  setCursor: (
+    pos: { line: number, ch: number },
+    ch?: number | null,
+    options?: { scroll?: boolean }
+  ) => void
+  heightAtLine: (line: number, mode: 'local' | 'page' | 'div') => number
+}
+⋮----
+/**
+ * Scroll the Source Code editor so `line` sits at the TOP of the viewport,
+ * animated.
+ *
+ * The editor runs CodeMirror with `viewportMargin: Infinity`, so CodeMirror
+ * renders the whole document at full height and its own `.CodeMirror-scroll`
+ * never scrolls — the OUTER `.source-code` container (`scrollContainer`) is the
+ * scrollable element. So neither `cm.scrollTo` nor `cm.scrollIntoView` moves
+ * anything; we scroll the container directly to the line's local Y, which puts
+ * the line at the top (CodeMirror's `scrollIntoView` only scrolled minimally,
+ * leaving the heading at the bottom edge with no animation). `setCursor` gets
+ * `scroll: false` so its native caret-into-view scroll doesn't fight the
+ * animation.
+ */
+export function scrollSourceEditorToLine(
+  editor: ISourceEditor,
+  line: number,
+  scrollContainer: HTMLElement | null | undefined
+): void
+⋮----
+/**
+ * Find the 0-based line number of the `headingIndex`-th markdown heading
+ * (ATX `# foo` or setext `foo\n===`) in document order, skipping fenced code
+ * blocks. Returns -1 when not found.
+ *
+ * Used by Source Code mode to resolve a TOC entry (whose order matches the
+ * document heading order muya builds the TOC from) to a CodeMirror line.
+ */
+export function findMarkdownHeadingLine(markdown: string, headingIndex: number): number
+⋮----
+// Toggle fenced-code-block state on ``` / ~~~ markers.
+⋮----
+// ATX heading.
+⋮----
+// Setext heading: a non-blank line immediately followed by an `===`/`---`
+// underline.
+⋮----
+i++ // consume the underline line
 </file>
 
 <file path="packages/desktop/src/renderer/src/util/theme.ts">
@@ -43455,6 +43640,29 @@ import {
 range.collapse(true) // start
 </file>
 
+<file path="packages/desktop/test/e2e/issue-4356.spec.ts">
+// Regression guard for issue #4356: TypeError: Cannot read properties of
+// null (reading 'length') in FORMAT_LINK_CLICK.
+//
+// A markdown link with a custom protocol (e.g. sambesi://) gets its href
+// stripped by muya's sanitizeHyperlink (DOMPurify protocol allowlist), so
+// getLinkInfo returns href: null. Clicking the linkTools popover's "jump"
+// button then forwarded { href: null } to the editor store, which crashed on
+// data.href.length (packages/desktop/src/renderer/src/store/editor.ts).
+//
+// The fix is two-layered: muya's linkTools no longer offers "jump" when
+// there is no href, and FORMAT_LINK_CLICK guards null hrefs defensively.
+import { expect, test } from '@playwright/test'
+import type { ElectronApplication, Page } from 'playwright'
+import {
+  launchWithMarkdown,
+  clearRendererErrors,
+  expectNoRendererErrors
+} from './helpers'
+⋮----
+// Give a (potential) error time to propagate over IPC.
+</file>
+
 <file path="packages/desktop/test/e2e/issue-4374.spec.ts">
 // Regression guard for issue #4374:
 //   TypeError: Cannot set properties of undefined (setting 'nextSibling')
@@ -44232,6 +44440,30 @@ const readSourceState = async(page: Page) =>
 ⋮----
 // The fixture's last paragraph has `$5 ... $10 only.` (no third $),
 // so any `$` after the second one must not start an unbounded math span.
+</file>
+
+<file path="packages/desktop/test/e2e/source-toc-scroll.spec.ts">
+import { expect, test } from '@playwright/test'
+import type { ElectronApplication, Page } from 'playwright'
+import { launchWithMarkdown, waitForEditor, enterSourceMode, clickMenuById } from './helpers'
+⋮----
+// marktext #3580: clicking a TOC entry in SOURCE CODE mode must scroll the
+// editor to that heading and place it near the TOP of the viewport. The editor
+// runs CodeMirror with viewportMargin: Infinity, so the OUTER `.source-code`
+// container is the scrollable element — neither cm.scrollTo nor cm.scrollIntoView
+// moves it.
+⋮----
+const buildLongDoc = (): string =>
+⋮----
+const srcScrollTop = (page: Page): Promise<number>
+⋮----
+// Distance of the `# Heading Number N` source line from the top of the
+// `.source-code` viewport (CodeMirror renders all lines, so the line is in the DOM).
+const headingLineTopInViewport = (page: Page, text: string): Promise<number | null>
+⋮----
+// animated scroll down
+⋮----
+// heading sits near the TOP of the viewport (not the bottom)
 </file>
 
 <file path="packages/desktop/test/e2e/strong-cjk.spec.ts">
@@ -45618,6 +45850,9 @@ import { useEditorStore } from '@/store/editor'
 import bus from '@/bus'
 import notice from '@/services/notification'
 ⋮----
+// marktext #3609: `[text](#id)` where `#id` is a custom `<a id="id">` (not a
+// heading) was silently swallowed — it isn't in the TOC. Fall back to the DOM.
+⋮----
 // currentFile is IFileState; EXPORT only reads { filename, pathname }.
 const setCurrentFile = (store: ReturnType<typeof useEditorStore>) =>
 ⋮----
@@ -45773,9 +46008,15 @@ const toolbarShortcutOf = (type: string): string | undefined
 // strong/em are the requested reconcilable mapping, plus the rest of the set
 // that agrees once notation is normalized.
 ⋮----
-// CHARACTERIZATION of a real drift (see suspectedBugs): the @muyajs/core toolbar
-// advertises Ctrl+E / ⇧+Ctrl+E for inline code / inline math, but the Format
-// menu binds Ctrl+` (Win) / Ctrl+Y (Linux) and Ctrl+Shift+M respectively.
+// After #4611 the toolbar advertises the real defaults — Ctrl+` for inline code
+// and ⇧+Ctrl+M for inline math — so the tooltips agree with the keybindings.
+// inline_math now matches the Format menu on every platform (covered by
+// RECONCILABLE above). inline_code matches on Windows (Ctrl+`) but still
+// diverges on Linux, which intentionally binds Ctrl+Y (see #4611 / #3630).
+⋮----
+// Windows binds Ctrl+` too, so toolbar and menu now agree there.
+⋮----
+// Linux intentionally binds Ctrl+Y, which still diverges from the toolbar.
 ⋮----
 // The Format slice above pins one menu's accelerators. The Paragraph/Edit/View
 // templates source their accelerators the same way — `keybindings.getAccelerator(id)`
@@ -45865,6 +46106,31 @@ const seedDir = (): string =>
 // 'a': both "a.png" and "images" qualify, while "b.jpg" is dropped.
 ⋮----
 // Mutate the directory on disk; the cached result must be returned as-is.
+</file>
+
+<file path="packages/desktop/test/unit/specs/keybinding-reload.spec.ts">
+import { describe, it, expect, vi, afterEach } from 'vitest'
+import os from 'os'
+import path from 'path'
+import fs from 'fs'
+⋮----
+// Main-process slice: instantiate the real `Keybindings` against a temp config
+// dir and a fake window, then verify that saving new user keybindings applies
+// them live (re-registers shortcuts) rather than only persisting to disk.
+⋮----
+import Keybindings from 'main_renderer/keyboard/shortcutHandler'
+⋮----
+type CommandManagerArg = ConstructorParameters<typeof Keybindings>[0]
+type AppEnvironmentArg = ConstructorParameters<typeof Keybindings>[1]
+type WinArg = Parameters<Keybindings['registerEditorKeyHandlers']>[0]
+⋮----
+const makeKeybindings = () =>
+⋮----
+// The active key map reflects the new binding immediately.
+⋮----
+// The changed accelerator is registered live on the open window.
+⋮----
+// The previously registered accelerators were torn down first.
 </file>
 
 <file path="packages/desktop/test/unit/specs/listen-for-main.spec.ts">
@@ -46012,6 +46278,54 @@ import { resolveLocalImageSrc } from '@/util/resolveImageSrc'
 // `.png` immediately followed by `?` still matches IMAGE_EXT_REG.
 </file>
 
+<file path="packages/desktop/test/unit/specs/search-prefill.spec.ts">
+import { describe, it, expect, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+import { parse, compileScript } from 'vue/compiler-sfc'
+import ts from 'typescript'
+import { ref, computed, watch, nextTick } from 'vue'
+⋮----
+// Regression guard for the find-bar prefill race (issue: the input showed a
+// stale single char like "T" instead of the selection). The bug lives entirely
+// in search/index.vue's reactive logic: `watch(searchMatches)` mirrors the
+// editor selection into the input, but when the find bar opens it steals focus
+// and the engine emits a spurious selection-change pointing at the document
+// start, which clobbers the just-prefilled value.
+//
+// The desktop unit runner ships no @vitejs/plugin-vue / @vue/test-utils, so we
+// compile the real <script setup> at runtime, swap its imports for injected
+// stubs (but keep Vue's *real* ref/computed/watch/nextTick), run setup() to grab
+// the live bindings, and drive the actual reactive code. This mirrors the
+// approach in source-code-image-action.spec.ts.
+⋮----
+interface Bindings {
+  searchValue: { value: string }
+  showSearch: { value: boolean }
+  listenFind: () => void
+}
+⋮----
+const loadComponent = (deps: Record<string, unknown>) =>
+⋮----
+// eslint-disable-next-line no-new-func
+⋮----
+const makeBindings = () =>
+⋮----
+// currentFile.searchMatches is the channel SELECTION_CHANGE writes the
+// selected text into; storeToRefs hands the component a ref to it.
+⋮----
+const setSelection = (value: string) =>
+⋮----
+// User selects a word in the editor.
+⋮----
+// Find bar opens (prefills "fox") and steals focus.
+⋮----
+// Opening the bar steals editor focus → the engine emits a spurious
+// selection-change pointing at the document start ("T"). It must NOT
+// overwrite the prefilled query now that the bar owns it.
+</file>
+
 <file path="packages/desktop/test/unit/specs/selection-menus.spec.ts">
 import { describe, it, expect } from 'vitest'
 import { type Menu } from 'electron'
@@ -46111,6 +46425,70 @@ const bootHandler = (cm: StubCM, deps: Record<string, unknown> = makeDeps()) =>
 ⋮----
 // findIndex uses `line.indexOf(id) > 0` (strict), so a line that begins
 // with the id renders no rewrite. Pinning the off-by-one rather than fixing.
+</file>
+
+<file path="packages/desktop/test/unit/specs/source-mode-dirty.spec.ts">
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+⋮----
+import { useEditorStore } from '@/store/editor'
+⋮----
+// #4455: editing in Source Code mode and closing without switching back to
+// WYSIWYG silently dropped the save prompt. Source-mode content changes reach
+// LISTEN_FOR_CONTENT_CHANGE WITHOUT an editor `history`, and the history-based
+// dirty check never flips `isSaved` (it can even reset it to true), so the
+// close path saw nothing unsaved. Decide dirty state from the content instead.
+⋮----
+const makeSavedTab = (store: ReturnType<typeof useEditorStore>) =>
+</file>
+
+<file path="packages/desktop/test/unit/specs/sourceModeToc.spec.ts">
+import { describe, expect, it, vi } from 'vitest'
+import { findMarkdownHeadingLine, scrollSourceEditorToLine } from '@/util/sourceModeToc'
+⋮----
+// marktext #3580: in Source Code mode, clicking a TOC entry must scroll the
+// CodeMirror editor to the heading's line. This resolves a TOC index to a line.
+⋮----
+'# First', // 0
+'', // 1
+'text', // 2
+'', // 3
+'## Second', // 4
+'', // 5
+'Setext', // 6
+'------', // 7  (setext h2 underline for line 6)
+'', // 8
+'### Third', // 9
+⋮----
+expect(findMarkdownHeadingLine(doc, 0)).toBe(0) // # First
+expect(findMarkdownHeadingLine(doc, 1)).toBe(4) // ## Second
+expect(findMarkdownHeadingLine(doc, 2)).toBe(6) // Setext (setext heading)
+expect(findMarkdownHeadingLine(doc, 3)).toBe(9) // ### Third
+⋮----
+'# Real', // 0
+'', // 1
+'```', // 2
+'# not a heading', // 3
+'fake setext', // 4
+'---', // 5
+'```', // 6
+'', // 7
+'## AlsoReal', // 8
+⋮----
+// marktext #3580 follow-up: clicking a TOC entry in Source Code mode must put
+// the heading at the TOP of the viewport (not the bottom, as CodeMirror's
+// minimal `scrollIntoView` did) and animate the scroll. Because CodeMirror runs
+// with viewportMargin: Infinity (full-height render), the OUTER `.source-code`
+// container is the scrollable element — that is what gets scrolled.
+type SourceEditor = Parameters<typeof scrollSourceEditorToLine>[0]
+⋮----
+const makeEditor = () =>
+⋮----
+// line top resolved as a local Y coordinate
+⋮----
+// the OUTER container is scrolled so that Y sits at the top, animated
+⋮----
+// caret moved without its native scroll fighting the animation
 </file>
 
 <file path="packages/desktop/test/unit/specs/spellchecker-language-command.spec.ts">
@@ -46270,6 +46648,22 @@ import { uploadImage } from '@/util/fileSystem'
 ⋮----
 // Simulates being handed the full preferences $state — only the two
 // whitelisted keys may cross the IPC boundary (structured-clone safety).
+</file>
+
+<file path="packages/desktop/test/unit/specs/write-file-missing-dir.spec.ts">
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'fs'
+import { tmpdir } from 'os'
+import path from 'path'
+import { afterEach, describe, expect, it } from 'vitest'
+import { writeFile } from 'main_renderer/filesystem'
+⋮----
+// #3509: with autosave on, moving/deleting a file's folder while it is open
+// makes the save target a now-missing directory. MarkText intentionally
+// recreates the directory tree and writes the file (via fs-extra `outputFile`),
+// matching VS Code, so an (auto)save never silently fails or loses edits. These
+// tests pin that behavior.
+⋮----
+function tempDir(): string
 </file>
 
 <file path="packages/desktop/tsconfig.base.json">
@@ -47766,6 +48160,43 @@ function logNonCritical(scope: string, violations: ReadonlyArray<IAxeViolation>)
 // mount their floats but only become visible on cell focus / hover.
 </file>
 
+<file path="packages/muya/e2e/tests/blocks/codeblock-scroll-3191.spec.ts">
+import { expect, test } from '@playwright/test';
+import { loadMarkdown, slowType } from '../helpers/keyboard';
+import { editor } from '../helpers/selectors';
+⋮----
+// #3191: typing near the end of a long, horizontally-scrolled line in a code
+// block reset the scroll back to the start of the line, because every
+// keystroke rewrites the content `innerHTML` (which resets the scroll
+// container's scrollLeft). The fix preserves and restores the scroll position
+// across the re-render. This is a real-browser layout behaviour, so it can
+// only be verified end-to-end.
+⋮----
+// The `.mu-code` element is the horizontal overflow container.
+⋮----
+// Go to the end of the line (the issue's step 2).
+⋮----
+// Step 3: keep typing characters. After each keystroke the scroll must
+// stay near the caret (the end), not jump back to the start.
+⋮----
+// The typed characters landed at the end of the line.
+</file>
+
+<file path="packages/muya/e2e/tests/blocks/diagram-fence-2177.spec.ts">
+import { expect, test } from '@playwright/test';
+import { loadMarkdown, slowType } from '../helpers/keyboard';
+import { editor } from '../helpers/selectors';
+⋮----
+// #2177: typing a diagram fence (```mermaid etc.) and pressing Enter must
+// create a diagram block. The real typing flow goes through the
+// CodeBlockLanguageSelector float (it opens on ```lang and consumes Enter),
+// so the conversion must happen there — not only in
+// ParagraphContent._enterConvert. This end-to-end test drives the real
+// keystroke path that the desktop app uses.
+⋮----
+async function typeFenceAndEnter(page: import('@playwright/test').Page, lang: string)
+</file>
+
 <file path="packages/muya/e2e/tests/blocks/footnote-scenarios.spec.ts">
 import { expect, test } from '../fixtures/muya';
 import { editor } from '../helpers/selectors';
@@ -47881,6 +48312,68 @@ interface ITagCase {
 // `span.mu-ruby` wrapper containing a `span.mu-ruby-text` (the
 // source side) and a `span.mu-ruby-render` (the preview that hosts
 // the actual <ruby><rt>…</rt></ruby> DOM via `htmlToVNode(raw)`).
+</file>
+
+<file path="packages/muya/e2e/tests/blocks/inline-math-align.spec.ts">
+import { expect, test } from '../fixtures/muya'
+⋮----
+// #4339: a long inline math must stay scrollable (not truncated) when hidden,
+// and the popup/inline scrollbar is thinned. The parse-error message is short
+// and never scrolls, so it keeps `overflow: visible` to stay on the text
+// baseline (the popup's `overflow: auto` otherwise takes the inline-block's
+// baseline from its bottom edge, pushing the message a few px above the text).
+// (A long valid formula keeps `overflow: auto` to stay scrollable, which is the
+// chosen trade-off — it sits slightly high rather than being truncated.)
+⋮----
+async function renderVsTextTop(page, md: string): Promise<number>
+⋮----
+expect(r.scrollable).toBe(true) // content is reachable by scrolling, not cut off
+⋮----
+// The ::-webkit-scrollbar height rule is what thins the bar; assert it is wired.
+</file>
+
+<file path="packages/muya/e2e/tests/blocks/inline-math-overflow-4339.spec.ts">
+import { expect, test } from '../fixtures/muya';
+⋮----
+// marktext #4339: a long inline-math formula rendered a wide KaTeX popup that
+// overflowed the editor horizontally. The popup must cap its width and scroll
+// instead.
+</file>
+
+<file path="packages/muya/e2e/tests/blocks/list-nav-4644.spec.ts">
+import { expect, test } from '@playwright/test';
+import { loadMarkdown, slowType } from '../helpers/keyboard';
+import { editor } from '../helpers/selectors';
+⋮----
+// #4644 — a sequence of list edits used to leave a `list-item` with zero
+// content children behind. An empty list item has no content descendant, so
+// cross-block arrow navigation (`previousContentInContext`) could not step
+// over it and Up arrow stopped moving the caret up a line.
+//
+// Repro sequence: * [space] A [return] B [up] [return] [backspace] [up]
+//                 [return] [return] [return]
+⋮----
+// Index of the active content block among all `.content` leaves, plus the
+// total content-block count — enough to tell whether the caret actually moved.
+async function caretProbe(page: import('@playwright/test').Page)
+⋮----
+const visit = (block: {
+            constructor: { blockName?: string };
+children?:
+⋮----
+async function runSequence(page: import('@playwright/test').Page)
+⋮----
+const walk = (node:
+⋮----
+// The caret must land on an earlier content block, not stay put.
+</file>
+
+<file path="packages/muya/e2e/tests/blocks/math-error-nowrap-4100.spec.ts">
+import { expect, test } from '../fixtures/muya';
+⋮----
+// marktext #4100: an invalid inline-math formula renders a KaTeX parse-error
+// message inside the narrow inline-math popup; without `white-space: nowrap`
+// the message wrapped across several lines and overflowed.
 </file>
 
 <file path="packages/muya/e2e/tests/blocks/reference-link-image.spec.ts">
@@ -48106,6 +48599,28 @@ import { editor } from '../helpers/selectors';
 // The encoded URL points at the public service. We can't assert the
 // exact encoded blob (it's deflate+base64), but the prefix shape is
 // stable.
+</file>
+
+<file path="packages/muya/e2e/tests/diagrams/sequence-overflow-3560.spec.ts">
+import { expect, test } from '../fixtures/muya';
+import { editor } from '../helpers/selectors';
+⋮----
+// marktext #3560: a wide rendered sequence-diagram <svg> overflowed the block
+// and was clipped. The fix gives the fixed-size (no-viewBox) <svg> a viewBox
+// derived from its width/height so `max-width: 100%` SCALES it to fit (rather
+// than just clipping the box). A wide diagram must end up no wider than its
+// block — i.e. fully visible, scaled down.
+⋮----
+// many actors + long messages → a diagram far wider than the editor
+⋮----
+// the viewBox is added asynchronously (the diagram draws from a font-load
+// callback), so poll for it
+⋮----
+// the diagram is intrinsically wider than the block (otherwise the test
+// would pass trivially), yet renders no wider than the block (scaled).
+⋮----
+expect(fits.wideEnough).toBe(true); // the diagram really is wider than the block
+expect(fits.fits).toBe(true); // ...but is scaled down to fit it
 </file>
 
 <file path="packages/muya/e2e/tests/diagrams/sequence.spec.ts">
@@ -48611,6 +49126,59 @@ async function pastePlainClipboard(
 ): Promise<void>
 </file>
 
+<file path="packages/muya/e2e/tests/editing/nbsp-editing.spec.ts">
+import { expect, test } from '../fixtures/muya'
+import { getMarkdown } from '../helpers/api'
+import { metaKey } from '../helpers/keyboard'
+⋮----
+// #3840 follow-up: the html-escape literal is wrapped in an inner
+// `.mu-html-escape-marker` span that is taken out of flow (position:absolute)
+// when the caret is outside the entity, to fix width without breaking the
+// line. This must not regress the editing core: copy / cut / cursor / selection
+// all run off muya's text-offset + state model, which is immune to CSS
+// positioning — these tests prove it end-to-end.
+⋮----
+// caret outside: the literal marker is out of flow (absolute)
+⋮----
+// caret inside the entity (offset 4 is within the 6-char "&nbsp;" run)
+⋮----
+// caret inside: the literal is back in normal flow → visible + editable
+⋮----
+block.setCursor(4, 4, true) // inside "&nbsp;"
+⋮----
+block.setCursor(8, 8, true) // end, right after "b"
+</file>
+
+<file path="packages/muya/e2e/tests/editing/nbsp-nowrap.spec.ts">
+import { expect, test } from '../fixtures/muya'
+⋮----
+// #3840: a `&nbsp;` entity must behave as a real non-breaking space — the
+// words on either side must never wrap apart. Regression: the html-escape
+// span inherited `display: inline-block` from `.mu-hide`, making it an atomic
+// box that the line could break around (so &nbsp; wrapped like a normal space).
+async function lineCount(page, md: string): Promise<number>
+⋮----
+// Constrain width and disable overflow-based breaking so ONLY genuine
+// soft-wrap opportunities cause a wrap.
+⋮----
+// sanity: a regular space IS a break opportunity → wraps to 2 lines
+⋮----
+// the fix: &nbsp; must NOT break → both words stay on one (overflowing) line
+⋮----
+// Horizontal gap between the first and last 'x' glyph in the paragraph — i.e.
+// the rendered width of whatever sits between them.
+async function gapBetweenX(page, md: string): Promise<number>
+⋮----
+const rectOf = (e:
+⋮----
+// #3840 expects the gap to be "the same width as breaking spaces" — the
+// whitespace entity renders its glyph inline (the actual U+00A0) instead of
+// in the 1em glyph slot, so the gap equals a normal space rather than 1em.
+⋮----
+// Every escape entity is exactly as wide as the character it stands for, so
+// `&amp;` is the width of a literal "&" rather than the old 1em glyph slot.
+</file>
+
 <file path="packages/muya/e2e/tests/editing/paste-as-plain-text.spec.ts">
 import { expect, test } from '../fixtures/muya';
 import { getMarkdown } from '../helpers/api';
@@ -48853,6 +49421,20 @@ import { expect, test } from '../fixtures/muya';
 import { getMarkdown } from '../helpers/api';
 import { slowType } from '../helpers/keyboard';
 import { editor, toolbar } from '../helpers/selectors';
+⋮----
+// #3825: undo coalesced every keystroke typed within History's 1s window
+// into one entry, so a single undo wiped out a whole sentence instead of
+// the most recent action. A correction after typing should be its own
+// undo step.
+⋮----
+// A correction is a deliberate, separate action — let the typed run
+// commit (History batches per animation frame) before deleting.
+⋮----
+// Only the deletion is undone — the full typed text comes back.
+⋮----
+// First undo drops the second word only.
+⋮----
+// Second undo drops the first word.
 </file>
 
 <file path="packages/muya/e2e/tests/export/markdown-to-html.spec.ts">
@@ -51861,6 +52443,20 @@ const findLangInput = (): Element | null
 // No init() yet — scrollPage is undefined. locale() must not throw.
 </file>
 
+<file path="packages/muya/src/__tests__/muyaDestroyPlugins.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Muya } from '../muya';
+⋮----
+// #3315: Muya.destroy() hid visible float tools but never invoked each UI
+// plugin's destroy(), so nodes appended to document.body in plugin
+// constructors/init (float boxes, the image resize bar) leaked permanently.
+// destroy() must iterate the registered plugins and call destroy() on each.
+⋮----
+function bootMuya(markdown: string): Muya
+</file>
+
 <file path="packages/muya/src/__tests__/parityHeadingCopyLink.spec.ts">
 // @vitest-environment happy-dom
 ⋮----
@@ -52528,7 +53124,8 @@ span.mu-language-input {
 /* loose tight list */
 .mu-tight-list > li > p {
 ⋮----
-/* order list and bullet list */
+/* order list and bullet list — logical `inline-start` so nested-list
+   indentation mirrors correctly under `dir="rtl"` (#4673) */
 ol.mu-order-list,
 ⋮----
 ol.mu-order-list {
@@ -52639,6 +53236,10 @@ figure.mu-math-block .mu-math-preview .katex-display {
 ⋮----
 /* to prevent plantuml img overflow */
 figure.mu-diagram-block .mu-diagram-preview img {
+⋮----
+/* to prevent rendered diagram <svg> (e.g. a wide sequence diagram) overflowing
+   and getting clipped by the block */
+figure.mu-diagram-block .mu-diagram-preview > svg {
 ⋮----
 figure.mu-html-block .mu-html-preview > pre {
 ⋮----
@@ -53276,6 +53877,21 @@ code.mu-inline-rule {
 /* html escape */
 .mu-html-escape {
 ⋮----
+/* `inline` (overriding the `inline-block` inherited from `.mu-hide`, an
+       atomic box the line breaks around) so an entity breaks like the character
+       it represents — a `&nbsp;` glyph (U+00A0) is non-breaking; `nowrap` keeps
+       the literal entity text together while editing. `baseline` overrides the
+       `vertical-align: middle` from `.mu-hide` so the inline glyph sits on the
+       text baseline like the character it represents. */
+⋮----
+/* When the caret is outside the entity, take the literal marker text out of
+   flow so the entity shows only its `::before` glyph, at the glyph's own width
+   (no extra width from the hidden literal, no break opportunity). */
+.mu-hide.mu-html-escape[data-character] .mu-html-escape-marker {
+⋮----
+/* Render the glyph (`data-character`) inline at its natural width, so every
+   entity is exactly as wide as the character it stands for: `&nbsp;` is one
+   space, `&amp;` one ampersand, `&mdash;` one em dash — not a fixed 1em slot. */
 .mu-html-escape::before {
 ⋮----
 /* hard line break and soft line end */
@@ -53290,9 +53906,18 @@ code.mu-inline-rule {
 ⋮----
 .mu-math > .mu-math-render,
 ⋮----
+/* A long inline-math formula must scroll horizontally (in the editing popup and
+   inline when hidden) instead of overflowing the editor area. */
+.mu-math > .mu-math-render {
+⋮----
+.mu-math > .mu-math-render::-webkit-scrollbar {
+⋮----
 .mu-ruby > .mu-ruby-render {
 ⋮----
 div .mu-math-error,
+⋮----
+/* Keep the KaTeX parse-error message on one line instead of wrapping
+       across the narrow inline-math popup. */
 ⋮----
 .mu-math > .mu-math-render .katex-display {
 ⋮----
@@ -53304,6 +53929,12 @@ div .mu-math-error,
 .mu-hide.mu-ruby > .mu-ruby-text,
 ⋮----
 .mu-hide.mu-ruby > .mu-ruby-render,
+⋮----
+/* A parse-error message is short and never needs scrolling, but `overflow: auto`
+   makes the inline-block take its baseline from its bottom edge, pushing it a few
+   px above the surrounding text. `visible` keeps it on the baseline. (A long
+   valid formula keeps `overflow: auto` so it stays scrollable, not truncated.) */
+.mu-hide.mu-math > .mu-math-render.mu-math-error {
 ⋮----
 .mu-ruby:not(.mu-hide) > .mu-ruby-render,
 ⋮----
@@ -53480,9 +54111,39 @@ function flush(): Promise<void>
 ⋮----
 // offset 2 is mid-block; ArrowLeft should fall through to the browser.
 ⋮----
+// #3193: ArrowUp on the first visual line of the FIRST block (no previous
+// block) used to preventDefault and return without moving the caret, so the
+// caret stayed put. It should move to the start of the line (offset 0).
+⋮----
+// #3193 follow-up: when the caret is ALREADY at offset 0 of the first block,
+// ArrowUp has nowhere to go — it must not re-set the selection (which would
+// emit a spurious selection-change and needlessly re-render the block).
+⋮----
+// Land at offset 0 first; this setup emits its own change.
+⋮----
+// Only now start counting: the no-op ArrowUp must stay silent.
+⋮----
+// The caret is untouched, and the native no-op scroll is still suppressed.
+⋮----
 // offset 2 is mid-block; ArrowRight should fall through to the browser.
 ⋮----
+// #3520: pressing ArrowDown on an already-empty trailing paragraph must NOT
+// keep appending new empty paragraphs on every keypress. A trailing
+// paragraph is created only when the current (last) block has content.
+⋮----
+// First ArrowDown at the end of a non-empty last block appends one
+// trailing empty paragraph (existing, desired behavior).
+⋮----
+// Pressing ArrowDown again, now inside the empty trailing paragraph,
+// must NOT create a fourth block — the caret stays put.
+⋮----
 // No navigation, no trailing-paragraph creation.
+⋮----
+// marktext #3568: in RTL mode the physical Left/Right arrows are visually
+// mirrored, so the cross-block boundary keys must swap. Offset 0 is the visual
+// RIGHT end of an RTL line (ArrowRight should go to the previous block); offset
+// === text.length is the visual LEFT end (ArrowLeft should go to the next).
+function bootMuyaRtl(markdown: string): Muya
 </file>
 
 <file path="packages/muya/src/block/base/__tests__/autoPair.spec.ts">
@@ -53682,6 +54343,43 @@ function nullifySelection(muya: Muya): void
 // is next to the strong token, so a re-render is needed.
 </file>
 
+<file path="packages/muya/src/block/base/__tests__/convertToListAfterStrong.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import type { Muya } from '../../../muya';
+import type Format from '../format';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Muya as MuyaClass } from '../../../muya';
+⋮----
+// #2429: typing a list marker on a new (soft-line-break) line after bold text
+// converted the wrong character. `_convertToList`'s regex used a lazy pre-group
+// that grabbed the `*` inside the closing `**` of the bold text as the bullet
+// marker (because two trailing spaces followed it), instead of the `-` the user
+// just typed on the next line — corrupting the bold syntax. The marker must be
+// taken from the start of a line.
+⋮----
+function bootMuya(markdown: string): Muya
+⋮----
+interface ILiveBlock {
+    blockName?: string;
+    meta?: { marker?: string };
+    firstContentInDescendant: () => { text: string };
+    children?: { forEach: (cb: (b: ILiveBlock) => void) => void };
+}
+⋮----
+// Collect the top-level blocks of the live block tree after conversion.
+function convert(text: string): ILiveBlock[]
+⋮----
+// `**foo:**` + two spaces + soft-line-break + `- `
+⋮----
+// marker is the dash typed on the new line, not a `*` from the bold run.
+⋮----
+// the bold text is preserved intact as a leading paragraph, not corrupted
+// into `**foo:*`.
+⋮----
+// no spurious leading paragraph
+</file>
+
 <file path="packages/muya/src/block/base/__tests__/crossBlockFormat.spec.ts">
 // @vitest-environment happy-dom
 import type Parent from '../parent';
@@ -53698,6 +54396,9 @@ function stubFullRange(leaf: any)
 ⋮----
 // The span is restored across both blocks instead of collapsing onto the
 // first block (the live DOM selection collapses for a cross-block range).
+⋮----
+// Both leaves live inside the SAME outmost block (the blockquote), so an
+// outmost-block-granular same-block check wrongly reports "same block".
 ⋮----
 // happy-dom does not track range offsets, so getCursor must report whatever the
 // cached selection currently holds (the per-leaf range _formatLeafInRange sets).
@@ -54302,6 +55003,19 @@ arrowHandler(event: Event)
 ⋮----
 // Just do nothing if the cursor is not collapsed or `shiftKey` pressed
 ⋮----
+// In RTL the physical Left/Right arrows are visually mirrored, so the
+// cross-block boundary keys swap (offset 0 is the visual right end).
+⋮----
+// First block, no previous: ArrowUp moves the caret to the
+// start of the line (offset 0) instead of staying put (#3193).
+// A boundary ArrowLeft has nowhere to go, so leave it. Skip the
+// re-set when the caret is already at offset 0, so a no-op
+// ArrowUp doesn't emit a spurious selection-change or re-render.
+⋮----
+// Only append a trailing paragraph when the last block has content.
+// Otherwise ArrowDown in an already-empty last paragraph would keep
+// creating empty paragraphs on every keypress (#3520).
+⋮----
 override createDomNode()
 ⋮----
 /**
@@ -54562,6 +55276,11 @@ private _convertToThematicBreak()
 ); // Add one, because the `\n`
 ⋮----
 private _convertToList()
+⋮----
+// The marker must start a line: the pre-group captures whole lines up to
+// (and including) the newline before the marker, so a `*` inside e.g.
+// `**bold**` on an earlier soft-line is never mistaken for the bullet
+// marker (#2429).
 ⋮----
 // convert `[*-+] \[[xX ]\] ` to task list.
 ⋮----
@@ -56141,6 +56860,11 @@ function enterWithText(muya: Muya, content: Content, text: string):
 ⋮----
 function flush(): Promise<void>
 ⋮----
+// #2177: typing ```` ```mermaid ```` (or any diagram language) and pressing
+// Enter must produce a diagram block, the same as loading that fence from a
+// file. The file-load path (markdownToState) already routes the five diagram
+// languages to a `diagram` state; the live-typing path must match.
+⋮----
 // tagName 'div' length 3 + 3 === 6.
 ⋮----
 // Fell through to Format.enterHandler: the paragraph split into two
@@ -56190,6 +56914,45 @@ function flush(): Promise<void>
 function blockText(state: ReturnType<Muya['getState']>, index: number): string
 </file>
 
+<file path="packages/muya/src/block/content/paragraphContent/__tests__/enterListItemEmptyFirst.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import type { TState } from '../../../../state/types';
+import type Content from '../../../base/content';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Muya } from '../../../../muya';
+⋮----
+// #4644 — pressing Enter on the EMPTY FIRST paragraph of a loose list item
+// (one that holds more than one paragraph) must not strip every paragraph out
+// of the list item. `_enterInListItem`'s "empty paragraph, not only child"
+// branch moved every paragraph from the caret's index to the end into a new
+// sibling list item; when the caret sat on the first paragraph (index 0) that
+// emptied the original list item, leaving a `list-item` with zero children.
+//
+// An empty list item has no content descendant, so
+// `previousContentInContext()`/`nextContentInContext()` return null when arrow
+// navigation tries to cross it — the symptom reported in #4644 where Up arrow
+// can no longer move the caret up a line.
+⋮----
+// A loose bullet list whose single list item holds two paragraphs: an empty
+// first paragraph followed by `tail`.
+⋮----
+function bootMuya(content: TState[]): Muya
+⋮----
+function contentByText(muya: Muya, text: string): Content
+⋮----
+const visit = (block: {
+        text?: string;
+        constructor: { blockName?: string };
+children?:
+⋮----
+function enterAt(muya: Muya, content: Content, offset: number)
+⋮----
+function flush(): Promise<void>
+⋮----
+interface IListItemLike { name: string; children?: unknown[] }
+</file>
+
 <file path="packages/muya/src/block/content/paragraphContent/__tests__/insertTabAndIndent.spec.ts">
 // @vitest-environment happy-dom
 ⋮----
@@ -56199,9 +56962,12 @@ import { Muya } from '../../../../muya';
 ⋮----
 // Characterization of ParagraphContent.tabHandler's three plain-Tab branches
 // (src/block/content/paragraphContent/index.ts):
-//   1. insertTab()           — a normal paragraph gains `tabSize` non-breaking
-//                              spaces (U+00A0) at the caret and the caret
-//                              advances by that width.
+//   1. insertTab()           — a normal paragraph gains `tabSize` ordinary
+//                              spaces (U+0020) at the caret and the caret
+//                              advances by that width. `.mu-content` is
+//                              `white-space: pre-wrap`, so ordinary spaces are
+//                              preserved visually without polluting the saved
+//                              markdown with non-breaking spaces (#3273).
 //   2. _indentListItem() / _unindentListItem() — Tab nests a list item under
 //      its predecessor; Shift+Tab lifts it back out.
 //   3. _checkCursorAtEndFormat() — with the caret just inside a closing inline
@@ -56213,7 +56979,7 @@ import { Muya } from '../../../../muya';
 // keydown listener routes it, and state/markdown/cursor are read after the
 // json1 op flushes on the next animation frame.
 ⋮----
-// A non-breaking space — the character insertTab repeats `tabSize` times.
+// An ordinary space (U+0020) — the character insertTab repeats `tabSize` times.
 ⋮----
 function bootMuya(markdown: string, options: Record<string, unknown> =
 ⋮----
@@ -56235,9 +57001,13 @@ function flush(): Promise<void>
 ⋮----
 function blockText(state: ReturnType<Muya['getState']>, index: number): string
 ⋮----
-// `hello` + four U+00A0 spaces.
+// `hello` + four U+0020 spaces.
 ⋮----
-// The inserted run is non-breaking spaces, not ordinary spaces.
+// The inserted run is ordinary spaces (U+0020), not non-breaking spaces.
+⋮----
+// #3273: Tab used to insert U+00A0 (charCode 160), which leaked into the
+// saved markdown and was not treated as whitespace by other tools. The
+// serialized document must contain only ordinary spaces.
 ⋮----
 // Only one DOM selection exists at a time, so capture each instance's
 // caret offset immediately after driving it, before booting the other.
@@ -56353,6 +57123,39 @@ function enterWithText(muya: Muya, text: string): Content
 // The original content leaf survives as a paragraph content block.
 </file>
 
+<file path="packages/muya/src/block/content/paragraphContent/__tests__/unindentReplacement.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import type Content from '../../../base/content';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Muya } from '../../../../muya';
+⋮----
+// #3223: Shift+Tab on a list item whose containing list is the FIRST child of
+// an outer list item takes the REPLACEMENT path in `_unindentListItem`. That
+// branch promoted the paragraph but — unlike the INDENT branch — never called
+// setCursor, so the caret was left on the detached original block and lost.
+// These tests boot real Muya, drive Shift+Tab through the handler, and assert
+// the caret lands on the promoted paragraph.
+⋮----
+function bootMuya(markdown: string): Muya
+⋮----
+function contentByText(muya: Muya, text: string): Content
+⋮----
+const visit = (block: {
+        text?: string;
+        constructor: { blockName?: string };
+children?:
+⋮----
+function tabAt(muya: Muya, content: Content, offset: number, shiftKey = false): void
+⋮----
+function flush(): Promise<void>
+⋮----
+// `- - A\n  - B\n`: the outer list item's first (and only) child is the
+// inner list [A, B], so `list.prev` is null -> REPLACEMENT path.
+⋮----
+// The promoted block is the active content block.
+</file>
+
 <file path="packages/muya/src/block/content/paragraphContent/index.ts">
 import type { Muya } from '../../../index';
 import type { CodeEmojiMathToken, HTMLTagToken, ImageToken, LinkToken, ReferenceLinkToken, Token } from '../../../inlineRenderer/types';
@@ -56360,6 +57163,7 @@ import type { IRenderCursor } from '../../../selection/types';
 import type {
     IBlockQuoteState,
     IBulletListState,
+    IDiagramMeta,
     IListItemState,
     IOrderListState,
     IParagraphState,
@@ -56431,7 +57235,9 @@ private _enterConvert(event: KeyboardEvent)
 ⋮----
 // eslint-disable-next-line regexp/no-super-linear-backtracking
 ⋮----
-// Convert to code block
+// Diagram fences (```mermaid etc.) become diagram blocks, mirroring
+// the file-load path in markdownToState; everything else is a fenced
+// code block.
 ⋮----
 // Table extends the base `create` shape with a static
 // `createWithHeader(muya, header)` factory; the registry-level
@@ -56453,6 +57259,10 @@ private _enterInBlockQuote(event: KeyboardEvent)
 ⋮----
 private _enterInListItem(event: KeyboardEvent)
 ⋮----
+// Splitting from index 0 would empty the original list item,
+// leaving a childless list-item that breaks arrow navigation
+// (#4644). Keep the empty first paragraph and split below it.
+⋮----
 override enterHandler(event: Event)
 ⋮----
 private _paragraphParentType()
@@ -56470,6 +57280,8 @@ private _getUnindentType(): Nullable<UnindentType>
 private _canIndentListItem()
 ⋮----
 // Now we know it's a list item. Check whether we can indent the list item.
+⋮----
+private _placeCursorIn(block: Nullable<Parent>, startOffset: number, endOffset: number)
 ⋮----
 private _unindentListItem(type: UnindentType)
 ⋮----
@@ -56843,6 +57655,39 @@ override tabHandler(event: Event)
 override composeHandler(event: Event)
 </file>
 
+<file path="packages/muya/src/block/content/thematicBreakContent/__tests__/handlers.spec.ts">
+// @vitest-environment happy-dom
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ScrollPage } from '../../../scrollPage';
+import ThematicBreakContent from '../index';
+⋮----
+// Regression #4559: deleting consecutive blocks crashed the renderer with
+// `NotFoundError: ... is not a child of this node`. Backspace at offset 0 of a
+// thematic break (and Enter at offset 0) convert/insert a block but used to
+// forget `event.preventDefault()`. Because the mu-container is contenteditable,
+// the browser's native edit then mutated the DOM out from under muya's block
+// tree, so a later `insertBefore` on the now-detached node threw. The fix
+// mirrors the existing AtxHeadingContent guard.
+//
+// Exercised with a structurally-typed `this` so no Muya bootstrap is needed.
+interface IFakeTBContent {
+    text: string;
+    muya: unknown;
+    cursor: { start: number; end: number };
+    parent: { parent: { insertBefore: (block: unknown, ref: unknown) => void } };
+    getCursor: () => { start: { offset: number }; end: { offset: number } };
+    setCursor: (start: number, end: number) => void;
+    convertToParagraph: () => void;
+}
+⋮----
+function makeFakeContent(cursorAt: number): IFakeTBContent
+⋮----
+getCursor()
+setCursor(start, end)
+⋮----
+function makeKeyEvent()
+</file>
+
 <file path="packages/muya/src/block/content/thematicBreakContent/index.ts">
 import type { Muya } from '../../../muya';
 import type { IRenderCursor } from '../../../selection/types';
@@ -56944,6 +57789,19 @@ import loadRenderer from '../../../utils/diagram';
 import logger from '../../../utils/logger';
 import Parent from '../../base/parent';
 ⋮----
+// Give a fixed-size `<svg>` (one with `width`/`height` px attributes but no
+// `viewBox`) a viewBox derived from those dimensions, so `max-width: 100%`
+// scales it down to fit instead of clipping it. Returns true once applied.
+function addViewBox(target: HTMLElement): boolean
+⋮----
+// `drawSVG` (js-sequence-diagrams / flowchart.js) renders the `<svg>`
+// asynchronously — it's drawn from a theme callback after its font loads — so
+// the element and its `width`/`height` attributes aren't there synchronously.
+// Try once, then observe `target` until the sized `<svg>` appears.
+function ensureViewBox(target: HTMLElement): void
+⋮----
+// Safety net so the observer can't leak if the svg never renders.
+⋮----
 interface IRenderOptions {
     type: string;
     code: string;
@@ -56963,6 +57821,11 @@ async function renderDiagram({
     plantumlServer,
     sequenceTheme,
 }: IRenderOptions)
+⋮----
+// js-sequence-diagrams / flowchart.js emit an <svg> with a fixed pixel
+// width/height but NO viewBox, so the `max-width: 100%` style can only
+// clip a wide diagram, not scale it. Derive a viewBox from those pixel
+// dimensions (once the async draw completes) so it scales to fit.
 ⋮----
 class DiagramPreview extends Parent
 ⋮----
@@ -57129,6 +57992,11 @@ queryBlock(path: TBlockPath)
 // TODO is there right?
 ⋮----
 override getState(): IFrontmatterState
+</file>
+
+<file path="packages/muya/src/block/extra/math/__tests__/mhchem.spec.ts">
+import katex from 'katex';
+import { describe, expect, it } from 'vitest';
 </file>
 
 <file path="packages/muya/src/block/extra/math/index.ts">
@@ -58230,6 +59098,21 @@ function stubCrossSelection(
 // after "o" in "one" to after "th" in "three"
 ⋮----
 // after "al" in "alpha" to after "be" in "beta"
+</file>
+
+<file path="packages/muya/src/clipboard/__tests__/crossBlockCutGuard.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import { describe, expect, it, vi } from 'vitest';
+import { shouldCrossBlockCut } from '../index';
+⋮----
+// The clipboard module pulls in CodeBlockContent → utils/prism which touches
+// `window` at import time. Stub the prism shim (same stub as sibling specs).
+⋮----
+// #3491: on a cross-block selection, the keydown handler cuts (replaces) the
+// selection for an editing keystroke. It must NOT cut on a modifier combo —
+// in particular Ctrl+C (copy) on Windows/Linux, which previously deleted the
+// selected text because only metaKey (macOS Cmd) was excluded.
 </file>
 
 <file path="packages/muya/src/clipboard/__tests__/cutBlockConvert.spec.ts">
@@ -59383,6 +60266,13 @@ import { pastePlainText, pasteSelection } from './paste';
 import { pasteImageSrc } from './pasteImage';
 import { CopyType, PasteType } from './types';
 ⋮----
+// After the table/same-block guards, decide whether a keydown over a
+// cross-block selection should cut (replace) the selected text. Non-editing
+// keys and any modifier combo must NOT cut — in particular Ctrl+<key> (e.g.
+// Ctrl+C copy on Windows/Linux), which was previously not excluded and
+// silently deleted the selection (#3491). Mirrors the macOS metaKey guard.
+export function shouldCrossBlockCut(key: string, metaKey: boolean, ctrlKey: boolean): boolean
+⋮----
 class Clipboard
 ⋮----
 get selection()
@@ -59400,8 +60290,6 @@ const ownsEvent = ()
 const copyCutHandler = (event: Event) =>
 ⋮----
 const keydownHandler = (event: Event) =>
-⋮----
-// TODO: Is there any way to identify these key bellow?
 ⋮----
 const pasteHandler = (event: Event) =>
 ⋮----
@@ -59920,6 +60808,16 @@ export enum PasteType {
 }
 </file>
 
+<file path="packages/muya/src/config/__tests__/escapeCharacter.spec.ts">
+import { describe, expect, it } from 'vitest';
+import escapeCharactersMap from '../escapeCharacter';
+⋮----
+// marktext #3840: the `&nbsp;` entries in the character table stored U+0020
+// (a regular space) instead of U+00A0 (the non-breaking space), so a `&nbsp;`
+// in the document was treated as an ordinary space (wrong width / a wrap could
+// occur across it). The other space entities were already correct.
+</file>
+
 <file path="packages/muya/src/config/emojis.ts">
 export type Emoji = typeof emojis[number];
 </file>
@@ -60061,7 +60959,10 @@ frontMatter: true, // Whether to support frontmatter.
 // `data:image/png;base64,iVBORw0KGg...`. A bare `data:image/` prefix is not
 // treated as a safe-to-embed source.
 ⋮----
-// do not forbid `class` because `code` element use class to present language
+// do not forbid `class` because `code` element use class to present language.
+// `style` is allowed (matching EXPORT_DOMPURIFY_CONFIG) so inline-styled HTML
+// blocks render the same in the editor as on export; DOMPurify still
+// sanitizes the style values themselves.
 ⋮----
 // Allow "file" protocol to export images on Windows (#1997).
 ⋮----
@@ -60473,6 +61374,7 @@ type BlockNode = {
     remove?: (source: string) => void;
     replaceWith?: (newBlock: BlockNode, source: string) => void;
     insertBefore?: (newBlock: BlockNode, ref: BlockNode, source: string) => void;
+    append?: (newBlock: BlockNode, source: string) => void;
     update?: (value?: unknown, source?: string) => void;
     blockName?: string;
     align?: string;
@@ -60584,9 +61486,9 @@ private _restoreSelection(selection: Nullable<IHistorySelection>, treeRebuilt = 
 // fall back to focusing the first content block when the saved path no
 // longer points at a content leaf (e.g. a paragraph became a table).
 ⋮----
-// Incremental (updateContents) path: blocks are still attached. Clone the
-// paths so `queryBlock(path)` can't drain the caller's arrays — notably
-// the selection object stored in the undo stack.
+// Incremental (updateContents) path. Clone the paths so
+// `queryBlock(path)` can't drain the caller's arrays — notably the
+// selection object stored in the undo stack.
 ⋮----
 /**
      * Apply a history op by rebuilding the live block tree wholesale instead of
@@ -60837,6 +61739,33 @@ export interface IListeners {
 }
 </file>
 
+<file path="packages/muya/src/history/__tests__/undoGrouping.spec.ts">
+import { describe, expect, it } from 'vitest';
+import { classifyInputKind, shouldBreakUndoGroup } from '../index';
+⋮----
+// Undo grouping is otherwise time-based only (History.delay = 1s), so a fast
+// typed sentence coalesces into a single undo entry (#3825). These helpers
+// drive the boundary decision the input pipeline feeds to History.cutoff().
+</file>
+
+<file path="packages/muya/src/history/__tests__/undoRedoCoalescedListRoundTrip.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import type Format from '../../block/base/format';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Muya } from '../../muya';
+⋮----
+function bootMuya(markdown: string): Muya
+⋮----
+function placeCursorOnFirstContent(muya: Muya): void
+⋮----
+function secondBlockContent(muya: Muya): Format
+⋮----
+function undoDepth(muya: Muya): number
+⋮----
+// @ts-expect-error — reach into the private stack for test assertions.
+</file>
+
 <file path="packages/muya/src/history/index.ts">
 import type { JSONOpList } from 'ot-json1';
 import type { Muya } from '../muya';
@@ -60922,6 +61851,20 @@ enum HistoryAction {
     REDO = 'redo',
 }
 ⋮----
+export type TInputKind = 'insert' | 'delete';
+⋮----
+// Undo grouping is otherwise purely time-based (`delay`), so a fast typed
+// sentence coalesces into a single entry. These helpers let the input pipeline
+// hint a boundary: a switch between inserting and deleting, or typing a
+// whitespace (word boundary), starts a fresh undo entry.
+export function classifyInputKind(inputType: string): Nullable<TInputKind>
+⋮----
+export function shouldBreakUndoGroup(
+    prevKind: Nullable<TInputKind>,
+    kind: Nullable<TInputKind>,
+    data: Nullable<string>,
+): boolean
+⋮----
 class History
 ⋮----
 private get _selection()
@@ -60934,26 +61877,8 @@ private _change(source: HistoryAction, dest: HistoryAction)
 ⋮----
 clear()
 ⋮----
-/**
-     * Return a deep, JSON-serializable snapshot of the undo/redo history.
-     *
-     * The ot-json1 ops are plain JSON arrays and are deep-cloned as-is.
-     * Selections drop their live `anchorBlock` / `focusBlock` references and
-     * keep only the serializable `anchorPath` / `focusPath` + offsets; the
-     * caret is re-resolved from those paths on restore (see
-     * `_toSerializableSelection`). The result can be `JSON.stringify`-d, stored
-     * on a desktop tab, and handed back to `setHistory` to restore the exact
-     * undo/redo state — `setHistory(getHistory())` followed by `undo()`
-     * reproduces the prior document state.
-     */
 getHistory(): ISerializedHistory
 ⋮----
-/**
-     * Restore a snapshot previously produced by `getHistory`. Replaces the
-     * undo/redo stacks and recording bookkeeping. The restored selections are
-     * path-only; `Selection.setSelection` / `_setCursor` resolve the live
-     * block from the path when the op is later applied by `undo` / `redo`.
-     */
 setHistory(history: ISerializedHistory)
 ⋮----
 private _toSerializableOperation(op: IOperation): ISerializableOperation
@@ -60978,6 +61903,8 @@ private _fromSerializableSelection(
 ): Nullable<IHistorySelection>
 ⋮----
 cutoff()
+⋮----
+markInputBoundary(inputType: string, data: Nullable<string>): void
 ⋮----
 private _getLastSelection()
 ⋮----
@@ -61045,6 +61972,33 @@ export interface ILocale {
 
 <file path="packages/muya/src/index.ts">
 // Export ui tools.
+</file>
+
+<file path="packages/muya/src/inlineRenderer/__tests__/autoLinkTrailingPunct.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import type { Token } from '../types';
+import { describe, expect, it } from 'vitest';
+import { tokenizer } from '../lexer';
+⋮----
+// #2096: an extended (bare) autolink swallowed trailing punctuation because the
+// path component matched `\S+`. Per GFM §6.9, trailing punctuation
+// (?!.,:*_~) must not be part of the link.
+⋮----
+function autoLinkExt(src: string)
+⋮----
+// GFM §6.9 also trims the link extent for three further cases. The match is
+// greedy (`\S+`) so these all need post-match trimming, not regex.
+⋮----
+// Rule: an unmatched trailing `)` is excluded when the link has more `)`
+// than `(`, so an autolink can sit inside parentheses.
+⋮----
+// Rule: a trailing `;` closing an `&entity;`-looking reference is excluded.
+⋮----
+// Rule: a `<` ends the autolink.
+⋮----
+// The rules interleave and apply repeatedly: ").": trim '.' then the now-
+// unbalanced ')'.
 </file>
 
 <file path="packages/muya/src/inlineRenderer/__tests__/commonmarkExamples.spec.ts">
@@ -61157,6 +62111,20 @@ function topTypes(src: string): string[]
 // higher-priority construct (inline math/code/links) that would overlap the
 // emphasis, but treated an escaped `\$` as a real `$` math delimiter — so the
 // first `**bold**` on a line that also contained a later `\$` was suppressed.
+</file>
+
+<file path="packages/muya/src/inlineRenderer/__tests__/inlineMathEscape.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import type { CodeEmojiMathToken } from '../types';
+import { describe, expect, it } from 'vitest';
+import { tokenizer } from '../lexer';
+⋮----
+// #4555: an escaped dollar `\$` inside an inline math span ($...$) broke the
+// block's rendering. The inline_math content group did not allow backslash
+// escapes, so the inner `\$` was read as the closing delimiter and the math
+// expression was truncated / mis-tokenized.
+function mathContent(src: string): string | undefined
 </file>
 
 <file path="packages/muya/src/inlineRenderer/index.ts">
@@ -61284,8 +62252,24 @@ function tryReferenceImage(state: ILexState): boolean
 // html escape
 function tryHtmlEscape(state: ILexState): boolean
 ⋮----
+// GFM §6.9 (https://github.github.com/gfm/#autolinks-extension-): trim a
+// www/url autolink's extent to drop characters that are not part of the link.
+// The match is greedy (`\S+`), so these are applied after the regex, mirroring
+// cmark-gfm's `autolink_delim`:
+//   - a `<` ends the autolink;
+//   - trailing punctuation `?!.,:*_~` is excluded (interior is kept);
+//   - a trailing `)` is excluded when the link has more `)` than `(`, so an
+//     autolink can sit inside parentheses;
+//   - a trailing `;` closing an `&entity;`-looking reference is excluded.
+// The last three rules interleave and are applied repeatedly (e.g. `).`).
+function trimAutoLinkExtent(raw: string): string
+⋮----
 // auto link extension
 function tryAutoLinkExtension(state: ILexState): boolean
+⋮----
+// GFM §6.9: trim characters that are not part of a www/url autolink so the
+// leftover renders as plain text instead (#2096). Email autolinks are
+// unaffected (their extent is fixed by the domain regex).
 ⋮----
 // auto link
 function tryAutoLink(state: ILexState): boolean
@@ -62237,6 +63221,8 @@ export type GfmRules = typeof gfmRules;
 ⋮----
 // Markdown extensions (not belongs to GFM and Commonmark)
 ⋮----
+// eslint-disable-next-line regexp/no-super-linear-backtracking
+⋮----
 // This is not the best regexp, because it not support `2^2\\^`.
 ⋮----
 export type InlineExtensionRules = typeof inlineExtensionRules;
@@ -62901,7 +63887,6 @@ import {
     locateSentinelOffsets,
     resolveSentinelCursor,
 } from './selection/offsetCursor';
-import { getTOC } from './state/getTOC';
 import { isAnyListState, isAtxHeadingState, isCodeBlockState } from './state/types';
 import { Ui } from './ui/ui';
 import { deepClone } from './utils';
@@ -62961,25 +63946,12 @@ constructor(element: HTMLElement, options?: Partial<IMuyaOptions>)
 ⋮----
 // this.domNode[BLOCK_DOM_PROPERTY] = this;
 ⋮----
-// Expose `focus` / `blur` lifecycle events so external SDK consumers can
-// react to editor focus changes. Routed
-// through attachDOMEvent so cleanup is automatic via detachAllDomEvents
-// in destroy().
 private _bindFocusBlurEvents()
 ⋮----
 init()
 ⋮----
 // UI plugins
 ⋮----
-/**
-     * Switch the editor's UI language at runtime. Swaps the i18n resources, then
-     * re-renders the block tree so already-mounted blocks pick up the new
-     * translation. The inline placeholder hints (quick-insert
-     * "Type / to insert…", code-block language, math, front matter) are DOM
-     * attributes baked once in each block's constructor; without the re-render
-     * they would keep the old language until the block was next recreated.
-     * History and the caret are preserved across the refresh (`_forceRender`).
-     */
 locale(object: ILocale)
 ⋮----
 /**
@@ -63001,37 +63973,18 @@ getState()
 ⋮----
 getMarkdown()
 ⋮----
-/**
-     * Return a flat table of contents for the current document.
-     *
-     * Only top-level atx / setext headings are surfaced; nested
-     * headings inside blockquotes / list items are ignored. `content` is the
-     * raw heading text (inline markdown not
-     * parsed); `slug` is a stable per-block identifier; `githubSlug` is
-     * the GitHub-style anchor derived from `content`.
-     */
+// Flush queued edits synchronously; call before swapping the document out
+// (e.g. a tab switch) so a same-frame keystroke isn't lost (#2938).
+flush()
+⋮----
 getTOC(): ITocItem[]
 ⋮----
 undo()
 ⋮----
 redo()
 ⋮----
-/**
-     * Return a JSON-serializable snapshot of the undo/redo history.
-     *
-     * Used by the desktop shell to persist each tab's editing history across
-     * tab switches: read it before deactivating a tab, store it, and hand it
-     * back to `setHistory` when the tab is re-selected. The ot-json1 ops are
-     * deep-cloned plain JSON; selections are reduced to their serializable
-     * paths/offsets (live block references are dropped and re-resolved on
-     * restore). Lossless round-trip: `setHistory(getHistory())` then `undo()`
-     * reproduces the prior document state.
-     */
 getHistory()
 ⋮----
-/**
-     * Restore a history snapshot previously produced by `getHistory`.
-     */
 setHistory(history: ReturnType<Muya['getHistory']>)
 ⋮----
 /**
@@ -63087,38 +64040,9 @@ replaceContent(content: TState[] | string, recordSelection?: Nullable<IHistorySe
 // the inverse must restore. The forward apply dispatches a json-change,
 // so suppress History's own recording of it to avoid a duplicate entry.
 ⋮----
-/**
-     * Update editor options at runtime: merges `options` into `muya.options`,
-     * reflects the container-level ones
-     * (spellcheck, quick-insert hint), and — when `forceRender` is set — fully
-     * re-renders the document so render-affecting options (superSubScript,
-     * disableHtml, frontmatterType, codeBlockLineNumbers, …) take effect. When a
-     * PARSE-affecting option changes (GitLab compatibility, math, footnote,
-     * frontMatter, …) the document is first re-parsed from markdown, since those
-     * options decide block structure the cached state cannot reflect. Unlike
-     * `setContent`, the undo history is preserved; the cursor is restored by path.
-     */
 setOptions(options: Partial<IMuyaOptions>, forceRender = false)
 ⋮----
-// A parse-affecting option re-classifies block structure, so re-parse the
-// current markdown into a fresh state before the render rebuild. This
-// updates `jsonState` in place without clearing history (only `setContent`
-// clears it), keeping setOptions' history-preserving contract.
-⋮----
-/**
-     * Rebuild the whole block tree from its current state, preserving the undo
-     * history (only `setContent` clears it; `updateState` does not) and
-     * restoring the caret by path. Re-running every block constructor re-applies
-     * the i18n-driven DOM attributes (placeholder hints, etc.), so this also
-     * serves as the locale refresh. Shared by `setOptions(..., forceRender)` and
-     * `locale()`.
-     */
 private _forceRender()
-⋮----
-// Restore the caret on the rebuilt tree by resolving the block at the
-// saved path and setting the cursor on it directly. (Passing only a
-// path to setSelection does not work — Selection._setCursor needs a
-// concrete block's domNode; a bare queryBlock result is not a Node.)
 ⋮----
 /** Update the editor font size / line height. */
 setFont(
@@ -63131,27 +64055,17 @@ setListIndentation(listIndentation: IMuyaOptions['listIndentation'])
 ⋮----
 focus()
 ⋮----
-/**
-     * Toggle focus mode. When enabled,
-     * every top-level block except the one holding the cursor is dimmed via the
-     * `mu-focus-mode` class on the editor container; the dimming itself lives in
-     * the stylesheet (`.mu-focus-mode .mu-container > * { opacity }`).
-     */
 setFocusMode(focusMode: boolean)
 ⋮----
 selectAll()
 ⋮----
-/**
-     * Toggle an inline format on the current selection.
-     * @param type One of strong/em/u/del/inline_code/link/image/inline_math/
-     * sub/sup/mark/clear (and html_tag aliases). No-op when the selection is
-     * not inside a single formattable block.
-     */
 format(type: string)
 ⋮----
-// Cross-block selection: apply to each formattable leaf in range. The
+// Cross-leaf selection: apply to each formattable leaf in range. The
 // live DOM selection collapses across blocks, so detect via the cached
-// endpoints (the same ones the menu/IPC round-trip relies on).
+// endpoints (the same ones the menu/IPC round-trip relies on). Compare
+// at the LEAF level, not the outmost block: two paragraphs nested in the
+// same blockquote share an outmost block but are distinct leaves (#3462).
 ⋮----
 // A heading's text includes its leading `# ` marker; never format the
 // marker itself, only the heading content. Clamp the start past it.
@@ -63161,12 +64075,6 @@ return; // the selection lies entirely within the marker
 // Restore the selection before applying the format — the menu/IPC
 // round-trip can drop the live DOM selection.
 ⋮----
-/**
-     * Apply an inline format to every formattable leaf in a cross-block
-     * selection, in document order. Non-formattable leaves (code/math/html/
-     * frontmatter/diagram) are skipped; link/image are no-ops across blocks
-     * (and the menu disables them). Ported from muyajs's multi-block format.
-     */
 private _formatAcrossBlocks(type: string)
 ⋮----
 // Restore the span across the formatted leaves using each leaf's
@@ -63275,21 +64183,8 @@ pasteAsPlainText(): Promise<void>
      */
 pasteImage(src: string): Promise<void>
 ⋮----
-/**
-     * The outer-most block at the current cursor — the target for block-level
-     * operations. Uses the persisted active content block (which survives the
-     * menu/IPC round-trip), falling back to the selection anchor.
-     */
 private _outmostBlockAtCursor(): Parent | null
 ⋮----
-/**
-     * The immediate block-level parent of the active content leaf — the
-     * paragraph/heading block that directly wraps the cursor. Used by the
-     * context-menu "Insert Paragraph Before/After" path: a new paragraph lands
-     * as an inner sibling inside a list item / blockquote rather than jumping out to
-     * the outermost container. Uses the persisted active content block (which
-     * survives the menu/IPC round-trip), falling back to the selection anchor.
-     */
 private _immediateBlockAtCursor(): Parent | null
 ⋮----
 /**
@@ -63311,6 +64206,15 @@ private _selectionEndpoints():
 ⋮----
 /** Whether the current selection stays within a single outmost block. */
 private _selectionInSameBlock(): boolean
+⋮----
+/**
+     * Whether the current selection stays within a single content leaf. Unlike
+     * `_selectionInSameBlock` (outmost-block granularity, for paragraph-menu
+     * dispatch), this compares the actual leaves so a selection spanning two
+     * paragraphs nested in one blockquote is correctly treated as cross-leaf
+     * for inline formatting (#3462).
+     */
+private _selectionInSameLeaf(): boolean
 ⋮----
 /**
      * The contiguous run of OUTMOST (scrollPage-child) blocks the current
@@ -63368,31 +64272,7 @@ insertParagraph(location: 'before' | 'after' = 'after', text = '', outMost = fal
      */
 deleteParagraph()
 ⋮----
-/**
-     * Insert a GFM table at the current cursor. An EMPTY cursor block is
-     * replaced in place; a NON-empty block keeps its content and the table is
-     * inserted directly AFTER it inside its own container (e.g. right after the
-     * paragraph in a list item, not after the whole list) — matching the
-     * Paragraph menu's insert-below rule for non-convertible blocks. Pass
-     * `{ replace: true }` to always
-     * replace the cursor block — the in-editor grid picker uses this to consume
-     * its trigger block (a `/table` quick-insert line or the empty paragraph the
-     * front-menu offers). The table has `rows` rows × `columns` columns with the
-     * first row as the header; every cell is empty with `align: 'none'`. The
-     * cursor lands in the first cell. No-op when there is no current block.
-     * `rows`/`columns` are coerced to integers and clamped to a valid GFM shape
-     * (`rows >= 2`, `columns >= 1`) so invalid input (e.g. `rows: 0`, non-finite,
-     * or fractional values) still yields a usable table instead of an invalid
-     * state.
-     */
 createTable(
-⋮----
-// Coerce and clamp to a valid GFM table shape. A GFM table needs a
-// header row plus at least one body row (rows >= 2) and at least one
-// column (columns >= 1). Garbage input (NaN/Infinity/floats/negatives)
-// is normalised rather than producing an invalid state — `rows = 0`
-// would otherwise build a table with no rows and crash `columnCount`
-// (which reads `firstChild.firstChild`).
 ⋮----
 const makeRow = (): ITableState['children'][number] => (
 ⋮----
@@ -63658,6 +64538,10 @@ destroy()
 ⋮----
 // Hide all float tools.
 ⋮----
+// Destroy every registered UI plugin so the nodes they appended to
+// `document.body` (float boxes, the image resize bar, tooltips) are
+// removed rather than leaked (#3315).
+⋮----
 /**
  * [ensureContainerDiv ensure container element is div]
  */
@@ -63848,6 +64732,20 @@ import { Muya } from '../../muya';
 //     and preserves the legacy Caret/Range/None `type` field on the payload.
 ⋮----
 function bootMuya(markdown: string): Muya
+</file>
+
+<file path="packages/muya/src/selection/__tests__/offsetClamp.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import { describe, expect, it } from 'vitest';
+import { getLegalOffset, getNodeAndOffset } from '../dom';
+⋮----
+// Regression coverage for the `Failed to execute 'setStart' on 'Range'`
+// crashes reported in #4575 / #4464 (offset past the rendered text after a
+// re-render) and #4458 (offset 4294967295 = unsigned -1 from a corrupted
+// browser selection). The legacy engine clamped the recorded offset to the
+// node's legal range before touching the DOM Range API; the rewrite dropped
+// that guard. `getLegalOffset` restores it.
 </file>
 
 <file path="packages/muya/src/selection/__tests__/parityPreviewImage.spec.ts">
@@ -64336,6 +65234,8 @@ export function getNodeAndOffset(
 ):
 ⋮----
 // Fix #1460 - put the cursor at the next text node or element if it can be put at the last of /^\n$/ or the next text node/element.
+⋮----
+export function getLegalOffset(node: Node, offset: number): number
 </file>
 
 <file path="packages/muya/src/selection/ImageSelection.ts">
@@ -64724,6 +65624,7 @@ import { getCursorCoords } from './cursorCoords';
 import {
     compareParagraphsOrder,
     findContentDOM,
+    getLegalOffset,
     getNodeAndOffset,
     getOffsetOfParagraph,
 } from './dom';
@@ -64998,6 +65899,41 @@ function toMarkdown(states: IStateLike[]): string
 // vega-lite.
 ⋮----
 // flowchart is not vega-lite, so the inner code lang stays yaml.
+</file>
+
+<file path="packages/muya/src/state/__tests__/flushPendingOps.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import type Content from '../../block/base/content';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { Muya } from '../../muya';
+⋮----
+// #2938 part 2: `muya.flush()` makes a same-frame edit durable before the
+// document is swapped out (a tab switch calls setContent within the same frame
+// as the last keystroke). Drives the real typing path: `content.text = ...`
+// queues an op + schedules a requestAnimationFrame; the op lands only when that
+// frame fires — unless flushed first.
+⋮----
+function boot(md: string): Muya
+⋮----
+function nextFrame(): Promise<void>
+⋮----
+leaf.text = 'hello world'; // queued, not yet applied
+⋮----
+// The edit is now in the document, and a json-change fired — all without
+// waiting for the animation frame.
+⋮----
+leaf.text = 'hello world'; // pending
+⋮----
+// Tab-switch sequence: flush the outgoing doc FIRST, then swap.
+⋮----
+expect(captured).toEqual(['hello world']); // outgoing edit captured
+⋮----
+// No leftover op fired against B, and B is intact.
+⋮----
+// A subsequent edit still batches + flushes on its own frame.
+⋮----
+expect(muya.getMarkdown().trim()).toBe('one'); // still deferred
 </file>
 
 <file path="packages/muya/src/state/__tests__/footnoteExportHtml.spec.ts">
@@ -65354,6 +66290,21 @@ const exporter = () => new ExportMarkdown(
 // `html-block` state.
 </file>
 
+<file path="packages/muya/src/state/__tests__/mathTrailingSpace.spec.ts">
+import { describe, expect, it } from 'vitest';
+import { MarkdownToState } from '../markdownToState';
+⋮----
+// #1931: a display-math block whose closing `$$` has trailing whitespace
+// (e.g. `$$ `) was not recognized as math — the block regex required the
+// closing marker to be immediately followed by a newline or end-of-input, so
+// any trailing space made it fall through to plain text. Fenced code blocks
+// already tolerate trailing spaces; math should too.
+⋮----
+interface IBlock { name: string; text?: string }
+⋮----
+function parse(markdown: string): IBlock[]
+</file>
+
 <file path="packages/muya/src/state/__tests__/nestedMixedLists.spec.ts">
 // @vitest-environment happy-dom
 ⋮----
@@ -65584,6 +66535,36 @@ import { renderToStaticHTML } from '../renderToStaticHTML';
 // point of this mode, hence the docstring warning.
 </file>
 
+<file path="packages/muya/src/state/__tests__/setContentClearsOpCache.spec.ts">
+// @vitest-environment happy-dom
+⋮----
+import type { Muya } from '../../muya';
+import type { TState } from '../types';
+import { describe, expect, it } from 'vitest';
+import JSONState from '../index';
+⋮----
+// #2938: switching files (setContent) within the same frame as a pending edit
+// left the previous document's deferred op batch in the cache. The scheduled
+// requestAnimationFrame then applied that op to the NEW document's state,
+// corrupting it (or throwing and freezing `_isGoing`), which broke saving the
+// switched-to file. setContent must drop the pending batch and cancel its
+// scheduled flush.
+⋮----
+function makeState(blocks: TState[]): JSONState
+⋮----
+function nextFrame(): Promise<void>
+⋮----
+// Pending edit against doc A (insert a block at index 1), not yet flushed.
+⋮----
+// Switch to doc B within the same frame.
+⋮----
+// Let the (cancelled) rAF window elapse.
+⋮----
+// The stale insert must NOT have been applied to doc B.
+⋮----
+// A fresh op against doc B applies cleanly (not frozen by a stuck _isGoing).
+</file>
+
 <file path="packages/muya/src/state/__tests__/stateToMarkdown.spec.ts">
 import type { ITableCellState, ITableRowState, ITableState } from '../types';
 import { describe, expect, it } from 'vitest';
@@ -65602,6 +66583,16 @@ function table(rows: ITableRowState[]): ITableState
 // when a body row had more cells than the header, or
 //   TypeError: Cannot read properties of undefined (reading 'length')
 // when a body row had fewer cells than the header.
+⋮----
+// Regression for #1983. Column padding used String.prototype.length, so a
+// cell containing a combining mark (its code units exceed its visual width)
+// was over-measured and broke alignment. Padding must use visual column width.
+⋮----
+row([cell('aʊ̯x')]), // a, ʊ, U+032F combining mark, x — 4 code units, 3 columns
+⋮----
+row([cell('中文')]), // two wide characters → 4 columns
+⋮----
+// Column width is max(visual): 'id' = 2, '中文' = 4 → inner width 4.
 ⋮----
 // `align` lives on every cell's `meta.align` ('none' | 'left' | 'center' |
 // 'right'). The serializer renders the delimiter row from the *header* row's
@@ -65733,25 +66724,9 @@ interface IHeadingBlock extends Parent {
     meta: { level: number };
 }
 ⋮----
-// Stable per-block slug. marktext exposed `block.key` for the same purpose
-// (a DOM-id-friendly anchor that survives across `getTOC()` calls). The new
-// block tree has no `.key`, so we lazily assign one and cache by block
-// instance — same heading → same slug, even across repeated invocations.
-// Different muya instances build different blocks, so there is no risk of
-// cross-instance collision.
-⋮----
 export function stableSlug(block: Parent): string
 ⋮----
 export function getTOC(muya: Muya): ITocItem[]
-⋮----
-// Walk the linked list directly instead of `forEach`, which materialises
-// every top-level block into an array via `[...iterator()]` (see
-// `LinkedList.forEach`). For large documents the intermediate array is
-// pure waste.
-⋮----
-// 9cb2cbe8: `\s` instead of literal ASCII space so unicode
-// whitespace / tabs before or between the `#` markers also strip
-// cleanly.
 </file>
 
 <file path="packages/muya/src/state/htmlToMarkdown.ts">
@@ -65783,8 +66758,9 @@ import type { TState } from './types';
 ⋮----
 import { deepClone } from '../utils';
 import logger from '../utils/logger';
-import { MarkdownToState } from './markdownToState';
+import { getTOC } from './getTOC';
 ⋮----
+import { MarkdownToState } from './markdownToState';
 import StateToMarkdown from './stateToMarkdown';
 ⋮----
 // ot-json1 declares its document type as the opaque `Doc`. Muya treats the
@@ -65809,6 +66785,11 @@ static transform(
         type: 'left' | 'right',
 )
 ⋮----
+// Handle of the scheduled deferred-op flush. Doubles as the "a flush is
+// already scheduled" guard (non-null ⇒ batching in progress), and lets
+// `setContent` cancel a pending batch that belongs to the outgoing
+// document (#2938).
+⋮----
 constructor(private _muya: Muya, stateOrMarkdown: TState[] | string)
 ⋮----
 private _apply(op: JSONOp)
@@ -65818,6 +66799,11 @@ private _apply(op: JSONOp)
 // the call site can treat `op` as definitely applied.
 ⋮----
 setContent(content: TState[] | string)
+⋮----
+// A pending deferred-op batch belongs to the OUTGOING document. Applying
+// it to the new content would corrupt it (or throw and leave the flush
+// guard stuck, freezing all future edits). Drop the batch and cancel its
+// scheduled flush before swapping the state (#2938).
 ⋮----
 private _setState(state: TState[])
 ⋮----
@@ -65867,6 +66853,8 @@ getState(): TState[]
 ⋮----
 getMarkdown()
 ⋮----
+getTOC()
+⋮----
 // Serialize an ARBITRARY state array to markdown with the same generator
 // `getMarkdown` uses. Used by `Muya.getCursorOffset` to serialize a
 // sentinel-bearing state clone WITHOUT mutating the live `_state`.
@@ -65874,18 +66862,24 @@ getMarkdownFromState(state: TState[]): string
 ⋮----
 private _emitStateChange()
 ⋮----
+// Apply queued edits to the current document now instead of on the next
+// frame. Lets a tab switch persist the outgoing tab's last keystroke before
+// `setContent` replaces the document, otherwise that edit is lost (#2938).
+flush()
+⋮----
+private _flushOperationCache()
+⋮----
 // Wrap compose in a lambda — `Array.prototype.reduce` passes
 // (acc, current, index, array) to the callback, but
 // `json1.type.compose` only accepts (op1, op2). Without the
 // wrapper TS rejects the signature mismatch.
-// `compose` returns JSONOp (= null | JSONOpList); when the cache
-// contains at least one op the result is the composed list,
-// never null. The reduce above runs only when _operationCache is
-// non-empty (guarded by the requestAnimationFrame in
-// `_emitStateChange`), and a non-empty cache always composes to
-// a non-null op.
+// `compose` returns JSONOp (= null | JSONOpList); a non-empty cache
+// (guarded above) always composes to a non-null op.
 ⋮----
 // TODO: remove doc in future
+⋮----
+// Clear before emitting: a listener that edits synchronously then starts
+// a fresh batch instead of mutating the one being flushed.
 </file>
 
 <file path="packages/muya/src/state/markdownToHtml.ts">
@@ -66186,6 +67180,7 @@ import type {
 import { deepClone } from '../utils';
 ⋮----
 import logger from '../utils/logger';
+import stringWidth from '../utils/stringWidth';
 import { isAnyListState } from './types';
 ⋮----
 function escapeText(str: string)
@@ -66289,6 +67284,10 @@ private _serializeFootnote(state: IFootnoteBlockState, indent: string)
 private _serializeTable(state: ITableState, indent: string)
 ⋮----
 ); // add 2, because have two space around text
+⋮----
+// Pad by visual column width, not code-unit length,
+// so combining marks and wide characters stay
+// aligned (#1983). One leading space + cell + fill.
 ⋮----
 private _serializeList(
         state: IBulletListState | IOrderListState | ITaskListState,
@@ -67062,6 +68061,17 @@ import { h, patch } from '../../utils/snabbdom';
 import BaseScrollFloat from '../baseScrollFloat';
 import fileIcons from '../utils/fileIcons';
 ⋮----
+// The language the user actually typed after the ``` fence. The selector's
+// fuzzy search may resolve a non-code language (e.g. `vega-lite`) to an
+// unrelated Prism language, so the diagram check keys off this raw text.
+function typedFenceLang(text: string): string
+⋮----
+// Build the state for the block a ```lang fence becomes. Diagram languages
+// (from the typed text) become a diagram block, mirroring markdownToState's
+// file-load path; GitLab math becomes a math-block; everything else a fenced
+// code block highlighted with the selector's matched language.
+function newBlockStateForLang(typedLang: string, matchedLang: string, isGitlabMath: boolean)
+⋮----
 export class CodeBlockLanguageSelector extends BaseScrollFloat
 ⋮----
 constructor(muya: Muya, options =
@@ -67800,6 +68810,10 @@ private _update()
 // Image width/height attribute must be an integer.
 ⋮----
 hide()
+⋮----
+// Remove the `.mu-transformer` container appended to document.body in the
+// constructor; invoked by `Muya.destroy()` so it is not leaked (#3315).
+destroy()
 </file>
 
 <file path="packages/muya/src/ui/imageToolbar/config.ts">
@@ -68137,12 +69151,14 @@ import LinkTools from '../index';
 interface ILinkToolsView {
     _linkBlock: Format | null;
     _linkInfo: {
-        href?: string;
+        href?: string | null;
         text?: string;
         raw?: string;
         range?: { start: number; end: number } | null;
     } | null;
     selectItem: (event: Event, item: { type: string; icon: string }) => void;
+    render: () => void;
+    container: HTMLElement | null;
     destroy: () => void;
 }
 ⋮----
@@ -68177,6 +69193,10 @@ function makeFakeEvent()
 ⋮----
 // linkBlock is typed as Format | null; the fake only implements
 // `unlink` (the only method selectItem calls).
+⋮----
+// Regression guard for issue #4356: a link whose href was sanitized away
+// (unsupported custom protocol) reaches the popover with `href: null`.
+// There is nothing to jump to, so the jump item must not render.
 </file>
 
 <file path="packages/muya/src/ui/linkTools/config.ts">
@@ -68256,6 +69276,11 @@ const mouseOverHandler = () =>
 const mouseOutHandler = () =>
 ⋮----
 render()
+⋮----
+// A link whose href was sanitized away (e.g. an unsupported custom
+// protocol, issue #4356) carries `href: null` — there is nothing to
+// jump to, so offer only "unlink" (the same nothing-to-act-on rule
+// that keeps unresolved reference links out of the popover entirely).
 ⋮----
 // SVG icon Asset
 ⋮----
@@ -69496,7 +70521,7 @@ import {
 ⋮----
 import type { Config } from '../dompurify';
 import { describe, expect, it } from 'vitest';
-import { EXPORT_DOMPURIFY_CONFIG } from '../../config';
+import { EXPORT_DOMPURIFY_CONFIG, PREVIEW_DOMPURIFY_CONFIG } from '../../config';
 import sanitize, { isValidAttribute } from '../dompurify';
 ⋮----
 // Lock the DOMPurify config to the typed contract so a regression in shape
@@ -69540,6 +70565,11 @@ import sanitize, { isValidAttribute } from '../dompurify';
 // same commit pair; the new repo carries that intent via
 // ADD_ATTR on EXPORT_DOMPURIFY_CONFIG so saved/exported markdown
 // image alignment metadata survives sanitization.
+⋮----
+// marktext #3594 / #3697: the editor's live HTML-block preview forbade the
+// `style` attribute while export allowed it, so inline-styled HTML rendered
+// unstyled in the editor. The preview config now matches export — `style`
+// survives, but DOMPurify still strips dangerous attributes.
 </file>
 
 <file path="packages/muya/src/utils/__tests__/embedKatexFonts.spec.ts">
@@ -69747,6 +70777,25 @@ import { isStandaloneTableHtml } from '../paste';
 ⋮----
 // The greedy `^<table\b[\s\S]*<\/table>$` matches this whole string, but
 // the parsed container has two root elements — not a standalone table.
+</file>
+
+<file path="packages/muya/src/utils/__tests__/stringWidth.spec.ts">
+import { describe, expect, it } from 'vitest';
+import stringWidth from '../stringWidth';
+⋮----
+// `stringWidth` returns the number of monospace columns a string occupies, used
+// by the markdown table serializer to align columns (#1983). It must count
+// combining marks as zero width and East-Asian wide / fullwidth code points as
+// two, rather than counting UTF-16 code units like String.prototype.length.
+⋮----
+// `aʊ̯x` = a, ʊ, COMBINING INVERTED BREVE BELOW (U+032F), x.
+// length is 4 code units but it occupies 3 columns.
+⋮----
+// and it must align with the other plain 3-column cell.
+⋮----
+// U+FF21 FULLWIDTH LATIN CAPITAL LETTER A
+⋮----
+// U+20000 (𠀀) is a single wide ideograph encoded as a surrogate pair.
 </file>
 
 <file path="packages/muya/src/utils/__tests__/wordCount.spec.ts">
@@ -71492,6 +72541,50 @@ export const toHTML = sToHTML; // helper function for convert vnode to HTML stri
 export function htmlToVNode(html: string)
 ⋮----
 // helper function for convert html to vnode
+</file>
+
+<file path="packages/muya/src/utils/stringWidth.ts">
+// East-Asian Wide (W) and Fullwidth (F) code-point ranges. JavaScript's Unicode
+// property escapes do not expose East_Asian_Width, so the ranges are inlined
+// from the Unicode East Asian Width table. Each pair is an inclusive [start,
+// end] range whose code points occupy two monospace columns.
+⋮----
+[0x1100, 0x115F], // Hangul Jamo
+[0x2E80, 0x303E], // CJK Radicals .. Kangxi Radicals .. CJK symbols
+[0x3041, 0x33FF], // Hiragana, Katakana, CJK symbols and punctuation
+[0x3400, 0x4DBF], // CJK Unified Ideographs Extension A
+[0x4E00, 0x9FFF], // CJK Unified Ideographs
+[0xA000, 0xA4CF], // Yi Syllables / Radicals
+[0xAC00, 0xD7A3], // Hangul Syllables
+[0xF900, 0xFAFF], // CJK Compatibility Ideographs
+[0xFE10, 0xFE19], // Vertical forms
+[0xFE30, 0xFE6F], // CJK Compatibility Forms / Small Form Variants
+[0xFF00, 0xFF60], // Fullwidth Forms
+[0xFFE0, 0xFFE6], // Fullwidth signs
+[0x1F300, 0x1F64F], // Emoticons / Misc symbols and pictographs
+[0x1F900, 0x1F9FF], // Supplemental symbols and pictographs
+[0x20000, 0x3FFFD], // CJK Unified Ideographs Extension B and beyond
+⋮----
+// Nonspacing (Mn) and enclosing (Me) combining marks render with zero advance.
+⋮----
+// Format characters that occupy no columns (zero-width space family and BOM).
+function isZeroWidth(codePoint: number): boolean
+⋮----
+codePoint === 0x200B // zero width space
+|| (codePoint >= 0x200C && codePoint <= 0x200F) // ZWNJ/ZWJ/marks
+|| codePoint === 0xFEFF // zero width no-break space (BOM)
+⋮----
+function isWide(codePoint: number): boolean
+⋮----
+/**
+ * The number of monospace columns `str` occupies. Combining marks and
+ * zero-width formatting characters contribute 0; East-Asian wide / fullwidth
+ * code points contribute 2; everything else contributes 1.
+ *
+ * Iterating with `for...of` walks the string by code point, so astral
+ * characters (surrogate pairs) are measured once rather than per code unit.
+ */
+export default function stringWidth(str: string): number
 </file>
 
 <file path="packages/muya/src/utils/turndownService/index.ts">
@@ -102382,7 +103475,7 @@ You can pick commits from another branch and apply the commit to the current one
 <file path="packages/website/content/docs/dev/RELEASE.md">
 # Releasing MarkText
 
-The release pipeline is triggered by pushing a `v*` tag. The `Release MarkText` workflow (`.github/workflows/release.yml`) then runs **validate → build (4-platform matrix) → publish** and creates a GitHub Release with installers and `SHA256SUMS.txt`.
+The release pipeline is triggered by pushing a `v*` tag. The `Release MarkText` workflow (`.github/workflows/release.yml`) then runs **validate → build (5-platform matrix) → publish** and creates a GitHub Release with installers and `SHA256SUMS.txt`.
 
 The flow below covers both release candidates and stable releases — same steps, only the version string differs.
 
@@ -102445,7 +103538,7 @@ gh run list --workflow=release.yml --limit 3
 gh run watch <run-id> --exit-status
 ```
 
-Approximate timing: validate ~30 s · build matrix ~15–30 min (4 platforms in parallel) · publish ~1 min.
+Approximate timing: validate ~30 s · build matrix ~15–30 min (5 platforms in parallel) · publish ~1 min.
 
 ## 7. Verify the published release
 

@@ -69,6 +69,12 @@ describe('editor preferences', () => {
     })
   })
 
+  it('restores the editor-local rich view mode', () => {
+    expect(restoreEditorPreferences({ viewMode: 'rich' })).toMatchObject({
+      viewMode: 'rich'
+    })
+  })
+
   it('normalizes shortcut labels for display and marks blank values unassigned', () => {
     expect(displayShortcut(' ctrl + shift + 7 ')).toBe('Ctrl+Shift+7')
     expect(displayShortcut('')).toBe('Unassigned')

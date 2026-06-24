@@ -4,12 +4,16 @@ import {
   applyInlineWrap,
   applyLinePrefix,
   applyLink,
+  alignMarkdownTable,
   deleteSelectionOrLines,
+  deleteTableRow,
   duplicateSelectionOrLines,
   formatMarkdownSource,
   insertImage,
   insertBlock,
+  insertTableColumnAfter,
   insertTableRowAfter,
+  updateImageAttributes,
   wrapBlock
 } from './editingTransforms'
 
@@ -68,6 +72,17 @@ describe('editingTransforms', () => {
     expect(edit.text.slice(edit.selectionStart, edit.selectionEnd)).toBe('image.png')
   })
 
+  it('updates an image syntax range with alt, URL, and title', () => {
+    const edit = updateImageAttributes('Logo: ![old](old.png)', { start: 9, end: 12 }, {
+      alt: 'New logo',
+      url: 'assets/logo.png',
+      title: 'Brand mark'
+    })
+
+    expect(edit.text).toBe('Logo: ![New logo](assets/logo.png "Brand mark")')
+    expect(edit.text.slice(edit.selectionStart, edit.selectionEnd)).toBe('New logo')
+  })
+
   it('applies heading markers to the selected line range', () => {
     const edit = applyHeading('Intro\nOld heading\nTail', { start: 8, end: 12 }, 2)
 
@@ -118,6 +133,24 @@ describe('editingTransforms', () => {
     const edit = insertTableRowAfter('| A | B | C |\n| --- | --- | --- |', { start: 2, end: 2 })
 
     expect(edit.text).toBe('| A | B | C |\n|  |  |  |\n| --- | --- | --- |')
+  })
+
+  it('inserts a table column after the current column', () => {
+    const edit = insertTableColumnAfter('| A | B |\n| --- | --- |\n| 1 | 2 |', { start: 3, end: 3 })
+
+    expect(edit.text).toBe('| A |  | B |\n| --- | --- | --- |\n| 1 |  | 2 |')
+  })
+
+  it('deletes the current table row', () => {
+    const edit = deleteTableRow('| A | B |\n| --- | --- |\n| 1 | 2 |\n| 3 | 4 |', { start: 24, end: 24 })
+
+    expect(edit.text).toBe('| A | B |\n| --- | --- |\n| 3 | 4 |')
+  })
+
+  it('aligns a Markdown table without changing table content', () => {
+    const edit = alignMarkdownTable('| A | Longer |\n| --- | --- |\n| 1 | 22 |', { start: 2, end: 2 })
+
+    expect(edit.text).toBe('| A   | Longer |\n| --- | ------ |\n| 1   | 22     |')
   })
 
   it('deletes the current line when the selection is empty', () => {

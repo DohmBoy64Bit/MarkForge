@@ -1,5 +1,6 @@
 import { renderMarkdown } from '@markforge/markdown-engine'
 import { err, ok, type CancellableOptions, type Result } from '@markforge/shared'
+import type { FileChild } from 'docx'
 
 export type ConversionFormat =
   | 'browser-print'
@@ -8,6 +9,8 @@ export type ConversionFormat =
   | 'html'
   | 'html-to-markdown'
   | 'markdown-cleanup'
+  | 'markdown-to-docx'
+  | 'markdown-to-pdf'
   | 'ocr-to-markdown'
   | 'pdf-to-markdown'
   | 'rich-clipboard-to-markdown'
@@ -27,6 +30,7 @@ export type ConverterMetadata = {
 
 export type ConversionWarning = {
   code:
+    | 'extracted-text'
     | 'export-settings-applied'
     | 'host-print-required'
     | 'lossy-conversion'
@@ -38,25 +42,31 @@ export type ConversionWarning = {
 }
 
 export type HtmlExportSettings = {
+  bodyClass?: string
   includeGeneratedMeta?: boolean
   includeTableOfContents?: boolean
+  stylesheet?: string
   title?: string
 }
 
 export type ConversionRequest = CancellableOptions & {
   csv?: string
+  data?: ArrayBuffer | Uint8Array
   exportSettings?: HtmlExportSettings
   format: ConversionFormat
   html?: string
+  image?: ArrayBuffer | Blob | Uint8Array
   markdown?: string
   title?: string
   url?: string
 }
 
 export type ConversionResult = {
+  data?: ArrayBuffer
   format: ConversionFormat
   html?: string
   markdown?: string
+  mimeType?: string
   warnings: ConversionWarning[]
 }
 
@@ -106,6 +116,36 @@ export const urlToMarkdownConverterMetadata: ConverterMetadata = {
   id: 'url-markdown',
   label: 'URL/Article to Markdown',
   capabilities: [{ format: 'url-to-markdown' }]
+}
+
+export const docxToMarkdownConverterMetadata: ConverterMetadata = {
+  id: 'docx-markdown',
+  label: 'DOCX to Markdown',
+  capabilities: [{ format: 'docx-to-markdown' }]
+}
+
+export const pdfToMarkdownConverterMetadata: ConverterMetadata = {
+  id: 'pdf-markdown',
+  label: 'PDF to Markdown',
+  capabilities: [{ format: 'pdf-to-markdown' }]
+}
+
+export const ocrToMarkdownConverterMetadata: ConverterMetadata = {
+  id: 'ocr-markdown',
+  label: 'Image OCR to Markdown',
+  capabilities: [{ format: 'ocr-to-markdown' }]
+}
+
+export const markdownToPdfConverterMetadata: ConverterMetadata = {
+  id: 'markdown-pdf',
+  label: 'Markdown to PDF',
+  capabilities: [{ format: 'markdown-to-pdf' }]
+}
+
+export const markdownToDocxConverterMetadata: ConverterMetadata = {
+  id: 'markdown-docx',
+  label: 'Markdown to DOCX',
+  capabilities: [{ format: 'markdown-to-docx' }]
 }
 
 export function createHtmlConverter(): MarkdownConverter {
@@ -299,8 +339,148 @@ export function createUrlToMarkdownConverter(fetchHtml: UrlHtmlFetcher = default
   }
 }
 
+export type DocxHtmlExtractor = (data: ArrayBuffer, options?: CancellableOptions) => Promise<string>
+export type DocxExporter = (markdown: string, title: string, options?: CancellableOptions) => Promise<ArrayBuffer>
+export type PdfExporter = (markdown: string, title: string, options?: CancellableOptions) => Promise<ArrayBuffer>
+export type PdfTextExtractor = (data: ArrayBuffer, options?: CancellableOptions) => Promise<string>
+export type OcrTextExtractor = (image: ArrayBuffer | Blob, options?: CancellableOptions) => Promise<string>
+
+export function createDocxToMarkdownConverter(extractHtml: DocxHtmlExtractor = defaultDocxHtmlExtractor): MarkdownConverter {
+  return {
+    metadata: docxToMarkdownConverterMetadata,
+    canConvert(format) {
+      return format === 'docx-to-markdown'
+    },
+    async convert(request) {
+      if (request.signal?.aborted) return err('cancelled', 'Conversion was cancelled.')
+      if (request.format !== 'docx-to-markdown') return unsupportedFormat(request.format)
+
+      const data = normalizeBinaryInput(request.data)
+      if (!data) return err('invalid-input', 'DOCX input data is required.')
+
+      const html = await extractHtml(data, { signal: request.signal })
+      const service = await createTurndownService()
+      return ok({
+        format: 'docx-to-markdown',
+        markdown: normalizeConvertedMarkdown(service.turndown(html)),
+        warnings: [
+          {
+            code: 'lossy-conversion',
+            message: 'DOCX conversion preserves document text and common structure, but page layout, comments, and unsupported Word features are dropped.'
+          }
+        ]
+      })
+    }
+  }
+}
+
+export function createPdfToMarkdownConverter(extractText: PdfTextExtractor = defaultPdfTextExtractor): MarkdownConverter {
+  return {
+    metadata: pdfToMarkdownConverterMetadata,
+    canConvert(format) {
+      return format === 'pdf-to-markdown'
+    },
+    async convert(request) {
+      if (request.signal?.aborted) return err('cancelled', 'Conversion was cancelled.')
+      if (request.format !== 'pdf-to-markdown') return unsupportedFormat(request.format)
+
+      const data = normalizeBinaryInput(request.data)
+      if (!data) return err('invalid-input', 'PDF input data is required.')
+
+      const text = await extractText(data, { signal: request.signal })
+      return ok({
+        format: 'pdf-to-markdown',
+        markdown: normalizeConvertedMarkdown(text),
+        warnings: [
+          {
+            code: 'extracted-text',
+            message: 'PDF conversion extracts readable text order; exact page layout is not reconstructed.'
+          }
+        ]
+      })
+    }
+  }
+}
+
+export function createOcrToMarkdownConverter(extractText: OcrTextExtractor = defaultOcrTextExtractor): MarkdownConverter {
+  return {
+    metadata: ocrToMarkdownConverterMetadata,
+    canConvert(format) {
+      return format === 'ocr-to-markdown'
+    },
+    async convert(request) {
+      if (request.signal?.aborted) return err('cancelled', 'Conversion was cancelled.')
+      if (request.format !== 'ocr-to-markdown') return unsupportedFormat(request.format)
+
+      const image = normalizeImageInput(request.image ?? request.data)
+      if (!image) return err('invalid-input', 'Image input data is required for OCR.')
+
+      const text = await extractText(image, { signal: request.signal })
+      return ok({
+        format: 'ocr-to-markdown',
+        markdown: normalizeConvertedMarkdown(text),
+        warnings: [
+          {
+            code: 'extracted-text',
+            message: 'OCR conversion extracts recognized text and may contain recognition errors.'
+          }
+        ]
+      })
+    }
+  }
+}
+
+export function createMarkdownToPdfConverter(exportPdf: PdfExporter = defaultPdfExporter): MarkdownConverter {
+  return {
+    metadata: markdownToPdfConverterMetadata,
+    canConvert(format) {
+      return format === 'markdown-to-pdf'
+    },
+    async convert(request) {
+      if (request.signal?.aborted) return err('cancelled', 'Conversion was cancelled.')
+      if (request.format !== 'markdown-to-pdf') return unsupportedFormat(request.format)
+      if (typeof request.markdown !== 'string') return err('invalid-input', 'Markdown input is required.')
+
+      const data = await exportPdf(request.markdown, request.title ?? request.exportSettings?.title ?? 'MarkForge document', { signal: request.signal })
+      return ok({
+        data,
+        format: 'markdown-to-pdf',
+        mimeType: 'application/pdf',
+        warnings: []
+      })
+    }
+  }
+}
+
+export function createMarkdownToDocxConverter(exportDocx: DocxExporter = defaultDocxExporter): MarkdownConverter {
+  return {
+    metadata: markdownToDocxConverterMetadata,
+    canConvert(format) {
+      return format === 'markdown-to-docx'
+    },
+    async convert(request) {
+      if (request.signal?.aborted) return err('cancelled', 'Conversion was cancelled.')
+      if (request.format !== 'markdown-to-docx') return unsupportedFormat(request.format)
+      if (typeof request.markdown !== 'string') return err('invalid-input', 'Markdown input is required.')
+
+      const data = await exportDocx(request.markdown, request.title ?? request.exportSettings?.title ?? 'MarkForge document', { signal: request.signal })
+      return ok({
+        data,
+        format: 'markdown-to-docx',
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        warnings: [
+          {
+            code: 'lossy-conversion',
+            message: 'DOCX export preserves headings and paragraph text; advanced Markdown layout is simplified.'
+          }
+        ]
+      })
+    }
+  }
+}
+
 export function createUnsupportedConverter(
-  format: Exclude<ConversionFormat, 'csv-to-markdown-table' | 'html' | 'html-to-markdown' | 'markdown-cleanup' | 'rich-clipboard-to-markdown' | 'url-to-markdown'>,
+  format: Exclude<ConversionFormat, 'csv-to-markdown-table' | 'docx-to-markdown' | 'html' | 'html-to-markdown' | 'markdown-cleanup' | 'markdown-to-docx' | 'markdown-to-pdf' | 'ocr-to-markdown' | 'pdf-to-markdown' | 'rich-clipboard-to-markdown' | 'url-to-markdown'>,
   label: string,
   reason: string
 ): MarkdownConverter {
@@ -323,8 +503,13 @@ export function createUnsupportedConverter(
 }
 
 export type ConverterSetOptions = {
-  print?: () => void
+  docxHtmlExtractor?: DocxHtmlExtractor
+  docxExporter?: DocxExporter
   fetchHtml?: UrlHtmlFetcher
+  ocrTextExtractor?: OcrTextExtractor
+  pdfExporter?: PdfExporter
+  pdfTextExtractor?: PdfTextExtractor
+  print?: () => void
 }
 
 export function createDefaultConverters(options: ConverterSetOptions = {}): MarkdownConverter[] {
@@ -340,9 +525,11 @@ export function createDefaultConverters(options: ConverterSetOptions = {}): Mark
     createMarkdownCleanupConverter(),
     createRichClipboardToMarkdownConverter(),
     createUrlToMarkdownConverter(options.fetchHtml),
-    createUnsupportedConverter('docx-to-markdown', 'DOCX to Markdown', 'DOCX import needs file parsing and fixture coverage before it can be supported.'),
-    createUnsupportedConverter('pdf-to-markdown', 'PDF to Markdown', 'PDF import needs an explicit text/layout extraction strategy and fixtures.'),
-    createUnsupportedConverter('ocr-to-markdown', 'Image OCR to Markdown', 'OCR import needs an OCR engine decision and model/runtime packaging plan.')
+    createDocxToMarkdownConverter(options.docxHtmlExtractor),
+    createPdfToMarkdownConverter(options.pdfTextExtractor),
+    createOcrToMarkdownConverter(options.ocrTextExtractor),
+    createMarkdownToPdfConverter(options.pdfExporter),
+    createMarkdownToDocxConverter(options.docxExporter)
   ]
 }
 
@@ -501,6 +688,12 @@ function wrapHtmlDocument(
   const generated = settings.includeGeneratedMeta
     ? `<meta name="generator" content="MarkForge">`
     : ''
+  const stylesheet = settings.stylesheet?.trim()
+    ? `<style>${settings.stylesheet}</style>`
+    : ''
+  const bodyClass = settings.bodyClass?.trim()
+    ? ` class="${escapeHtml(settings.bodyClass.trim())}"`
+    : ''
 
   return [
     '<!doctype html>',
@@ -509,8 +702,9 @@ function wrapHtmlDocument(
     '<meta charset="utf-8">',
     generated,
     `<title>${escapeHtml(title)}</title>`,
+    stylesheet,
     '</head>',
-    '<body>',
+    `<body${bodyClass}>`,
     toc,
     body,
     '</body>',
@@ -542,6 +736,132 @@ async function defaultFetchHtml(url: string, options?: CancellableOptions): Prom
   return response.text()
 }
 
+async function defaultDocxHtmlExtractor(data: ArrayBuffer, options?: CancellableOptions): Promise<string> {
+  if (options?.signal?.aborted) throw new Error('Conversion was cancelled.')
+
+  const mammoth = await import('mammoth')
+  const result = await mammoth.convertToHtml({ arrayBuffer: data })
+
+  return result.value
+}
+
+async function defaultPdfTextExtractor(data: ArrayBuffer, options?: CancellableOptions): Promise<string> {
+  if (options?.signal?.aborted) throw new Error('Conversion was cancelled.')
+
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  const document = await pdfjs.getDocument({
+    data: new Uint8Array(data)
+  }).promise
+  const pages: string[] = []
+
+  for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
+    if (options?.signal?.aborted) throw new Error('Conversion was cancelled.')
+    const page = await document.getPage(pageNumber)
+    const content = await page.getTextContent()
+    const text = content.items
+      .map(item => 'str' in item && typeof item.str === 'string' ? item.str : '')
+      .filter(Boolean)
+      .join(' ')
+      .trim()
+
+    if (text) pages.push(text)
+  }
+
+  return pages.join('\n\n')
+}
+
+async function defaultOcrTextExtractor(image: ArrayBuffer | Blob, options?: CancellableOptions): Promise<string> {
+  if (options?.signal?.aborted) throw new Error('Conversion was cancelled.')
+
+  const { createWorker } = await import('tesseract.js')
+  const worker = await createWorker('eng')
+
+  try {
+    const imageInput = image instanceof ArrayBuffer ? new Uint8Array(image) : image
+    const result = await worker.recognize(imageInput as Parameters<typeof worker.recognize>[0])
+    return result.data.text
+  } finally {
+    await worker.terminate()
+  }
+}
+
+async function defaultPdfExporter(markdown: string, title: string, options?: CancellableOptions): Promise<ArrayBuffer> {
+  if (options?.signal?.aborted) throw new Error('Conversion was cancelled.')
+
+  const { jsPDF } = await import('jspdf')
+  const document = new jsPDF({ format: 'letter', unit: 'pt' })
+  const lines = markdownToPlainTextLines(markdown, title)
+  const pageWidth = document.internal.pageSize.getWidth()
+  const pageHeight = document.internal.pageSize.getHeight()
+  const margin = 54
+  let y = margin
+
+  document.setProperties({ title })
+  document.setFont('helvetica', 'normal')
+  document.setFontSize(11)
+
+  for (const line of lines) {
+    if (options?.signal?.aborted) throw new Error('Conversion was cancelled.')
+    const wrapped = document.splitTextToSize(line || ' ', pageWidth - margin * 2) as string[]
+
+    for (const wrappedLine of wrapped) {
+      if (y > pageHeight - margin) {
+        document.addPage()
+        y = margin
+      }
+      document.text(wrappedLine, margin, y)
+      y += 16
+    }
+
+    y += 4
+  }
+
+  return document.output('arraybuffer')
+}
+
+async function defaultDocxExporter(markdown: string, title: string, options?: CancellableOptions): Promise<ArrayBuffer> {
+  if (options?.signal?.aborted) throw new Error('Conversion was cancelled.')
+
+  const { Document, HeadingLevel, Packer, Paragraph, TextRun } = await import('docx')
+  const children = markdownToDocxParagraphs(markdown, title, { HeadingLevel, Paragraph, TextRun })
+  const document = new Document({
+    creator: 'MarkForge',
+    title,
+    sections: [{ children }]
+  })
+  const packer = Packer as unknown as {
+    toArrayBuffer?: (document: unknown) => Promise<ArrayBuffer>
+    toBuffer?: (document: unknown) => Promise<Uint8Array>
+  }
+
+  if (packer.toArrayBuffer) return packer.toArrayBuffer(document)
+  if (packer.toBuffer) {
+    const buffer = await packer.toBuffer(document)
+    return normalizeBinaryInput(buffer) ?? new ArrayBuffer(0)
+  }
+
+  throw new Error('DOCX exporter runtime does not expose a supported packer.')
+}
+
+function normalizeBinaryInput(value: ArrayBuffer | Uint8Array | undefined): ArrayBuffer | null {
+  if (!value) return null
+  if (value instanceof ArrayBuffer) return value
+
+  const copy = new Uint8Array(value.byteLength)
+  copy.set(value)
+  return copy.buffer
+}
+
+function normalizeImageInput(value: ArrayBuffer | Blob | Uint8Array | undefined): ArrayBuffer | Blob | null {
+  if (!value) return null
+  if (isBlob(value)) return value
+  return normalizeBinaryInput(value)
+}
+
+function isBlob(value: unknown): value is Blob {
+  return typeof Blob !== 'undefined' && value instanceof Blob
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -555,4 +875,59 @@ function escapeMarkdownTableCell(value: string): string {
   return value
     .replace(/\r?\n/g, '<br>')
     .replace(/\|/g, '\\|')
+}
+
+function markdownToPlainTextLines(markdown: string, title: string): string[] {
+  const lines = cleanupMarkdown(markdown)
+    .split('\n')
+    .map(line => line
+      .replace(/^#{1,6}\s+/, '')
+      .replace(/^[-*+]\s+/, '- ')
+      .replace(/^\d+\.\s+/, '')
+      .replace(/!\[([^\]]*)]\([^)]+\)/g, '$1')
+      .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
+      .replace(/[`*_~]/g, '')
+      .trim())
+
+  return [title, '', ...lines]
+}
+
+function markdownToDocxParagraphs(
+  markdown: string,
+  title: string,
+  docx: {
+    HeadingLevel: { HEADING_1: unknown; HEADING_2: unknown; HEADING_3: unknown }
+    Paragraph: new (options: Record<string, unknown>) => unknown
+    TextRun: new (options: Record<string, unknown>) => unknown
+  }
+): FileChild[] {
+  const paragraphs: FileChild[] = [
+    new docx.Paragraph({ text: title, heading: docx.HeadingLevel.HEADING_1 }) as FileChild
+  ]
+
+  for (const line of cleanupMarkdown(markdown).split('\n')) {
+    const heading = /^(#{1,3})\s+(.+)$/.exec(line)
+    if (heading) {
+      paragraphs.push(new docx.Paragraph({
+        text: heading[2],
+        heading: heading[1].length === 1
+          ? docx.HeadingLevel.HEADING_1
+          : heading[1].length === 2
+            ? docx.HeadingLevel.HEADING_2
+            : docx.HeadingLevel.HEADING_3
+      }) as FileChild)
+      continue
+    }
+
+    if (!line.trim()) {
+      paragraphs.push(new docx.Paragraph({ text: '' }) as FileChild)
+      continue
+    }
+
+    paragraphs.push(new docx.Paragraph({
+      children: [new docx.TextRun({ text: markdownToPlainTextLines(line, '')[2] ?? line })]
+    }) as FileChild)
+  }
+
+  return paragraphs
 }

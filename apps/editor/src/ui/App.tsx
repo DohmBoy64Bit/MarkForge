@@ -2,11 +2,15 @@ import {
   commandById,
   commandGroups,
   applyMarkdownInsertion,
+  alignMarkdownTable,
   defaultSearchOptions,
+  deleteTableRow,
   editorCommands,
   filterMarkdownAutocompleteSuggestions,
+  filterMarkdownPathSuggestions,
   filterTemplateSuggestions,
   findMarkdownAutocompleteTrigger,
+  findMarkdownPathAutocompleteTrigger,
   findTemplateSuggestionTrigger,
   findSourceMatches,
   highlightSourceSnippet,
@@ -15,10 +19,13 @@ import {
   replaceAllSourceMatches,
   replaceCurrentSourceMatch,
   replaceMarkdownAutocompleteTrigger,
+  replaceMarkdownPathTrigger,
   replaceTemplateTrigger,
   renderEditorMarkdownPreview,
   resolveTemplateSuggestion,
+  insertTableColumnAfter,
   templateCatalog,
+  updateImageAttributes,
   workspaceTemplateFromFile,
   type EditorCommandIcon,
   type EditorCommandId,
@@ -26,6 +33,7 @@ import {
   type MarkdownTemplate,
   type MarkdownAutocompleteSuggestion,
   type MarkdownInsertMode,
+  type MarkdownPathAutocompleteSuggestion,
   type RenderedMarkdown,
   type SourceSearchMatch,
   type SourceSearchOptions,
@@ -37,6 +45,7 @@ import {
   createDefaultConverters,
   defaultHtmlExportPath,
   type ConversionFormat,
+  type HtmlExportSettings,
   type MarkdownConverter
 } from '@markforge/converters'
 import {
@@ -47,7 +56,7 @@ import {
   saveRecentFiles,
   type PersistedEditorSession
 } from '@markforge/core'
-import { runLlmAction } from '@markforge/llm'
+import { streamLlmAction } from '@markforge/llm'
 import {
   createNativeFileWatcher,
   createNativeWorkspaceWatcher,
@@ -130,6 +139,7 @@ import { ConverterDialog, type ConverterImportRequest } from './ConverterDialog'
 import { LocalAiDialog, type LocalAiRunRequest, type LocalAiRunResult } from './LocalAiDialog'
 import { PreferencesDialog } from './PreferencesDialog'
 import { QuickInsert } from './QuickInsert'
+import { RichMarkdownEditor, type RichMarkdownEditorHandle } from './RichMarkdownEditor'
 import { SourceEditor, type SourceEditorHandle } from './SourceEditor'
 import { TemplatesHelpDialog } from './TemplatesHelpDialog'
 import { UnsavedChangesDialog } from './UnsavedChangesDialog'
@@ -203,6 +213,7 @@ const platform = createPlatformServices({
   filesystem: {
     getFileInfo: path => invoke<FileInfo>('get_file_info', { path }),
     listWorkspaceFiles: root => invoke<WorkspaceFileEntry[]>('list_workspace_files', { root }),
+    readBinaryFile: async path => new Uint8Array(await invoke<number[]>('read_binary_file', { path })),
     readTextFile: path => invoke<string>('read_text_file', { path }),
     searchWorkspace: (root, options) => invoke<WorkspaceSearchMatch[]>('search_workspace', {
       root,
@@ -210,6 +221,7 @@ const platform = createPlatformServices({
       caseSensitive: options.caseSensitive,
       limit: options.limit
     }),
+    writeBinaryFile: (path, contents) => invoke<void>('write_binary_file', { path, contents: Array.from(contents) }),
     writeTextFile: (path, contents) => invoke<void>('write_text_file', { path, contents })
   },
   fileWatcher: {
@@ -250,6 +262,11 @@ const csvToMarkdownTableConverter = requiredAppConverter(appConverters, 'csv-to-
 const markdownCleanupConverter = requiredAppConverter(appConverters, 'markdown-cleanup')
 const richClipboardToMarkdownConverter = requiredAppConverter(appConverters, 'rich-clipboard-to-markdown')
 const urlToMarkdownConverter = requiredAppConverter(appConverters, 'url-to-markdown')
+const docxToMarkdownConverter = requiredAppConverter(appConverters, 'docx-to-markdown')
+const pdfToMarkdownConverter = requiredAppConverter(appConverters, 'pdf-to-markdown')
+const ocrToMarkdownConverter = requiredAppConverter(appConverters, 'ocr-to-markdown')
+const markdownToPdfConverter = requiredAppConverter(appConverters, 'markdown-to-pdf')
+const markdownToDocxConverter = requiredAppConverter(appConverters, 'markdown-to-docx')
 
 function requiredAppConverter(converters: MarkdownConverter[], format: ConversionFormat): MarkdownConverter {
   const converter = converters.find(candidate => converterCanHandle(candidate, format))
@@ -354,6 +371,10 @@ export function App() {
   const [replaceText, setReplaceText] = useState('')
   const [searchOptions, setSearchOptions] = useState<SourceSearchOptions>(defaultSearchOptions)
   const [selectedMatch, setSelectedMatch] = useState(0)
+  const [htmlExportSettings, setHtmlExportSettings] = useState<HtmlExportSettings>({
+    includeGeneratedMeta: true,
+    includeTableOfContents: true
+  })
   const [status, setStatus] = useState(restored.status)
   const [lastCommand, setLastCommand] = useState('No formatting command yet')
   const [clipboardStatus, setClipboardStatus] = useState('Not checked')
@@ -386,7 +407,10 @@ export function App() {
   const [markdownSuggestionActiveIndex, setMarkdownSuggestionActiveIndex] = useState(0)
   const [templateSuggestionActiveIndex, setTemplateSuggestionActiveIndex] = useState(0)
   const [dismissedTemplateSuggestionKey, setDismissedTemplateSuggestionKey] = useState<string | null>(null)
+  const [pathSuggestionActiveIndex, setPathSuggestionActiveIndex] = useState(0)
+  const [dismissedPathSuggestionKey, setDismissedPathSuggestionKey] = useState<string | null>(null)
   const sourceEditorRef = useRef<SourceEditorHandle | null>(null)
+  const richEditorRef = useRef<RichMarkdownEditorHandle | null>(null)
   const commandPaletteReturnFocusRef = useRef<HTMLElement | null>(null)
   const quickInsertReturnFocusRef = useRef<HTMLElement | null>(null)
   const preferencesReturnFocusRef = useRef<HTMLElement | null>(null)
@@ -482,11 +506,20 @@ export function App() {
       : null,
     [activeDocument, sourceSelection.end, sourceSelection.hasFocus]
   )
+  const pathSuggestionTrigger = useMemo(
+    () => activeDocument && sourceSelection.hasFocus
+      ? findMarkdownPathAutocompleteTrigger(activeDocument.text, sourceSelection.end)
+      : null,
+    [activeDocument, sourceSelection.end, sourceSelection.hasFocus]
+  )
   const templateSuggestionKey = templateSuggestionTrigger
     ? `${templateSuggestionTrigger.start}:${templateSuggestionTrigger.end}:${templateSuggestionTrigger.query}`
     : null
   const markdownSuggestionKey = markdownSuggestionTrigger
     ? `${markdownSuggestionTrigger.start}:${markdownSuggestionTrigger.end}:${markdownSuggestionTrigger.query}`
+    : null
+  const pathSuggestionKey = pathSuggestionTrigger
+    ? `${pathSuggestionTrigger.start}:${pathSuggestionTrigger.end}:${pathSuggestionTrigger.query}:${pathSuggestionTrigger.isImage ? 'image' : 'link'}`
     : null
   const templateSuggestions = useMemo(
     () => templateSuggestionTrigger
@@ -499,6 +532,12 @@ export function App() {
       ? filterMarkdownAutocompleteSuggestions(markdownSuggestionTrigger.query)
       : [],
     [markdownSuggestionTrigger]
+  )
+  const pathSuggestions = useMemo(
+    () => pathSuggestionTrigger
+      ? filterMarkdownPathSuggestions(pathSuggestionTrigger, workspaceFiles)
+      : [],
+    [pathSuggestionTrigger, workspaceFiles]
   )
   const selectionOverlayCommands = useMemo(
     () => selectionOverlayCommandIds.map(commandId => commandById[commandId]),
@@ -636,28 +675,108 @@ export function App() {
     })
   }, [])
 
+  const getActiveMarkdownSelection = useCallback((document: EditorDocument) => {
+    if (viewMode === 'rich') {
+      return richEditorRef.current?.getMarkdownSelection() ?? {
+        start: document.text.length,
+        end: document.text.length
+      }
+    }
+
+    const selection = sourceEditorRef.current?.getSelection()
+    const start = selection?.start ?? sourceSelection.start
+    const end = selection?.end ?? sourceSelection.end
+
+    return { start, end }
+  }, [sourceSelection.end, sourceSelection.start, viewMode])
+
+  const restoreActiveEditorSelection = useCallback((start: number, end: number, scrollTop?: number) => {
+    if (viewMode === 'rich') {
+      window.requestAnimationFrame(() => richEditorRef.current?.focus())
+      setSourceSelection({ start, end, hasFocus: true })
+      return
+    }
+
+    setEditorSelection(start, end, scrollTop)
+  }, [setEditorSelection, viewMode])
+
   const applyEditorCommand = useCallback((commandId: EditorCommandId) => {
     const document = activeDocument
     const command = commandById[commandId]
     const editor = sourceEditorRef.current
-    const selection = editor?.getSelection()
 
     if (!document || !command) {
       setStatus('No active document for formatting')
       return
     }
 
-    const selectionStart = selection?.start ?? document.text.length
-    const selectionEnd = selection?.end ?? selectionStart
-    const scrollTop = editor?.getScrollTop()
-    const edit = command.execute(document.text, { start: selectionStart, end: selectionEnd })
+    const selection = getActiveMarkdownSelection(document)
+    const scrollTop = viewMode === 'rich' ? undefined : editor?.getScrollTop()
+
+    if (commandId === 'insert.image') {
+      const selectedAlt = document.text.slice(selection.start, selection.end).trim()
+      const alt = window.prompt('Image alt text', selectedAlt || 'Image')
+
+      if (alt === null) {
+        setStatus('Image insertion canceled')
+        return
+      }
+
+      const path = window.prompt('Image path or URL', '')
+
+      if (!path?.trim()) {
+        setStatus('Image insertion needs a path or URL')
+        return
+      }
+
+      const title = window.prompt('Optional image title', '')
+      const edit = updateImageAttributes(document.text, selection, {
+        alt,
+        title: title?.trim() || undefined,
+        url: path.trim()
+      })
+
+      updateActiveDocument({ text: edit.text })
+      setLastCommand('Image inserted')
+      setStatus('Image inserted')
+      restoreActiveEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+      return
+    }
+
+    const edit = command.execute(document.text, selection)
     const confirmation = `${command.label} applied`
 
     updateActiveDocument({ text: edit.text })
     setLastCommand(confirmation)
     setStatus(confirmation)
-    setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
-  }, [activeDocument, setEditorSelection, updateActiveDocument])
+    restoreActiveEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+  }, [activeDocument, getActiveMarkdownSelection, restoreActiveEditorSelection, updateActiveDocument, viewMode])
+
+  const applyDocumentTransform = useCallback((
+    label: string,
+    transform: (source: string, selection: { end: number; start: number }) => {
+      selectionEnd: number
+      selectionStart: number
+      text: string
+    }
+  ) => {
+    const document = activeDocument
+    const editor = sourceEditorRef.current
+
+    if (!document) {
+      setStatus(`No active document for ${label.toLowerCase()}`)
+      return
+    }
+
+    const selection = getActiveMarkdownSelection(document)
+    const scrollTop = viewMode === 'rich' ? undefined : editor?.getScrollTop()
+    const edit = transform(document.text, selection)
+
+    updateActiveDocument({ text: edit.text })
+    setLastCommand(`${label} applied`)
+    setStatus(`${label} applied`)
+    restoreActiveEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+  }, [activeDocument, getActiveMarkdownSelection, restoreActiveEditorSelection, updateActiveDocument, viewMode])
 
   const openCommandPalette = useCallback(() => {
     commandPaletteReturnFocusRef.current = document.activeElement instanceof HTMLElement
@@ -828,24 +947,29 @@ export function App() {
   const insertTemplate = useCallback((template: MarkdownTemplate, body: string) => {
     const document = activeDocument
     const editor = sourceEditorRef.current
-    const selection = editor?.getSelection()
 
     if (!document) {
       setStatus('No active document for template insertion')
       return
     }
 
-    const selectionStart = selection?.start ?? document.text.length
-    const selectionEnd = selection?.end ?? selectionStart
-    const scrollTop = editor?.getScrollTop()
-    const edit = insertTextAtSelection(document.text, body, selectionStart, selectionEnd)
+    const selection = getActiveMarkdownSelection(document)
+    const scrollTop = viewMode === 'rich' ? undefined : editor?.getScrollTop()
+    const edit = insertTextAtSelection(document.text, body, selection.start, selection.end)
 
     updateActiveDocument({ text: edit.text })
     setLastCommand(`${template.title} template inserted`)
     setStatus(`Inserted ${template.title}`)
     closeTemplatesHelp(false)
-    setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
-  }, [activeDocument, closeTemplatesHelp, setEditorSelection, updateActiveDocument])
+    restoreActiveEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+  }, [
+    activeDocument,
+    closeTemplatesHelp,
+    getActiveMarkdownSelection,
+    restoreActiveEditorSelection,
+    updateActiveDocument,
+    viewMode
+  ])
 
   const insertTemplateSuggestion = useCallback((template: MarkdownTemplate) => {
     const document = activeDocument
@@ -884,54 +1008,83 @@ export function App() {
     setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
   }, [activeDocument, markdownSuggestionTrigger, setEditorSelection, updateActiveDocument])
 
+  const insertPathSuggestion = useCallback((suggestion: MarkdownPathAutocompleteSuggestion) => {
+    const document = activeDocument
+    const trigger = pathSuggestionTrigger
+    const editor = sourceEditorRef.current
+
+    if (!document || !trigger) return
+
+    const scrollTop = editor?.getScrollTop()
+    const edit = replaceMarkdownPathTrigger(document.text, trigger, suggestion)
+
+    updateActiveDocument({ text: edit.text })
+    setLastCommand(`${suggestion.label} path inserted`)
+    setStatus(`Inserted ${suggestion.label}`)
+    setDismissedPathSuggestionKey(null)
+    setPathSuggestionActiveIndex(0)
+    setEditorSelection(edit.selectionStart, edit.selectionEnd, scrollTop)
+  }, [activeDocument, pathSuggestionTrigger, setEditorSelection, updateActiveDocument])
+
   const handleSourceKeyDown = useCallback((event: KeyboardEvent) => {
+    const suggestionsBlocked = isCommandPaletteOpen ||
+      isQuickInsertOpen ||
+      isPreferencesOpen ||
+      isTemplatesHelpOpen ||
+      isConverterDialogOpen ||
+      isLocalAiOpen
+
+    const canUsePathSuggestions = pathSuggestionTrigger &&
+      pathSuggestionKey !== dismissedPathSuggestionKey &&
+      pathSuggestions.length > 0 &&
+      !suggestionsBlocked
+
     const canUseSuggestions = templateSuggestionTrigger &&
       templateSuggestionKey !== dismissedTemplateSuggestionKey &&
       templateSuggestions.length > 0 &&
-      !isCommandPaletteOpen &&
-      !isQuickInsertOpen &&
-      !isPreferencesOpen &&
-      !isTemplatesHelpOpen &&
-      !isConverterDialogOpen &&
-      !isLocalAiOpen
+      !suggestionsBlocked
 
     const canUseMarkdownSuggestions = markdownSuggestionTrigger &&
       markdownSuggestionKey !== dismissedMarkdownSuggestionKey &&
       markdownSuggestions.length > 0 &&
-      !isCommandPaletteOpen &&
-      !isQuickInsertOpen &&
-      !isPreferencesOpen &&
-      !isTemplatesHelpOpen &&
-      !isConverterDialogOpen &&
-      !isLocalAiOpen
+      !suggestionsBlocked
 
-    if (!canUseSuggestions && !canUseMarkdownSuggestions) return
-    const activeSuggestionCount = canUseSuggestions ? templateSuggestions.length : markdownSuggestions.length
+    if (!canUsePathSuggestions && !canUseSuggestions && !canUseMarkdownSuggestions) return
+    const activeSuggestionCount = canUsePathSuggestions
+      ? pathSuggestions.length
+      : canUseSuggestions
+        ? templateSuggestions.length
+        : markdownSuggestions.length
 
     if (event.key === 'ArrowDown') {
       event.preventDefault()
-      if (canUseSuggestions) setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, 1, activeSuggestionCount))
+      if (canUsePathSuggestions) setPathSuggestionActiveIndex(current => nextTemplateIndex(current, 1, activeSuggestionCount))
+      else if (canUseSuggestions) setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, 1, activeSuggestionCount))
       else setMarkdownSuggestionActiveIndex(current => nextTemplateIndex(current, 1, activeSuggestionCount))
       return
     }
 
     if (event.key === 'ArrowUp') {
       event.preventDefault()
-      if (canUseSuggestions) setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, -1, activeSuggestionCount))
+      if (canUsePathSuggestions) setPathSuggestionActiveIndex(current => nextTemplateIndex(current, -1, activeSuggestionCount))
+      else if (canUseSuggestions) setTemplateSuggestionActiveIndex(current => nextTemplateIndex(current, -1, activeSuggestionCount))
       else setMarkdownSuggestionActiveIndex(current => nextTemplateIndex(current, -1, activeSuggestionCount))
       return
     }
 
     if (event.key === 'Escape') {
       event.preventDefault()
-      if (canUseSuggestions) setDismissedTemplateSuggestionKey(templateSuggestionKey)
+      if (canUsePathSuggestions) setDismissedPathSuggestionKey(pathSuggestionKey)
+      else if (canUseSuggestions) setDismissedTemplateSuggestionKey(templateSuggestionKey)
       else setDismissedMarkdownSuggestionKey(markdownSuggestionKey)
       return
     }
 
     if (event.key === 'Enter') {
       event.preventDefault()
-      if (canUseSuggestions) {
+      if (canUsePathSuggestions) {
+        insertPathSuggestion(pathSuggestions[pathSuggestionActiveIndex] ?? pathSuggestions[0])
+      } else if (canUseSuggestions) {
         insertTemplateSuggestion(templateSuggestions[templateSuggestionActiveIndex] ?? templateSuggestions[0])
       } else {
         insertMarkdownSuggestion(markdownSuggestions[markdownSuggestionActiveIndex] ?? markdownSuggestions[0])
@@ -939,8 +1092,10 @@ export function App() {
     }
   }, [
     dismissedMarkdownSuggestionKey,
+    dismissedPathSuggestionKey,
     dismissedTemplateSuggestionKey,
     insertMarkdownSuggestion,
+    insertPathSuggestion,
     insertTemplateSuggestion,
     isCommandPaletteOpen,
     isConverterDialogOpen,
@@ -952,6 +1107,10 @@ export function App() {
     markdownSuggestionKey,
     markdownSuggestionTrigger,
     markdownSuggestions,
+    pathSuggestionActiveIndex,
+    pathSuggestionKey,
+    pathSuggestionTrigger,
+    pathSuggestions,
     templateSuggestionActiveIndex,
     templateSuggestionKey,
     templateSuggestionTrigger,
@@ -1203,6 +1362,10 @@ export function App() {
 
     try {
       const result = await htmlConverter.convert({
+        exportSettings: {
+          ...htmlExportSettings,
+          title: titleWithoutExtension(activeDocument.title)
+        },
         format: 'html',
         markdown: activeDocument.text,
         title: titleWithoutExtension(activeDocument.title)
@@ -1240,6 +1403,58 @@ export function App() {
       const message = messageFromError(error)
       setStatus(message)
       recordConverterActivity('HTML export', message, 'error')
+    }
+  }, [activeDocument, htmlExportSettings, recordConverterActivity])
+
+  const exportBinaryDocument = useCallback(async (format: 'markdown-to-docx' | 'markdown-to-pdf') => {
+    if (!activeDocument) {
+      setStatus('No active document to export')
+      recordConverterActivity(format === 'markdown-to-pdf' ? 'PDF export' : 'DOCX export', 'No active document', 'error')
+      return
+    }
+
+    const isPdf = format === 'markdown-to-pdf'
+    const label = isPdf ? 'PDF export' : 'DOCX export'
+
+    try {
+      const converter = isPdf ? markdownToPdfConverter : markdownToDocxConverter
+      const result = await converter.convert({
+        format,
+        markdown: activeDocument.text,
+        title: titleWithoutExtension(activeDocument.title)
+      })
+
+      if (!result.ok) {
+        setStatus(result.error.message)
+        recordConverterActivity(label, result.error.message, 'error')
+        return
+      }
+
+      if (!result.value.data) {
+        setStatus(`${label} produced no binary output`)
+        recordConverterActivity(label, 'No binary output', 'warning')
+        return
+      }
+
+      const defaultPath = defaultBinaryExportPath(activeDocument.path ?? activeDocument.title, isPdf ? 'pdf' : 'docx')
+      const selected = isPdf
+        ? await selectSavePdfPathFromPlatform(defaultPath)
+        : await selectSaveDocxPathFromPlatform(defaultPath)
+
+      if (!selected) {
+        setStatus(`${label} canceled`)
+        recordConverterActivity(label, 'Save dialog canceled', 'warning')
+        return
+      }
+
+      await writeBinaryDocumentToPlatform(selected, new Uint8Array(result.value.data))
+      const message = conversionWarningStatus(`Exported ${isPdf ? 'PDF' : 'DOCX'} to ${selected}`, result.value.warnings)
+      setStatus(message)
+      recordConverterActivity(label, selected, result.value.warnings.length > 0 ? 'warning' : 'success')
+    } catch (error) {
+      const message = messageFromError(error)
+      setStatus(message)
+      recordConverterActivity(label, message, 'error')
     }
   }, [activeDocument, recordConverterActivity])
 
@@ -1310,21 +1525,22 @@ export function App() {
       }
 
       const editor = sourceEditorRef.current
-      const selection = editor?.getSelection()
+      const selection = getActiveMarkdownSelection(activeDocument)
       const edit = applyMarkdownInsertion(
         activeDocument.text,
         markdown,
-        {
-          start: selection?.start ?? sourceSelection.start,
-          end: selection?.end ?? sourceSelection.end
-        },
+        selection,
         request.insertMode
       )
       const action = `${label} inserted`
       const message = conversionWarningStatus(action, result.value.warnings)
 
       updateActiveDocument({ text: edit.text })
-      setEditorSelection(edit.selectionStart, edit.selectionEnd, editor?.getScrollTop())
+      restoreActiveEditorSelection(
+        edit.selectionStart,
+        edit.selectionEnd,
+        viewMode === 'rich' ? undefined : editor?.getScrollTop()
+      )
       setLastCommand(message)
       setStatus(message)
       recordConverterActivity(
@@ -1343,11 +1559,86 @@ export function App() {
   }, [
     activeDocument,
     closeConverterDialog,
+    getActiveMarkdownSelection,
     recordConverterActivity,
-    setEditorSelection,
-    sourceSelection.end,
-    sourceSelection.start,
-    updateActiveDocument
+    restoreActiveEditorSelection,
+    updateActiveDocument,
+    viewMode
+  ])
+
+  const importBinaryConvertedMarkdown = useCallback(async (format: 'docx-to-markdown' | 'ocr-to-markdown' | 'pdf-to-markdown') => {
+    if (!activeDocument) {
+      setStatus('No active document for binary import')
+      recordConverterActivity('Binary import', 'No active document', 'error')
+      return
+    }
+
+    const label = labelForBinaryImportMode(format)
+
+    setIsConvertingImport(true)
+
+    try {
+      const selected = await selectBinaryImportPathFromPlatform(format)
+
+      if (!selected) {
+        setStatus(`${label} canceled`)
+        recordConverterActivity(label, 'Open dialog canceled', 'warning')
+        return
+      }
+
+      const data = await readBinaryDocumentFromPlatform(selected)
+      const converter = converterForBinaryImportMode(format)
+      const result = await converter.convert({
+        data,
+        format
+      })
+
+      if (!result.ok) {
+        setStatus(result.error.message)
+        recordConverterActivity(label, result.error.message, 'error')
+        return
+      }
+
+      const markdown = result.value.markdown ?? ''
+      if (!markdown.trim()) {
+        setStatus(`${label} produced no Markdown`)
+        recordConverterActivity(label, 'No Markdown output', 'warning')
+        return
+      }
+
+      const editor = sourceEditorRef.current
+      const selection = getActiveMarkdownSelection(activeDocument)
+      const edit = applyMarkdownInsertion(
+        activeDocument.text,
+        markdown,
+        selection,
+        selection.start === selection.end ? 'insert-at-cursor' : 'replace-selection'
+      )
+      const message = conversionWarningStatus(`${label} inserted`, result.value.warnings)
+
+      updateActiveDocument({ text: edit.text })
+      restoreActiveEditorSelection(
+        edit.selectionStart,
+        edit.selectionEnd,
+        viewMode === 'rich' ? undefined : editor?.getScrollTop()
+      )
+      setLastCommand(message)
+      setStatus(message)
+      recordConverterActivity(label, `${markdown.length} Markdown characters from ${titleFromPath(selected)}`, result.value.warnings.length > 0 ? 'warning' : 'success')
+    } catch (error) {
+      const message = messageFromError(error)
+      setStatus(message)
+      recordConverterActivity(label, message, 'error')
+    } finally {
+      setIsConvertingImport(false)
+    }
+  }, [
+    activeDocument,
+    getActiveMarkdownSelection,
+    recordConverterActivity,
+    restoreActiveEditorSelection,
+    updateActiveDocument,
+    viewMode
   ])
 
   const runLocalAi = useCallback(async (request: LocalAiRunRequest): Promise<LocalAiRunResult> => {
@@ -1365,10 +1656,11 @@ export function App() {
     setIsLocalAiRunning(true)
 
     try {
-      const result = await runLlmAction(provider.value, {
+      const result = await streamLlmAction(provider.value, {
         actionId: request.actionId,
         document: document.text,
         invokedByUser: true,
+        onToken: request.onToken,
         selection: request.useSelection ? selectedSourceText : ''
       })
 
@@ -1389,33 +1681,34 @@ export function App() {
   const insertLocalAiResult = useCallback((text: string, mode: MarkdownInsertMode) => {
     const document = activeDocument
     const editor = sourceEditorRef.current
-    const selection = editor?.getSelection()
 
     if (!document) {
       setStatus('No active document for Local AI result')
       return
     }
 
+    const selection = getActiveMarkdownSelection(document)
     const edit = applyMarkdownInsertion(
       document.text,
       text,
-      {
-        start: selection?.start ?? sourceSelection.start,
-        end: selection?.end ?? sourceSelection.end
-      },
+      selection,
       mode
     )
 
     updateActiveDocument({ text: edit.text })
-    setEditorSelection(edit.selectionStart, edit.selectionEnd, editor?.getScrollTop())
+    restoreActiveEditorSelection(
+      edit.selectionStart,
+      edit.selectionEnd,
+      viewMode === 'rich' ? undefined : editor?.getScrollTop()
+    )
     setLastCommand('Local AI result inserted')
     setStatus('Local AI result inserted')
   }, [
     activeDocument,
-    setEditorSelection,
-    sourceSelection.end,
-    sourceSelection.start,
-    updateActiveDocument
+    getActiveMarkdownSelection,
+    restoreActiveEditorSelection,
+    updateActiveDocument,
+    viewMode
   ])
 
   const checkClipboard = useCallback(async () => {
@@ -1566,7 +1859,7 @@ export function App() {
 
   const jumpToMatch = useCallback((match: SourceSearchMatch, index: number) => {
     setSelectedMatch(index)
-    setViewMode(current => current === 'preview' ? 'split' : current)
+    setViewMode(current => current === 'preview' || current === 'rich' ? 'split' : current)
     window.setTimeout(() => {
       const editor = sourceEditorRef.current
       if (!editor) return
@@ -1668,7 +1961,10 @@ export function App() {
     const handleKeyDown = (event: KeyboardEvent) => {
       const actionId = actionIdFromKeyboardEvent(event, preferences.keybindings)
 
-      if (!actionId || !shouldHandleEditorShortcut(event, sourceEditorRef.current?.element() ?? null)) return
+      if (!actionId || !shouldHandleEditorShortcut(event, [
+        sourceEditorRef.current?.element() ?? null,
+        richEditorRef.current?.element() ?? null
+      ])) return
 
       if (actionId === commandPaletteActionId) {
         event.preventDefault()
@@ -1870,12 +2166,34 @@ export function App() {
   const pendingLifecycleDocument = pendingLifecycleAction
     ? documents.find(document => document.id === pendingLifecycleAction.documentId) ?? null
     : null
+  const htmlExportAvailable = converterCanHandle(htmlConverter, 'html')
+  const browserPrintAvailable = converterCanHandle(browserPrintConverter, 'browser-print')
+  const markdownPdfExportAvailable = converterCanHandle(markdownToPdfConverter, 'markdown-to-pdf')
+  const markdownDocxExportAvailable = converterCanHandle(markdownToDocxConverter, 'markdown-to-docx')
+  const docxImportAvailable = converterCanHandle(docxToMarkdownConverter, 'docx-to-markdown')
+  const pdfImportAvailable = converterCanHandle(pdfToMarkdownConverter, 'pdf-to-markdown')
+  const ocrImportAvailable = converterCanHandle(ocrToMarkdownConverter, 'ocr-to-markdown')
   const showTemplateSuggestions = Boolean(
     activeDocument &&
     templateSuggestionTrigger &&
     templateSuggestionKey !== dismissedTemplateSuggestionKey &&
     templateSuggestions.length > 0 &&
     viewMode !== 'preview' &&
+    viewMode !== 'rich' &&
+    !isCommandPaletteOpen &&
+    !isQuickInsertOpen &&
+    !isPreferencesOpen &&
+    !isTemplatesHelpOpen &&
+    !isConverterDialogOpen &&
+    !isLocalAiOpen
+  )
+  const showPathSuggestions = Boolean(
+    activeDocument &&
+    pathSuggestionTrigger &&
+    pathSuggestionKey !== dismissedPathSuggestionKey &&
+    pathSuggestions.length > 0 &&
+    viewMode !== 'preview' &&
+    viewMode !== 'rich' &&
     !isCommandPaletteOpen &&
     !isQuickInsertOpen &&
     !isPreferencesOpen &&
@@ -1889,7 +2207,9 @@ export function App() {
     markdownSuggestionKey !== dismissedMarkdownSuggestionKey &&
     markdownSuggestions.length > 0 &&
     viewMode !== 'preview' &&
+    viewMode !== 'rich' &&
     !showTemplateSuggestions &&
+    !showPathSuggestions &&
     !isCommandPaletteOpen &&
     !isQuickInsertOpen &&
     !isPreferencesOpen &&
@@ -1902,6 +2222,7 @@ export function App() {
     sourceSelection.hasFocus &&
     sourceSelection.end > sourceSelection.start &&
     viewMode !== 'preview' &&
+    viewMode !== 'rich' &&
     !isCommandPaletteOpen &&
     !isQuickInsertOpen &&
     !isPreferencesOpen &&
@@ -1909,6 +2230,7 @@ export function App() {
     !isConverterDialogOpen &&
     !isLocalAiOpen &&
     !showTemplateSuggestions &&
+    !showPathSuggestions &&
     !pendingLifecycleAction
   )
 
@@ -2010,7 +2332,7 @@ export function App() {
         </nav>
 
         <div className="viewSwitch" aria-label="View mode">
-          {(['source', 'split', 'preview'] as const).map(mode => (
+          {(['source', 'rich', 'split', 'preview'] as const).map(mode => (
             <button
               key={mode}
               type="button"
@@ -2074,14 +2396,15 @@ export function App() {
 
         <div className="themeSwitch" aria-label="Theme">
           {appVisibleThemes.map(option => {
-            const Icon = iconForTheme(option.id)
+            const themeId = option.id as Theme
+            const Icon = iconForTheme(themeId)
 
             return (
               <button
                 key={option.id}
                 type="button"
-                className={theme === option.id ? 'active' : ''}
-                onClick={() => setTheme(option.id)}
+                className={theme === themeId ? 'active' : ''}
+                onClick={() => setTheme(themeId)}
                 title={`${option.label} theme`}
                 aria-label={`${option.label} theme`}
               >
@@ -2154,6 +2477,41 @@ export function App() {
           </div>
         ))}
 
+        <div className="commandGroup" aria-label="Table editing commands">
+          <span className="commandGroupLabel">Table</span>
+          <div className="commandButtons">
+            <button
+              type="button"
+              disabled={!activeDocument}
+              onClick={() => applyDocumentTransform('Insert table column', insertTableColumnAfter)}
+              title="Insert table column after cursor"
+              aria-label="Insert table column after cursor"
+            >
+              <Table2 size={16} aria-hidden="true" />
+              <span>Col</span>
+            </button>
+            <button
+              type="button"
+              disabled={!activeDocument}
+              onClick={() => applyDocumentTransform('Align table', alignMarkdownTable)}
+              title="Align selected Markdown table"
+              aria-label="Align selected Markdown table"
+            >
+              <Wand2 size={16} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              disabled={!activeDocument}
+              onClick={() => applyDocumentTransform('Delete table row', deleteTableRow)}
+              title="Delete selected table row"
+              aria-label="Delete selected table row"
+            >
+              <Trash2 size={16} aria-hidden="true" />
+              <span>Row</span>
+            </button>
+          </div>
+        </div>
+
         <div className="commandGroup replaceGroup" aria-label="Replace commands">
           <span className="commandGroupLabel">Replace</span>
           <label className="replaceBox">
@@ -2188,7 +2546,7 @@ export function App() {
 
       <section className={`editorWorkspace ${viewMode}`}>
         <section
-          className={`sourcePane ${viewMode === 'preview' ? 'isHidden' : ''}`}
+          className={`sourcePane ${viewMode === 'preview' || viewMode === 'rich' ? 'isHidden' : ''}`}
           aria-label="Markdown source editor"
         >
           <div className="paneHeader">
@@ -2208,6 +2566,8 @@ export function App() {
               setMarkdownSuggestionActiveIndex(0)
               setDismissedTemplateSuggestionKey(null)
               setTemplateSuggestionActiveIndex(0)
+              setDismissedPathSuggestionKey(null)
+              setPathSuggestionActiveIndex(0)
             }}
             onKeyDown={handleSourceKeyDown}
             onSelectionChange={setSourceSelection}
@@ -2236,6 +2596,34 @@ export function App() {
                   <span>{template.category}</span>
                   <strong>{template.title}</strong>
                   <small>{template.description}</small>
+                </button>
+              ))}
+            </div>
+          )}
+          {showPathSuggestions && (
+            <div
+              className="templateSuggestionMenu"
+              role="listbox"
+              aria-label="Path suggestions"
+              onMouseDown={event => event.preventDefault()}
+            >
+              <div className="templateSuggestionHint">
+                {pathSuggestionTrigger?.isImage ? <Image size={14} aria-hidden="true" /> : <FileText size={14} aria-hidden="true" />}
+                <span>{pathSuggestionTrigger?.query ? `Paths matching "${pathSuggestionTrigger.query}"` : 'Workspace path suggestions'}</span>
+              </div>
+              {pathSuggestions.map((suggestion, index) => (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  className={index === pathSuggestionActiveIndex ? 'active' : ''}
+                  onClick={() => insertPathSuggestion(suggestion)}
+                  onMouseEnter={() => setPathSuggestionActiveIndex(index)}
+                  role="option"
+                  aria-selected={index === pathSuggestionActiveIndex}
+                >
+                  <span>{pathSuggestionTrigger?.isImage ? 'Image path' : 'Link path'}</span>
+                  <strong>{suggestion.label}</strong>
+                  <small>{workspaceRoot ? 'Workspace file' : 'Open a workspace for project-relative paths'}</small>
                 </button>
               ))}
             </div>
@@ -2291,7 +2679,35 @@ export function App() {
         </section>
 
         <section
-          className={`previewPane ${viewMode === 'source' ? 'isHidden' : ''}`}
+          className={`richPane ${viewMode === 'rich' ? '' : 'isHidden'}`}
+          aria-label="Rich Markdown editor"
+        >
+          <div className="paneHeader">
+            <strong>Rich</strong>
+            <span>Markdown-backed</span>
+          </div>
+          <RichMarkdownEditor
+            ref={richEditorRef}
+            value={activeDocument?.text ?? ''}
+            spellCheck
+            onFocusChange={hasFocus => {
+              if (!hasFocus) setSourceSelection(current => ({ ...current, hasFocus: false }))
+            }}
+            onChange={value => {
+              updateActiveDocument({ text: value })
+              setDismissedMarkdownSuggestionKey(null)
+              setMarkdownSuggestionActiveIndex(0)
+              setDismissedTemplateSuggestionKey(null)
+              setTemplateSuggestionActiveIndex(0)
+              setDismissedPathSuggestionKey(null)
+              setPathSuggestionActiveIndex(0)
+            }}
+            onSelectionChange={setSourceSelection}
+          />
+        </section>
+
+        <section
+          className={`previewPane ${viewMode === 'source' || viewMode === 'rich' ? 'isHidden' : ''}`}
           aria-label="Markdown preview"
         >
           <div className="paneHeader">
@@ -2471,6 +2887,110 @@ export function App() {
             ) : (
               <p className="emptyLine">None yet</p>
             )}
+          </section>
+
+          <section>
+            <div className="panelTitle">
+              <FileCode size={16} />
+              <h2>Export Profile</h2>
+            </div>
+            <div className="exportProfile">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={Boolean(htmlExportSettings.includeTableOfContents)}
+                  onChange={event => setHtmlExportSettings(current => ({
+                    ...current,
+                    includeTableOfContents: event.target.checked
+                  }))}
+                />
+                <span>HTML table of contents</span>
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={Boolean(htmlExportSettings.includeGeneratedMeta)}
+                  onChange={event => setHtmlExportSettings(current => ({
+                    ...current,
+                    includeGeneratedMeta: event.target.checked
+                  }))}
+                />
+                <span>HTML generator meta</span>
+              </label>
+              <div className="exportProfileActions">
+                <button
+                  type="button"
+                  disabled={!activeDocument || !htmlExportAvailable}
+                  onClick={() => void exportHtml()}
+                  title="Export the active Markdown document as HTML"
+                >
+                  <FileCode size={14} />
+                  <span>HTML</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!activeDocument || !browserPrintAvailable}
+                  onClick={() => void printDocument()}
+                  title="Open the host print dialog for PDF or printer output"
+                >
+                  <Printer size={14} />
+                  <span>PDF/Print</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!activeDocument || !markdownPdfExportAvailable}
+                  onClick={() => void exportBinaryDocument('markdown-to-pdf')}
+                  title="Export the active Markdown document as a PDF file"
+                >
+                  <FileText size={14} />
+                  <span>PDF</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!activeDocument || !markdownDocxExportAvailable}
+                  onClick={() => void exportBinaryDocument('markdown-to-docx')}
+                  title="Export the active Markdown document as a DOCX file"
+                >
+                  <FileText size={14} />
+                  <span>DOCX</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!activeDocument || isConvertingImport || !docxImportAvailable}
+                  onClick={() => void importBinaryConvertedMarkdown('docx-to-markdown')}
+                  title="Import a DOCX file into the active Markdown document"
+                >
+                  <ArrowDownToLine size={14} />
+                  <span>DOCX</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!activeDocument || isConvertingImport || !pdfImportAvailable}
+                  onClick={() => void importBinaryConvertedMarkdown('pdf-to-markdown')}
+                  title="Import PDF text into the active Markdown document"
+                >
+                  <ArrowDownToLine size={14} />
+                  <span>PDF</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!activeDocument || isConvertingImport || !ocrImportAvailable}
+                  onClick={() => void importBinaryConvertedMarkdown('ocr-to-markdown')}
+                  title="Run OCR on an image and insert Markdown text"
+                >
+                  <Image size={14} />
+                  <span>OCR</span>
+                </button>
+              </div>
+              <dl className="metaList compact">
+                <dt>HTML</dt>
+                <dd>{htmlExportAvailable ? 'Converter ready' : 'Unavailable'}</dd>
+                <dt>PDF</dt>
+                <dd>{markdownPdfExportAvailable ? 'Native file export' : browserPrintAvailable ? 'Host print adapter' : 'Unavailable'}</dd>
+                <dt>DOCX/OCR</dt>
+                <dd>{docxImportAvailable && ocrImportAvailable && markdownDocxExportAvailable ? 'Import/export ready' : 'Partially available'}</dd>
+              </dl>
+            </div>
           </section>
 
           <section>
@@ -2770,13 +3290,13 @@ function frontMatterEntries(data: FrontMatterData | null | undefined): [string, 
   return Object.entries(data).map(([key, value]) => [key, String(value)])
 }
 
-function shouldHandleEditorShortcut(event: KeyboardEvent, sourceEditor: HTMLElement | null): boolean {
+function shouldHandleEditorShortcut(event: KeyboardEvent, editorElements: Array<HTMLElement | null>): boolean {
   if (event.defaultPrevented) return false
 
   const target = event.target
 
   if (!(target instanceof HTMLElement)) return true
-  if (sourceEditor?.contains(target)) return true
+  if (editorElements.some(editor => editor?.contains(target))) return true
   if (target.isContentEditable) return false
 
   return !['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)
@@ -2837,11 +3357,21 @@ function titleWithoutExtension(title: string): string {
   return title.replace(/\.(md|markdown|mdown|txt)$/i, '') || title
 }
 
+function defaultBinaryExportPath(sourcePathOrTitle: string, extension: 'docx' | 'pdf'): string {
+  return `${titleWithoutExtension(sourcePathOrTitle).replace(/\.(docx|html|pdf)$/i, '')}.${extension}`
+}
+
 function converterForImportMode(mode: ConverterImportRequest['mode']) {
   if (mode === 'html-to-markdown') return htmlToMarkdownConverter
   if (mode === 'csv-to-markdown-table') return csvToMarkdownTableConverter
   if (mode === 'rich-clipboard-to-markdown') return richClipboardToMarkdownConverter
   return urlToMarkdownConverter
+}
+
+function converterForBinaryImportMode(mode: 'docx-to-markdown' | 'ocr-to-markdown' | 'pdf-to-markdown'): MarkdownConverter {
+  if (mode === 'docx-to-markdown') return docxToMarkdownConverter
+  if (mode === 'pdf-to-markdown') return pdfToMarkdownConverter
+  return ocrToMarkdownConverter
 }
 
 function conversionRequestForImport(mode: ConverterImportRequest['mode'], input: string) {
@@ -2856,6 +3386,12 @@ function labelForImportMode(mode: ConverterImportRequest['mode']): string {
   if (mode === 'csv-to-markdown-table') return 'CSV import'
   if (mode === 'rich-clipboard-to-markdown') return 'Rich clipboard import'
   return 'URL import'
+}
+
+function labelForBinaryImportMode(mode: 'docx-to-markdown' | 'ocr-to-markdown' | 'pdf-to-markdown'): string {
+  if (mode === 'docx-to-markdown') return 'DOCX import'
+  if (mode === 'pdf-to-markdown') return 'PDF import'
+  return 'OCR import'
 }
 
 function iconForTheme(theme: Theme): LucideIcon {
@@ -2910,6 +3446,28 @@ async function selectSaveHtmlPathFromPlatform(defaultPath: string): Promise<stri
   return result.value
 }
 
+async function selectSavePdfPathFromPlatform(defaultPath: string): Promise<string | null> {
+  const result = await platform.dialogs.savePdfFile(defaultPath)
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
+async function selectSaveDocxPathFromPlatform(defaultPath: string): Promise<string | null> {
+  const result = await platform.dialogs.saveDocxFile(defaultPath)
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
+async function selectBinaryImportPathFromPlatform(format: 'docx-to-markdown' | 'ocr-to-markdown' | 'pdf-to-markdown'): Promise<string | null> {
+  const result = format === 'docx-to-markdown'
+    ? await platform.dialogs.openDocxFile()
+    : format === 'pdf-to-markdown'
+      ? await platform.dialogs.openPdfFile()
+      : await platform.dialogs.openImageFile()
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
 async function readDocumentFromPlatform(path: string): Promise<{ contents: string; info: FileInfo }> {
   const contents = await platform.filesystem.readTextFile(path)
   if (!contents.ok) throw new Error(contents.error.message)
@@ -2922,6 +3480,19 @@ async function readDocumentFromPlatform(path: string): Promise<{ contents: strin
 
 async function writeDocumentToPlatform(path: string, contents: string): Promise<FileInfo> {
   const written = await platform.filesystem.writeTextFile(path, contents)
+  if (!written.ok) throw new Error(written.error.message)
+
+  return getFileInfoFromPlatform(path)
+}
+
+async function readBinaryDocumentFromPlatform(path: string): Promise<Uint8Array> {
+  const result = await platform.filesystem.readBinaryFile(path)
+  if (!result.ok) throw new Error(result.error.message)
+  return result.value
+}
+
+async function writeBinaryDocumentToPlatform(path: string, contents: Uint8Array): Promise<FileInfo> {
+  const written = await platform.filesystem.writeBinaryFile(path, contents)
   if (!written.ok) throw new Error(written.error.message)
 
   return getFileInfoFromPlatform(path)

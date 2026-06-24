@@ -6,19 +6,20 @@ import {
   saveEditorPreferences as saveCoreEditorPreferences,
   type EditorPreferences as CoreEditorPreferences,
   type KeybindingDefinition as CoreKeybindingDefinition,
-  type ThemePreference,
-  type ViewModePreference
+  type ThemePreference
 } from '@markforge/core'
 import { commandGroups, editorCommands, type EditorCommandId } from '@markforge/editor-engine'
 
 export { editorPrefsKey }
 
 export type Theme = ThemePreference
-export type ViewMode = ViewModePreference
+export type ViewMode = 'preview' | 'rich' | 'source' | 'split'
 export type KeybindingActionId = 'app.commandPalette' | 'app.quickInsert' | 'app.templatesHelp' | EditorCommandId
 
 export type KeybindingDefinition = CoreKeybindingDefinition<KeybindingActionId>
-export type EditorPreferences = CoreEditorPreferences<KeybindingActionId>
+export type EditorPreferences = Omit<CoreEditorPreferences<KeybindingActionId>, 'viewMode'> & {
+  viewMode: ViewMode
+}
 
 export type ShortcutConflict = {
   shortcut: string
@@ -60,10 +61,19 @@ export const keybindingDefinitions: KeybindingDefinition[] = [
 
 const defaultKeybindings = createDefaultPreferences(keybindingDefinitions).keybindings
 
-export const defaultEditorPreferences: EditorPreferences = createDefaultPreferences(keybindingDefinitions)
+export const defaultEditorPreferences: EditorPreferences = {
+  ...createDefaultPreferences(keybindingDefinitions),
+  viewMode: 'split'
+}
 
 export function restoreEditorPreferences(value: unknown): EditorPreferences {
-  return restoreCoreEditorPreferences(value, keybindingDefinitions)
+  const restored = restoreCoreEditorPreferences(value, keybindingDefinitions)
+  const storedViewMode = isRecord(value) ? value.viewMode : null
+
+  return {
+    ...restored,
+    viewMode: isViewMode(storedViewMode) ? storedViewMode : restored.viewMode
+  }
 }
 
 export function readEditorPreferences(storage: Storage = window.localStorage): EditorPreferences {
@@ -74,7 +84,7 @@ export function saveEditorPreferences(
   preferences: EditorPreferences,
   storage: Storage = window.localStorage
 ): void {
-  saveCoreEditorPreferences(storage, preferences)
+  saveCoreEditorPreferences(storage, preferences as CoreEditorPreferences<KeybindingActionId>)
 }
 
 export function shortcutForAction(
@@ -217,4 +227,12 @@ function formatKeyToken(key: string): string {
   if (lowerKey === 'delete' || lowerKey === 'del') return 'Delete'
 
   return key
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function isViewMode(value: unknown): value is ViewMode {
+  return value === 'source' || value === 'split' || value === 'preview' || value === 'rich'
 }

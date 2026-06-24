@@ -86,7 +86,17 @@ fn read_text_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn read_binary_file(path: String) -> Result<Vec<u8>, String> {
+    fs::read(&path).map_err(|error| format!("Failed to read {path}: {error}"))
+}
+
+#[tauri::command]
 fn write_text_file(path: String, contents: String) -> Result<(), String> {
+    fs::write(&path, contents).map_err(|error| format!("Failed to write {path}: {error}"))
+}
+
+#[tauri::command]
+fn write_binary_file(path: String, contents: Vec<u8>) -> Result<(), String> {
     fs::write(&path, contents).map_err(|error| format!("Failed to write {path}: {error}"))
 }
 
@@ -454,7 +464,9 @@ pub fn run() {
         .manage(FileWatchState::default())
         .invoke_handler(tauri::generate_handler![
             read_text_file,
+            read_binary_file,
             write_text_file,
+            write_binary_file,
             get_file_info,
             add_recent_document,
             list_workspace_files,

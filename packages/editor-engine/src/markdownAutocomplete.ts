@@ -18,6 +18,25 @@ export type MarkdownAutocompleteEdit = {
   text: string
 }
 
+export type MarkdownPathAutocompleteTrigger = {
+  end: number
+  isImage: boolean
+  query: string
+  start: number
+}
+
+export type MarkdownPathAutocompleteEntry = {
+  isDirectory?: boolean
+  path: string
+  relativePath?: string
+}
+
+export type MarkdownPathAutocompleteSuggestion = {
+  id: string
+  insertText: string
+  label: string
+}
+
 export const markdownAutocompleteSuggestions: MarkdownAutocompleteSuggestion[] = [
   {
     id: 'heading',
@@ -133,4 +152,85 @@ export function replaceMarkdownAutocompleteTrigger(
     selectionStart,
     text
   }
+}
+
+export function findMarkdownPathAutocompleteTrigger(source: string, cursor: number): MarkdownPathAutocompleteTrigger | null {
+  const caret = Math.max(0, Math.min(cursor, source.length))
+  const beforeCursor = source.slice(0, caret)
+  const imageMatch = /!\[[^\]\n]*]\(([^)\n]*)$/.exec(beforeCursor)
+  const linkMatch = /(?<!!)\[[^\]\n]*]\(([^)\n]*)$/.exec(beforeCursor)
+  const match = imageMatch ?? linkMatch
+
+  if (!match) return null
+
+  const query = match[1]
+  if (/^[a-z][a-z0-9+.-]*:/i.test(query) || query.startsWith('#')) return null
+
+  return {
+    start: caret - query.length,
+    end: caret,
+    query,
+    isImage: Boolean(imageMatch)
+  }
+}
+
+export function filterMarkdownPathSuggestions(
+  trigger: MarkdownPathAutocompleteTrigger,
+  entries: MarkdownPathAutocompleteEntry[],
+  limit = 8
+): MarkdownPathAutocompleteSuggestion[] {
+  const normalizedQuery = normalizePathForSearch(trigger.query)
+  const imageExtensions = new Set(['avif', 'gif', 'jpeg', 'jpg', 'png', 'svg', 'webp'])
+
+  return entries
+    .map(entry => {
+      const insertText = normalizePathForInsert(entry.relativePath ?? entry.path)
+      const extension = extensionOf(insertText)
+      return {
+        entry,
+        insertText,
+        extension,
+        searchText: normalizePathForSearch(insertText)
+      }
+    })
+    .filter(item => !trigger.isImage || item.entry.isDirectory || imageExtensions.has(item.extension))
+    .filter(item => !normalizedQuery || item.searchText.includes(normalizedQuery))
+    .sort((first, second) => first.insertText.localeCompare(second.insertText))
+    .slice(0, limit)
+    .map(item => ({
+      id: item.insertText,
+      insertText: item.insertText,
+      label: item.insertText
+    }))
+}
+
+export function replaceMarkdownPathTrigger(
+  source: string,
+  trigger: MarkdownPathAutocompleteTrigger,
+  suggestion: MarkdownPathAutocompleteSuggestion
+): MarkdownAutocompleteEdit {
+  const start = Math.max(0, Math.min(trigger.start, source.length))
+  const end = Math.max(start, Math.min(trigger.end, source.length))
+  const text = `${source.slice(0, start)}${suggestion.insertText}${source.slice(end)}`
+  const selection = start + suggestion.insertText.length
+
+  return {
+    selectionEnd: selection,
+    selectionStart: selection,
+    text
+  }
+}
+
+function normalizePathForSearch(value: string): string {
+  return value.replace(/\\/g, '/').toLowerCase()
+}
+
+function normalizePathForInsert(value: string): string {
+  return value.replace(/\\/g, '/').replace(/^\.\//, '')
+}
+
+function extensionOf(value: string): string {
+  const last = value.split('/').pop() ?? value
+  const index = last.lastIndexOf('.')
+  return index >= 0 ? last.slice(index + 1).toLowerCase() : ''
 }

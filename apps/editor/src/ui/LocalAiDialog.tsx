@@ -1,5 +1,14 @@
 import { labelForMarkdownInsertMode, type MarkdownInsertMode } from '@markforge/editor-engine'
-import { localLlmActions, type LocalLlmActionId, type LocalLlmProviderKind } from '@markforge/llm'
+import {
+  defaultLocalLlmProviderProfiles,
+  localLlmActions,
+  restoreLocalLlmProviderProfiles,
+  serializeLocalLlmProviderProfiles,
+  type LocalLlmActionId,
+  type LocalLlmProviderKind,
+  type LocalLlmProviderProfile,
+  type LlmPromptStreamChunk
+} from '@markforge/llm'
 import {
   AlertTriangle,
   BrainCircuit,
@@ -25,6 +34,7 @@ export type LocalAiRunRequest = {
   actionId: LocalLlmActionId
   endpoint: string
   model: string
+  onToken?: (chunk: LlmPromptStreamChunk) => void
   providerKind: EditorLocalAiProviderKind
   useSelection: boolean
 }
@@ -44,6 +54,7 @@ type LocalAiDialogProps = {
 }
 
 const insertModes: MarkdownInsertMode[] = ['replace-selection', 'insert-at-cursor', 'append-to-document']
+const localAiProfileStorageKey = 'markforge.editor.localAiProfiles.v1'
 
 export function LocalAiDialog({
   documentText,
@@ -58,6 +69,8 @@ export function LocalAiDialog({
   const [providerKind, setProviderKind] = useState<EditorLocalAiProviderKind>('ollama')
   const [endpoint, setEndpoint] = useState(defaultEndpointForLocalAiProvider('ollama'))
   const [model, setModel] = useState('')
+  const [profiles, setProfiles] = useState<LocalLlmProviderProfile[]>(() => readLocalAiProfiles())
+  const [selectedProfileId, setSelectedProfileId] = useState('ollama-default')
   const [actionId, setActionId] = useState<LocalLlmActionId>('summarize-document')
   const [useSelection, setUseSelection] = useState(selectionLength > 0)
   const [resultText, setResultText] = useState('')
@@ -83,11 +96,64 @@ export function LocalAiDialog({
     if (selectionLength === 0 && useSelection) setUseSelection(false)
   }, [selectionLength, useSelection])
 
+  useEffect(() => {
+    writeLocalAiProfiles(profiles)
+  }, [profiles])
+
+  const applyProfile = (profile: LocalLlmProviderProfile) => {
+    setProviderKind(profile.kind)
+    setEndpoint(profile.endpoint)
+    setModel(profile.model)
+    setSelectedProfileId(profile.id)
+    setResultText('')
+    setMessage(`${profile.label} selected. Enable the provider before running.`)
+  }
+
   const handleProviderChange = (kind: EditorLocalAiProviderKind) => {
     setProviderKind(kind)
     setEndpoint(defaultEndpointForLocalAiProvider(kind))
+    setSelectedProfileId(profiles.find(profile => profile.kind === kind)?.id ?? '')
     setResultText('')
     setMessage(`${labelForLocalAiProvider(kind)} selected. Enable the provider before running.`)
+  }
+
+  const saveProfile = () => {
+    const normalizedEndpoint = endpoint.trim()
+    const normalizedModel = model.trim()
+
+    if (!normalizedEndpoint || !normalizedModel) {
+      setMessage('Profiles need both an endpoint and model.')
+      return
+    }
+
+    const existing = profiles.find(profile => profile.id === selectedProfileId)
+    const id = existing && !isDefaultLocalAiProfile(existing.id)
+      ? existing.id
+      : `profile-${Date.now()}`
+    const nextProfile: LocalLlmProviderProfile = {
+      endpoint: normalizedEndpoint,
+      id,
+      kind: providerKind,
+      label: `${labelForLocalAiProvider(providerKind)} ${normalizedModel}`,
+      model: normalizedModel
+    }
+
+    setProfiles(current => {
+      const withoutCurrent = current.filter(profile => profile.id !== id)
+      return [nextProfile, ...withoutCurrent]
+    })
+    setSelectedProfileId(id)
+    setMessage(`${nextProfile.label} profile saved.`)
+  }
+
+  const deleteProfile = () => {
+    const profile = profiles.find(item => item.id === selectedProfileId)
+    if (!profile || isDefaultLocalAiProfile(profile.id)) return
+
+    setProfiles(current => current.filter(item => item.id !== profile.id))
+    const fallback = profiles.find(item => item.id !== profile.id) ?? defaultLocalLlmProviderProfiles[0]
+    applyProfile(fallback)
+    setMessage(`${profile.label} profile removed.`)
   }
 
   const runLocalAi = async () => {
@@ -95,15 +161,26 @@ export function LocalAiDialog({
 
     setMessage(`Sending ${promptPreview.ok ? promptPreview.value.inputSource : 'document'} text to ${providerLabel} on this machine.`)
     setResultText('')
+    let streamed = false
 
-    const result = await onRun({ actionId, endpoint, model, providerKind, useSelection })
+    const result = await onRun({
+      actionId,
+      endpoint,
+      model,
+      providerKind,
+      useSelection,
+      onToken: chunk => {
+        streamed = true
+        setResultText(current => `${current}${chunk.text}`)
+      }
+    })
 
     if (!result.ok) {
       setMessage(result.error.message)
       return
     }
 
-    setResultText(result.value.text)
+    if (!streamed) setResultText(result.value.text)
     setMessage(`${providerLabel} returned local output.`)
   }
 
@@ -178,6 +255,21 @@ export function LocalAiDialog({
             </label>
 
             <label className="localAiField">
+              <span>Profile</span>
+              <select
+                value={selectedProfileId}
+                onChange={event => {
+                  const profile = profiles.find(item => item.id === event.target.value)
+                  if (profile) applyProfile(profile)
+                }}
+              >
+                {profiles.map(profile => (
+                  <option key={profile.id} value={profile.id}>{profile.label}</option>
+                ))}
+              </select>
+            </label>
+
+            <label className="localAiField">
               <span>Provider</span>
               <select
                 value={providerKind}
@@ -208,6 +300,26 @@ export function LocalAiDialog({
                 spellCheck={false}
               />
             </label>
+
+            <div className="localAiProfileActions" aria-label="Local AI profile actions">
+              <button
+                type="button"
+                onClick={saveProfile}
+                title="Save the current endpoint and model as a Local AI profile"
+              >
+                <ShieldCheck size={14} />
+                <span>Save Profile</span>
+              </button>
+              <button
+                type="button"
+                disabled={isDefaultLocalAiProfile(selectedProfileId)}
+                onClick={deleteProfile}
+                title="Delete the selected custom Local AI profile"
+              >
+                <X size={14} />
+                <span>Delete</span>
+              </button>
+            </div>
           </div>
 
           <div className="localAiControls">
@@ -310,4 +422,23 @@ export function LocalAiDialog({
       </form>
     </div>
   )
+}
+
+function isDefaultLocalAiProfile(id: string): boolean {
+  return defaultLocalLlmProviderProfiles.some(profile => profile.id === id)
+}
+
+function readLocalAiProfiles(): LocalLlmProviderProfile[] {
+  if (typeof window === 'undefined') return defaultLocalLlmProviderProfiles.slice()
+
+  try {
+    return restoreLocalLlmProviderProfiles(JSON.parse(window.localStorage.getItem(localAiProfileStorageKey) ?? 'null'))
+  } catch {
+    return defaultLocalLlmProviderProfiles.slice()
+  }
+}
+
+function writeLocalAiProfiles(profiles: LocalLlmProviderProfile[]): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(localAiProfileStorageKey, serializeLocalLlmProviderProfiles(profiles))
 }

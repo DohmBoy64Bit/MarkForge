@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MarkForge Documentation</title>
+    <meta
+      name="description"
+      content="Static documentation index for MarkForge status, editor and viewer workflows, Markdown support, converters, themes, local AI, packaging, and architecture."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to documentation</a>
+    <div class="site-shell">
+      <aside class="sidebar" aria-label="Documentation navigation">
+        <div class="brand-block">
+          <span class="brand-mark" aria-hidden="true">MF</span>
+          <div>
+            <p class="eyebrow">Documentation</p>
+            <h1>MarkForge</h1>
+          </div>
+        </div>
+
+        <label class="search-label" for="docSearch">Filter sections</label>
+        <input
+          id="docSearch"
+          class="search-input"
+          type="search"
+          placeholder="Search docs, features, blockers"
+          autocomplete="off"
+        />
+        <p class="search-count" id="searchCount" aria-live="polite">All sections visible</p>
+
+        <nav class="nav-list" id="sectionNav" aria-label="Page sections">
+          <a href="#overview">Overview</a>
+          <a href="#editor">Editor</a>
+          <a href="#viewer">Viewer</a>
+          <a href="#markdown">Markdown Support</a>
+          <a href="#converters">Converters</a>
+          <a href="#themes">Themes</a>
+          <a href="#local-ai">Local AI</a>
+          <a href="#packaging">Packaging</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#deferred">Deferred Work</a>
+          <a href="#sources">Source Docs</a>
+        </nav>
+
+        <div class="sidebar-note">
+          <strong>Status:</strong> Rich editor, binary conversion, and Local AI profile wiring are implemented; release hardening remains open.
+        </div>
+      </aside>
+
+      <main id="content" class="content" tabindex="-1">
+        <header class="page-header doc-block" id="overview" data-search="overview current status phase 12a local first windows linux source editor docs">
+          <div class="header-copy">
+            <p class="eyebrow">Repository-grounded static docs</p>
+            <h2><span>MarkForge</span> <span>Documentation</span></h2>
+            <p class="lede">
+              MarkForge is being built as a professional, local-first Markdown editor and standalone
+              Markdown viewer for Windows and Linux, with Windows as the first production target.
+              Implementation has progressed beyond the Phase 12A source editor baseline with rich Markdown editing,
+              binary import/export conversion, path autocomplete, and Local AI profile/streaming workflows.
+              Release signing, updater publishing, Linux artifacts, and broader fixture coverage remain open.
+            </p>
+            <div class="header-actions" aria-label="Primary documentation links">
+              <a class="text-link" href="../user-documentation.md">User documentation</a>
+              <a class="text-link" href="../developer-documentation.md">Developer documentation</a>
+              <a class="text-link" href="../architecture.md">Architecture</a>
+            </div>
+          </div>
+          <figure class="evidence-panel">
+            <img
+              src="../audits/screenshots/phase-12/editor-codemirror-desktop.png"
+              alt="MarkForge editor screenshot showing the CodeMirror source editor surface"
+            />
+            <figcaption>Phase 12A CodeMirror source editor screenshot evidence.</figcaption>
+          </figure>
+        </header>
+
+        <section class="status-grid" aria-label="Project status summary">
+          <article class="status-card doc-block" data-search="phase 12a codemirror source editor preserved workflows">
+            <span class="status-kicker">Current implementation</span>
+            <h3>Source and rich editing</h3>
+            <p>CodeMirror 6 backs source mode, while ProseMirror powers a Markdown-backed rich mode. Commands, templates, converters, Local AI insertion, search, dirty state, and preview workflows remain wired.</p>
+          </article>
+          <article class="status-card doc-block" data-search="windows first packaging nsis installers editor viewer">
+            <span class="status-kicker">Release posture</span>
+            <h3>Windows-first baseline</h3>
+            <p>Reproducible NSIS installer commands and smoke documentation exist for editor and viewer. Linux remains a smoke plan, not an end-user channel.</p>
+          </article>
+          <article class="status-card warning doc-block" data-search="not product ready deferred external blockers">
+            <span class="status-kicker">Truth boundary</span>
+            <h3>Release blockers remain</h3>
+            <p>Signing, updater publishing, Linux release artifacts, full conformance fixtures, and broader OS smoke evidence remain open.</p>
+          </article>
+        </section>
+
+        <section class="doc-section doc-block" id="editor" data-search="editor source split preview codemirror command palette templates workspace search local ai rich editor">
+          <div class="section-heading">
+            <p class="eyebrow">Editor</p>
+            <h2>Source-first workbench, rich-editor groundwork</h2>
+          </div>
+          <div class="split-layout">
+            <div>
+              <p>
+                The editor currently supports source, rich, split, and preview modes. Source mode uses CodeMirror 6, while rich mode uses a Markdown-backed ProseMirror surface that parses and serializes through the app document model without becoming a 1:1 MarkText clone.
+              </p>
+              <table>
+                <thead>
+                  <tr><th>Area</th><th>Current capability</th><th>Boundary</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Editing surface</td><td>CodeMirror source mode with Markdown syntax plus a ProseMirror rich Markdown mode with parse/serialize bridging.</td><td>Broader rich-editing fixture coverage remains open.</td></tr>
+                  <tr><td>Commands</td><td>Command palette, source formatting, quick insert, slash Markdown structures, path autocomplete, template insertion, search/replace, table tools, image insertion, and selection overlay are wired through editor-engine helpers.</td><td>Broader native menu parity remains open.</td></tr>
+                  <tr><td>Workspace</td><td>Open folder, list supported Markdown/text files, filter paths, search file contents, and open results.</td><td>Fuzzy quick-open and wider project-tree ergonomics remain future work.</td></tr>
+                  <tr><td>Templates</td><td>Built-in, custom local, and workspace templates under <code>.markforge/templates/*.md</code> are supported through the Templates and Help UI and source suggestions.</td><td>Syncable template libraries are not claimed.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <figure class="media-tile">
+              <img
+                src="../audits/screenshots/phase-7b/editor-desktop.png"
+                alt="MarkForge editor desktop screenshot from audit evidence"
+              />
+              <figcaption>Editor shell audit evidence.</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="doc-section doc-block" id="viewer" data-search="viewer read only markdown standalone workspace export html print themes search">
+          <div class="section-heading">
+            <p class="eyebrow">Viewer</p>
+            <h2>Standalone read-only Markdown viewer</h2>
+          </div>
+          <p>
+            The viewer is a MarkForge extension beyond MarkText parity. It renders local Markdown/text files, keeps the document read-only, watches opened files, supports workspace browsing/search, shares built-in themes, and exposes HTML export plus browser print handoff.
+          </p>
+          <div class="feature-list">
+            <article><strong>Open and reload</strong><span>Local file read/reload flows go through platform service boundaries.</span></article>
+            <article><strong>Workspace search</strong><span>Folders can be indexed for supported Markdown/text files and searched from the viewer inspector.</span></article>
+            <article><strong>Export path</strong><span>HTML export uses the shared converter pipeline; print remains browser print handoff.</span></article>
+          </div>
+        </section>
+
+        <section class="doc-section doc-block" id="markdown" data-search="markdown commonmark gfm front matter tables task lists footnotes katex mermaid raw html sanitization">
+          <div class="section-heading">
+            <p class="eyebrow">Markdown support</p>
+            <h2>Rendered through a package-owned engine</h2>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Supported or partially supported</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Common Markdown and GFM-style features</td><td>Baseline rendering includes tables, task lists, footnotes, headings, links, images, lists, blockquotes, code fences, and horizontal rules. Full conformance fixture import remains deferred.</td></tr>
+              <tr><td>Front matter</td><td>YAML, TOML-style key-value, and JSON front matter blocks are parsed, with warnings for invalid JSON.</td></tr>
+              <tr><td>Math</td><td>Inline and block KaTeX math render through the Markdown engine.</td></tr>
+              <tr><td>Diagrams</td><td>Simple safe Mermaid graph/flowchart fences render; unsupported diagram languages or syntax render as source with warnings.</td></tr>
+              <tr><td>Raw HTML</td><td>Sanitized raw HTML is available behind render options; dangerous script/link behavior is stripped.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="doc-section doc-block" id="converters" data-search="converters html export import csv rich clipboard url article markdown cleanup pdf docx ocr unsupported">
+          <div class="section-heading">
+            <p class="eyebrow">Converters</p>
+            <h2>Explicit capability boundaries</h2>
+          </div>
+          <p>
+            Conversion is package-owned in <code>packages/converters</code>, with metadata, capability checks, typed results, warnings, cancellation, and explicit unsupported results. Unsupported converters are boundaries, not hidden promises.
+          </p>
+          <div class="capability-table">
+            <div class="cap-row cap-head"><span>Capability</span><span>Status</span><span>Current behavior</span></div>
+            <div class="cap-row"><span>Markdown to HTML</span><span class="pill good">Supported</span><span>Editor and viewer export through the shared renderer/converter path.</span></div>
+            <div class="cap-row"><span>HTML to Markdown</span><span class="pill good">Supported</span><span>Sanitized conversion with lossiness warnings.</span></div>
+            <div class="cap-row"><span>CSV to Markdown table</span><span class="pill good">Supported</span><span>Quoted fields, escaped quotes, ragged-row padding warnings, and pipe escaping.</span></div>
+            <div class="cap-row"><span>Rich clipboard and URL/article HTML</span><span class="pill partial">Partial</span><span>Supported through the sanitized HTML-to-Markdown path with trust/lossiness warnings.</span></div>
+            <div class="cap-row"><span>DOCX import/export</span><span class="pill good">Supported</span><span>DOCX-to-Markdown import and Markdown-to-DOCX export run through package-owned converter adapters and app binary file I/O.</span></div>
+            <div class="cap-row"><span>PDF import/export</span><span class="pill partial">Partial</span><span>PDF text import and Markdown-to-PDF export are wired; browser print remains available for host print/PDF workflows.</span></div>
+            <div class="cap-row"><span>OCR image import</span><span class="pill partial">Partial</span><span>Image OCR can insert recognized text as Markdown through the converter pipeline.</span></div>
+          </div>
+        </section>
+
+        <section class="doc-section doc-block" id="themes" data-search="themes light dark sepia high contrast github modern neutral theme engine css variables">
+          <div class="section-heading">
+            <p class="eyebrow">Themes</p>
+            <h2>Built-in app themes from shared tokens</h2>
+          </div>
+          <p>
+            <code>packages/theme-engine</code> owns the built-in registry and app-facing CSS variable generation. Editor and viewer shell roots consume package-generated variables rather than duplicating theme colors locally.
+          </p>
+          <ul class="theme-swatches" aria-label="Current app-visible themes">
+            <li><span class="swatch light"></span>Light</li>
+            <li><span class="swatch dark"></span>Dark</li>
+            <li><span class="swatch sepia"></span>Sepia Paper</li>
+            <li><span class="swatch contrast"></span>High Contrast</li>
+            <li><span class="swatch github"></span>GitHub</li>
+            <li><span class="swatch neutral"></span>Modern Neutral</li>
+          </ul>
+          <p class="callout">System theme following, custom themes, code-highlighter theme switching, and export/print theme options remain follow-on work.</p>
+        </section>
+
+        <section class="doc-section doc-block" id="local-ai" data-search="local ai llm ollama lm studio llama cpp privacy loopback disabled">
+          <div class="section-heading">
+            <p class="eyebrow">Local AI</p>
+            <h2>Disabled by default, loopback only</h2>
+          </div>
+          <div class="split-layout compact">
+            <div>
+              <p>
+                Phase 9 added the first local-only AI workflow. The current editor dialog now uses package streaming APIs, persists local provider profiles, and calls through <code>packages/llm</code> rather than direct provider SDKs.
+              </p>
+              <ul class="check-list">
+                <li>Disabled until the user enables a local provider in the dialog.</li>
+                <li>Document or selection text is sent only after an explicit Run action.</li>
+                <li>Current validators accept only <code>localhost</code>, <code>127.0.0.1</code>, or <code>::1</code> endpoints.</li>
+                <li>Cloud provider endpoints are rejected by current validators.</li>
+              </ul>
+            </div>
+            <div class="inline-panel">
+              <h3>Current actions</h3>
+              <p>Summarize, improve clarity, create an outline, explain Markdown syntax, fix formatting, draft Markdown, generate tables, and suggest headings.</p>
+              <h3>Current provider paths</h3>
+              <p>Ollama <code>/api/generate</code>, LM Studio, and llama.cpp-style OpenAI-compatible local servers with persisted local profiles and streamed result output when available.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section doc-block" id="packaging" data-search="packaging release windows nsis linux smoke installers signing updater file associations">
+          <div class="section-heading">
+            <p class="eyebrow">Packaging and release</p>
+            <h2>Windows-first validation baseline</h2>
+          </div>
+          <p>
+            The current packaging baseline builds per-user NSIS installers for the editor and viewer. Validation includes docs, tests, app builds, bundle budget checks, packaging metadata checks, and Tauri Rust checks from each app shell.
+          </p>
+          <div class="command-strip" aria-label="Validation sequence">
+            <code>pnpm docs:check</code>
+            <code>pnpm test</code>
+            <code>pnpm build:editor</code>
+            <code>pnpm build:viewer</code>
+            <code>pnpm bundle:check</code>
+            <code>pnpm packaging:check</code>
+          </div>
+          <p class="callout">
+            Linux packaging is guarded by a smoke plan. Signing keys, update metadata, release channels, hosting, and rollback policy remain deferred.
+          </p>
+        </section>
+
+        <section class="doc-section doc-block" id="architecture" data-search="architecture monorepo packages apps dependency direction platform markdown engine converters llm core ui shared">
+          <div class="section-heading">
+            <p class="eyebrow">Architecture</p>
+            <h2>Strict package boundaries</h2>
+          </div>
+          <p>
+            MarkForge uses a monorepo with app shells delegating domain behavior to package APIs. UI should not directly parse Markdown, read files, call provider SDKs, or implement converter and LLM runtime behavior.
+          </p>
+          <div class="architecture-grid">
+            <article><strong>apps/editor</strong><span>Editor composition, panes, dialogs, command UI, native adapter wiring.</span></article>
+            <article><strong>apps/viewer</strong><span>Viewer window, read-only render lifecycle, search, TOC, export/print commands.</span></article>
+            <article><strong>markdown-engine</strong><span>Parsing, rendering, sanitization, headings, front matter, math, diagrams, export HTML.</span></article>
+            <article><strong>platform</strong><span>Filesystem, dialogs, clipboard, file watching, print, shell links, spellcheck, updates.</span></article>
+            <article><strong>converters</strong><span>Plugin-style converter runtime, capability checks, warnings, unsupported boundaries.</span></article>
+            <article><strong>llm</strong><span>Local provider interfaces, prompt templates, adapters, privacy guards.</span></article>
+          </div>
+        </section>
+
+        <section class="doc-section doc-block" id="deferred" data-search="deferred blockers fixtures linux signing updater spellcheck focus typewriter">
+          <div class="section-heading">
+            <p class="eyebrow">Deferred and external blockers</p>
+            <h2>What this site does not overclaim</h2>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Blocked or deferred area</th><th>Reason in current docs</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Full rich-editing parity</td><td>A Markdown-backed rich mode exists, but broad fixture coverage and parity-specific rich editing behavior still need hardening.</td></tr>
+              <tr><td>Full CommonMark/GFM and document conversion fixtures</td><td>Current support is implemented through targeted package tests; complete upstream fixture corpus coverage remains open.</td></tr>
+              <tr><td>Signing and updater publishing</td><td>Require signing keys, release hosts, channel policy, versioning, and rollback decisions.</td></tr>
+              <tr><td>Linux release artifacts</td><td>Current state is a smoke plan; AppImage/deb/rpm validation has not become a product-ready channel.</td></tr>
+              <tr><td>Focus, typewriter, and distraction-free modes</td><td>Tracked as future editor-engine/UI work.</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section class="doc-section doc-block" id="sources" data-search="source docs readme user developer architecture phase docs packaging local llm theme parity">
+          <div class="section-heading">
+            <p class="eyebrow">Source docs used</p>
+            <h2>Repository material behind this page</h2>
+          </div>
+          <div class="source-list">
+            <a href="../../README.md">README.md</a>
+            <a href="../user-documentation.md">User documentation</a>
+            <a href="../developer-documentation.md">Developer documentation</a>
+            <a href="../architecture.md">Architecture</a>
+            <a href="../marktext-parity-matrix.md">MarkText parity matrix</a>
+            <a href="../phase-12-rich-editor-surface.md">Phase 12 rich editor surface</a>
+            <a href="../phase-7-converters.md">Phase 7 converters</a>
+            <a href="../phase-8-theme-engine.md">Phase 8 theme engine</a>
+            <a href="../phase-9-local-llm.md">Phase 9 local LLM</a>
+            <a href="../phase-2-markdown-engine.md">Phase 2 Markdown engine</a>
+            <a href="../packaging-release.md">Packaging and release</a>
+            <a href="../local-llm-setup.md">Local LLM setup</a>
+            <a href="../theming-documentation.md">Theming documentation</a>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="site.js"></script>
+  </body>
+</html>

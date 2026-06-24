@@ -5,9 +5,14 @@ import {
   createBrowserPrintConverter,
   createCsvToMarkdownTableConverter,
   createDefaultConverters,
+  createDocxToMarkdownConverter,
   createHtmlConverter,
   createHtmlToMarkdownConverter,
   createMarkdownCleanupConverter,
+  createMarkdownToDocxConverter,
+  createMarkdownToPdfConverter,
+  createOcrToMarkdownConverter,
+  createPdfToMarkdownConverter,
   createPhase7AConverters,
   createRichClipboardToMarkdownConverter,
   createUrlToMarkdownConverter,
@@ -34,8 +39,10 @@ describe('@markforge/converters', () => {
     const converter = createHtmlConverter()
     const result = await converter.convert({
       exportSettings: {
+        bodyClass: 'export-profile',
         includeGeneratedMeta: true,
         includeTableOfContents: true,
+        stylesheet: 'body { color: red; }',
         title: 'Configured Export'
       },
       format: 'html',
@@ -45,6 +52,8 @@ describe('@markforge/converters', () => {
     expect(result.ok).toBe(true)
     expect(result.ok && result.value.html).toContain('<meta name="generator" content="MarkForge">')
     expect(result.ok && result.value.html).toContain('<nav aria-label="Table of contents">')
+    expect(result.ok && result.value.html).toContain('<style>body { color: red; }</style>')
+    expect(result.ok && result.value.html).toContain('<body class="export-profile">')
     expect(result.ok && result.value.html).toContain('<title>Configured Export</title>')
     expect(result.ok && result.value.warnings).toEqual([{ code: 'export-settings-applied', message: expect.any(String) }])
   })
@@ -140,25 +149,114 @@ describe('@markforge/converters', () => {
     })
   })
 
-  it('exposes only external-runtime converter capabilities as unsupported without claiming support', async () => {
+  it('converts DOCX HTML extraction output to Markdown with lossiness warnings', async () => {
+    const converter = createDocxToMarkdownConverter(async () => '<h1>Doc</h1><p><strong>Body</strong></p>')
+    const result = await converter.convert({
+      data: new Uint8Array([1, 2, 3]),
+      format: 'docx-to-markdown'
+    })
+
+    expect(converterCanHandle(converter, 'docx-to-markdown')).toBe(true)
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.value.markdown).toContain('# Doc')
+    expect(result.ok && result.value.markdown).toContain('**Body**')
+    expect(result.ok && result.value.warnings).toEqual([{ code: 'lossy-conversion', message: expect.any(String) }])
+  })
+
+  it('converts extracted PDF text to Markdown text with extraction warnings', async () => {
+    const converter = createPdfToMarkdownConverter(async () => 'Page one\n\nPage two')
+    const result = await converter.convert({
+      data: new Uint8Array([37, 80, 68, 70]),
+      format: 'pdf-to-markdown'
+    })
+
+    expect(converterCanHandle(converter, 'pdf-to-markdown')).toBe(true)
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        format: 'pdf-to-markdown',
+        markdown: 'Page one\n\nPage two\n',
+        warnings: [{ code: 'extracted-text', message: expect.any(String) }]
+      }
+    })
+  })
+
+  it('converts OCR output to Markdown text with recognition warnings', async () => {
+    const converter = createOcrToMarkdownConverter(async () => 'Scanned heading\n\nScanned body')
+    const result = await converter.convert({
+      data: new Uint8Array([137, 80, 78, 71]),
+      format: 'ocr-to-markdown'
+    })
+
+    expect(converterCanHandle(converter, 'ocr-to-markdown')).toBe(true)
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.value.markdown).toBe('Scanned heading\n\nScanned body\n')
+    expect(result.ok && result.value.warnings).toEqual([{ code: 'extracted-text', message: expect.any(String) }])
+  })
+
+  it('exports Markdown to PDF binary output', async () => {
+    const expected = new Uint8Array([1, 2, 3]).buffer
+    const converter = createMarkdownToPdfConverter(async (markdown, title) => {
+      expect(markdown).toBe('# Export')
+      expect(title).toBe('PDF Title')
+      return expected
+    })
+    const result = await converter.convert({
+      format: 'markdown-to-pdf',
+      markdown: '# Export',
+      title: 'PDF Title'
+    })
+
+    expect(converterCanHandle(converter, 'markdown-to-pdf')).toBe(true)
+    expect(result).toEqual({
+      ok: true,
+      value: {
+        data: expected,
+        format: 'markdown-to-pdf',
+        mimeType: 'application/pdf',
+        warnings: []
+      }
+    })
+  })
+
+  it('exports Markdown to DOCX binary output with simplification warning', async () => {
+    const expected = new Uint8Array([4, 5, 6]).buffer
+    const converter = createMarkdownToDocxConverter(async () => expected)
+    const result = await converter.convert({
+      format: 'markdown-to-docx',
+      markdown: '# Export',
+      title: 'DOCX Title'
+    })
+
+    expect(converterCanHandle(converter, 'markdown-to-docx')).toBe(true)
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.value).toMatchObject({
+      data: expected,
+      format: 'markdown-to-docx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      warnings: [{ code: 'lossy-conversion', message: expect.any(String) }]
+    })
+  })
+
+  it('exposes external-runtime converter capabilities in the default set', () => {
     const converters = createDefaultConverters()
     const browserPrintConverter = converters.find(converter => converter.metadata.id === 'browser-print')
-    const pdfConverter = converters.find(converter => converter.metadata.id === 'pdf-to-markdown')
+    const docxConverter = converters.find(converter => converter.metadata.id === 'docx-markdown')
+    const pdfConverter = converters.find(converter => converter.metadata.id === 'pdf-markdown')
+    const ocrConverter = converters.find(converter => converter.metadata.id === 'ocr-markdown')
+    const markdownPdfConverter = converters.find(converter => converter.metadata.id === 'markdown-pdf')
+    const markdownDocxConverter = converters.find(converter => converter.metadata.id === 'markdown-docx')
     const richClipboardConverter = converters.find(converter => converter.metadata.id === 'rich-clipboard-markdown')
     const urlConverter = converters.find(converter => converter.metadata.id === 'url-markdown')
 
     expect(browserPrintConverter && converterCanHandle(browserPrintConverter, 'browser-print')).toBe(false)
-    expect(pdfConverter).toBeDefined()
+    expect(docxConverter && converterCanHandle(docxConverter, 'docx-to-markdown')).toBe(true)
+    expect(pdfConverter && converterCanHandle(pdfConverter, 'pdf-to-markdown')).toBe(true)
+    expect(ocrConverter && converterCanHandle(ocrConverter, 'ocr-to-markdown')).toBe(true)
+    expect(markdownPdfConverter && converterCanHandle(markdownPdfConverter, 'markdown-to-pdf')).toBe(true)
+    expect(markdownDocxConverter && converterCanHandle(markdownDocxConverter, 'markdown-to-docx')).toBe(true)
     expect(richClipboardConverter && converterCanHandle(richClipboardConverter, 'rich-clipboard-to-markdown')).toBe(true)
     expect(urlConverter && converterCanHandle(urlConverter, 'url-to-markdown')).toBe(true)
-    expect(pdfConverter && converterCanHandle(pdfConverter, 'pdf-to-markdown')).toBe(false)
-    await expect(pdfConverter?.convert({ format: 'pdf-to-markdown' })).resolves.toMatchObject({
-      ok: false,
-      error: {
-        code: 'not-supported',
-        message: 'PDF to Markdown is explicitly unsupported in the current converter set.'
-      }
-    })
   })
 
   it('supports browser print in the convenience set only when a print adapter is provided', async () => {

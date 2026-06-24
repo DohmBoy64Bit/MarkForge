@@ -6,8 +6,8 @@ Current status: implemented package boundary.
 
 ## Public API
 
-- Filesystem read/write/info service contracts.
-- Markdown open/save dialog service contracts.
+- Filesystem text/binary read/write/info service contracts.
+- Markdown, HTML, DOCX, PDF, and image open/save dialog service contracts.
 - Clipboard read/write service contracts.
 - Browser print facade.
 - Native file-watch adapter contract with polling fallback support.
