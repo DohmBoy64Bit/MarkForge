@@ -153,5 +153,9 @@ Remaining drift is tracked debt, not the final intended ownership model.
 - Template validation/render tests.
 - LLM provider contract tests using local mocked providers.
 - Platform service tests with Windows path, network path, WSL-like path, and Linux path fixtures.
+- Frontend Tauri adapter tests use `@tauri-apps/api/mocks` to cover invoke, plugin, event, and metadata wiring without launching the desktop runtime.
+- Tauri backend command tests run through `pnpm cargo:test`.
 - UI behavior tests for command palette, menus, keybindings, editor mode toggles, TOC, search, image paste, and export.
+- Playwright browser-preview UI tests provide broad browser-safe editor/viewer workflow and screenshot coverage.
+- WebdriverIO plus `tauri-driver` smoke tests prove real Tauri WebView startup and native IPC/filesystem command behavior.
 - Packaging smoke tests for Windows before Linux packaging work begins.

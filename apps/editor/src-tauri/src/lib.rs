@@ -561,3 +561,151 @@ fn configure_menu(app: &mut tauri::App) -> tauri::Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        fs,
+        path::{Path, PathBuf},
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    struct TestDir {
+        path: PathBuf,
+    }
+
+    impl TestDir {
+        fn new(name: &str) -> Self {
+            let stamp = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("system clock should be after epoch")
+                .as_nanos();
+            let path = std::env::temp_dir().join(format!(
+                "markforge-editor-{name}-{}-{stamp}",
+                std::process::id()
+            ));
+            fs::create_dir_all(&path).expect("test directory should be created");
+            Self { path }
+        }
+
+        fn path(&self, relative: &str) -> PathBuf {
+            self.path.join(relative)
+        }
+
+        fn write(&self, relative: &str, contents: &str) -> PathBuf {
+            let path = self.path(relative);
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent).expect("parent directory should be created");
+            }
+            fs::write(&path, contents).expect("test file should be written");
+            path
+        }
+    }
+
+    impl Drop for TestDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.path);
+        }
+    }
+
+    fn path_string(path: &Path) -> String {
+        path.to_string_lossy().to_string()
+    }
+
+    #[test]
+    fn editor_text_and_binary_commands_round_trip_files() {
+        let dir = TestDir::new("round-trip");
+        let text_path = dir.path("draft.md");
+        let binary_path = dir.path("image.bin");
+
+        write_text_file(path_string(&text_path), "# Draft".to_string())
+            .expect("text write should succeed");
+        assert_eq!(
+            read_text_file(path_string(&text_path)).expect("text read should succeed"),
+            "# Draft"
+        );
+
+        write_binary_file(path_string(&binary_path), vec![0, 1, 255])
+            .expect("binary write should succeed");
+        assert_eq!(
+            read_binary_file(path_string(&binary_path)).expect("binary read should succeed"),
+            vec![0, 1, 255]
+        );
+    }
+
+    #[test]
+    fn editor_file_info_reports_existing_and_missing_paths() {
+        let dir = TestDir::new("file-info");
+        let existing = dir.write("note.md", "hello");
+        let missing = dir.path("missing.md");
+
+        let existing_info =
+            get_file_info(path_string(&existing)).expect("existing file info should succeed");
+        assert!(existing_info.exists);
+        assert_eq!(existing_info.len, Some(5));
+        assert!(existing_info.modified_ms.is_some());
+
+        let missing_info =
+            get_file_info(path_string(&missing)).expect("missing file info should still succeed");
+        assert!(!missing_info.exists);
+        assert_eq!(missing_info.len, None);
+        assert_eq!(missing_info.modified_ms, None);
+    }
+
+    #[test]
+    fn editor_workspace_listing_filters_and_sorts_supported_documents() {
+        let dir = TestDir::new("workspace-list");
+        dir.write("b.txt", "second");
+        dir.write("nested/a.md", "first");
+        dir.write("node_modules/ignored.md", "ignored");
+        dir.write("image.png", "ignored");
+
+        let entries =
+            list_workspace_files(path_string(&dir.path)).expect("workspace listing should succeed");
+        let relative_paths: Vec<_> = entries
+            .iter()
+            .map(|entry| entry.relative_path.as_str())
+            .collect();
+
+        assert_eq!(relative_paths, vec!["b.txt", "nested/a.md"]);
+        assert!(entries.iter().all(|entry| entry.len.is_some()));
+    }
+
+    #[test]
+    fn editor_workspace_search_honors_case_sensitivity_and_limit() {
+        let dir = TestDir::new("workspace-search");
+        dir.write("alpha.md", "Needle upper\nsecond line");
+        dir.write("beta.md", "needle lower");
+
+        let limited = search_workspace(
+            path_string(&dir.path),
+            "needle".to_string(),
+            Some(false),
+            Some(1),
+        )
+        .expect("limited search should succeed");
+        assert_eq!(limited.len(), 1);
+
+        let case_sensitive = search_workspace(
+            path_string(&dir.path),
+            "needle".to_string(),
+            Some(true),
+            None,
+        )
+        .expect("case sensitive search should succeed");
+        assert_eq!(case_sensitive.len(), 1);
+        assert_eq!(case_sensitive[0].relative_path, "beta.md");
+        assert_eq!(case_sensitive[0].line, 1);
+        assert_eq!(case_sensitive[0].column, 1);
+    }
+
+    #[test]
+    fn editor_supported_startup_extensions_are_enforced() {
+        assert!(ensure_supported_text_path("draft.md").is_ok());
+        assert!(ensure_supported_text_path("draft.markdown").is_ok());
+        assert!(ensure_supported_text_path("draft.mdown").is_ok());
+        assert!(ensure_supported_text_path("draft.txt").is_ok());
+        assert!(ensure_supported_text_path("draft.png").is_err());
+    }
+}

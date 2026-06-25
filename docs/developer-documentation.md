@@ -6,12 +6,15 @@
 - pnpm 10 or newer.
 - Python 3.10 or newer for repomixr audit scripts.
 - Rust toolchain for Tauri desktop builds and `cargo check`.
+- `tauri-driver` for real-app WebDriver smoke tests. Install with `cargo install tauri-driver --locked`.
 
 ## Current Commands
 
 ```bash
 pnpm docs:check
 pnpm test
+pnpm cargo:test
+pnpm test:tauri:smoke
 pnpm audit:marktext
 pnpm build:editor
 pnpm build:viewer
@@ -27,6 +30,10 @@ Run Tauri Rust checks from each app's `src-tauri` directory when changing deskto
 ```bash
 cargo check
 ```
+
+Run `pnpm cargo:test` from the repo root for both Tauri backend test suites.
+
+Run `pnpm test:tauri:smoke` for the real-app WebdriverIO/tauri-driver smoke suite. It builds debug editor and viewer Tauri apps, drives the actual WebView, and verifies native IPC command paths. On Windows, the suite resolves a matching Edge WebDriver through the `edgedriver` package unless `MARKFORGE_NATIVE_DRIVER_PATH` is set.
 
 `pnpm docs:check` runs the repository documentation validation script. It checks required documentation files, targeted stale-status drift markers, package placeholder/current implementation consistency, and local Markdown links across product documentation.
 

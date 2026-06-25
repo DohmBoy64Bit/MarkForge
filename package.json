@@ -21,6 +21,10 @@
     "tauri:viewer:build": "pnpm --filter @markforge/viewer tauri build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "cargo:test": "node scripts/cargo-test.mjs",
+    "test:tauri:smoke": "node scripts/tauri-smoke.mjs",
+    "test:tauri:smoke:editor": "node scripts/tauri-smoke.mjs editor",
+    "test:tauri:smoke:viewer": "node scripts/tauri-smoke.mjs viewer",
     "test:e2e:editor": "pnpm build:editor && pnpm build:viewer && node scripts/e2e-editor-ui.mjs",
     "test:e2e:viewer": "pnpm build:viewer && node scripts/e2e-viewer-ui.mjs",
     "test:e2e:ui": "pnpm test:e2e:editor",
@@ -31,6 +35,11 @@
   },
   "devDependencies": {
     "@types/node": "^26.0.0",
+    "@wdio/cli": "^9.29.0",
+    "@wdio/local-runner": "^9.29.0",
+    "@wdio/mocha-framework": "^9.29.0",
+    "@wdio/spec-reporter": "^9.29.0",
+    "edgedriver": "^6.3.0",
     "jsdom": "^29.1.1",
     "playwright": "^1.61.0",
     "vitest": "^4.1.9"

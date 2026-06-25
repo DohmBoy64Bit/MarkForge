@@ -1,9 +1,27 @@
 # Drift / Debt Remediation Changelog
 
 Date: 2026-06-23
-Latest evidence-mode verification: 2026-06-24
+Latest evidence-mode verification: 2026-06-25
 
 Scope: current remediation record for every confirmed issue in `docs/audits/documentation-code-drift-debt-audit.md`. The original audit captured a Phase 6B-era baseline. Later implementation phases resolved or reduced several findings, so this changelog records the current evidence-backed status after Phase 12A rather than preserving stale Phase 6-only conclusions.
+
+## 2026-06-25 Native Test Coverage Addendum
+
+### Added
+
+- Extracted editor and viewer Tauri platform adapter wiring into focused modules so native adapter behavior is unit-testable without broad App rendering.
+- Added `@tauri-apps/api/mocks` Vitest coverage for editor/viewer invoke, dialog, clipboard, watcher event, print, shell recent-document, and Tauri metadata behavior.
+- Added Rust backend command tests for editor/viewer filesystem, workspace listing/search, extension guards, missing-file metadata, and viewer HTML export write constraints.
+- Added `scripts/cargo-test.mjs` and root `pnpm cargo:test`.
+- Added WebdriverIO plus `tauri-driver` smoke coverage under `tests/tauri-smoke/` for real editor/viewer WebView startup and real IPC command execution.
+- Added `scripts/tauri-smoke.mjs`, `scripts/resolve-edge-driver.mjs`, and root smoke scripts for all apps or one app at a time.
+- Added `docs/audits/native-test-coverage-hardening-2026-06-25.md` and documented the new commands in `tests/README.md` and `docs/developer-documentation.md`.
+
+### Evidence
+
+- `pnpm test` passed with 23 test files and 177 tests.
+- `pnpm cargo:test` passed with 5 editor Rust tests and 6 viewer Rust tests.
+- `pnpm test:tauri:smoke` passed for editor and viewer real WebView2 smoke runs.
 
 ## 2026-06-24 E2E UI Audit Addendum
 
